@@ -1,0 +1,59 @@
+# test:subtest
+# test:encoding "4801F1"
+
+add rcx, rsi
+
+# test:subtest
+# test:encoding "4901F3"
+
+add r11, rsi
+
+# test:subtest
+# test:encoding "4C01F1"
+
+add rcx, r14
+
+# test:subtest
+# test:encoding "01F1"
+
+add ecx, esi
+
+# test:subtest
+# test:encoding "4101F3"
+
+add r11d, esi
+
+# test:subtest
+# test:encoding "4401F1"
+
+add ecx, r14d
+
+# test:subtest
+# test:encoding "6601F1"
+
+add cx, si
+
+# test:subtest
+# test:encoding "664101F3"
+
+add r11w, si
+
+# test:subtest
+# test:encoding "664401F1"
+
+add cx, r14w
+
+# test:subtest
+# test:encoding "4000F1"
+
+add cl, sil
+
+# test:subtest
+# test:encoding "4100F3"
+
+add r11b, sil
+
+# test:subtest
+# test:encoding "4400F1"
+
+add cl, r14b

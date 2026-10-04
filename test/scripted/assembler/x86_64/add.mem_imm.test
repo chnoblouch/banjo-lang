@@ -1,0 +1,84 @@
+# test:subtest
+# test:encoding "4883012A"
+
+add qword [rcx], 42
+
+# test:subtest
+# test:encoding "488101FF000000"
+
+add qword [rcx], 255
+
+# test:subtest
+# test:encoding "48810100010000"
+
+add qword [rcx], 256
+
+# test:subtest
+# test:encoding "48830180"
+
+add qword [rcx], -128
+
+# test:subtest
+# test:encoding "4881017FFFFFFF"
+
+add qword [rcx], -129
+
+# test:subtest
+# test:encoding "83012A"
+
+add dword [rcx], 42
+
+# test:subtest
+# test:encoding "8101FF000000"
+
+add dword [rcx], 255
+
+# test:subtest
+# test:encoding "810100010000"
+
+add dword [rcx], 256
+
+# test:subtest
+# test:encoding "830180"
+
+add dword [rcx], -128
+
+# test:subtest
+# test:encoding "81017FFFFFFF"
+
+add dword [rcx], -129
+
+# test:subtest
+# test:encoding "6683012A"
+
+add word [rcx], 42
+
+# test:subtest
+# test:encoding "668101FF00"
+
+add word [rcx], 255
+
+# test:subtest
+# test:encoding "6681010001"
+
+add word [rcx], 256
+
+# test:subtest
+# test:encoding "66830180"
+
+add word [rcx], -128
+
+# test:subtest
+# test:encoding "80012A"
+
+add byte [rcx], 42
+
+# test:subtest
+# test:encoding "80017F"
+
+add byte [rcx], 127
+
+# test:subtest
+# test:encoding "800180"
+
+add byte [rcx], -128

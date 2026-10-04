@@ -1,0 +1,39 @@
+# test:subtest
+# test:encoding "480131"
+
+add [rcx], rsi
+
+# test:subtest
+# test:encoding "4C0131"
+
+add [rcx], r14
+
+# test:subtest
+# test:encoding "0131"
+
+add [rcx], esi
+
+# test:subtest
+# test:encoding "440131"
+
+add [rcx], r14d
+
+# test:subtest
+# test:encoding "660131"
+
+add [rcx], si
+
+# test:subtest
+# test:encoding "66440131"
+
+add [rcx], r14w
+
+# test:subtest
+# test:encoding "400031"
+
+add [rcx], sil
+
+# test:subtest
+# test:encoding "440031"
+
+add [rcx], r14b

@@ -9,6 +9,7 @@
 
 #include <iostream>
 #include <optional>
+#include <string_view>
 
 #define RETURN_ERROR(message)                                                                                          \
     {                                                                                                                  \
@@ -194,6 +195,13 @@ static const HashMap<std::string_view, std::pair<mcode::PhysicalReg, unsigned>> 
 };
 // clang-format on
 
+static const HashMap<std::string_view, unsigned> SIZE_SPECIFIERS{
+    {"byte", 1},
+    {"word", 2},
+    {"dword", 4},
+    {"qword", 8},
+};
+
 X8664AsmParser::X8664AsmParser(TokenStream &tokens) : tokens{tokens} {}
 
 std::optional<mcode::Instruction> X8664AsmParser::parse_instr() {
@@ -259,6 +267,18 @@ std::optional<mcode::Operand> X8664AsmParser::parse_operand() {
 
             mcode::Register reg = mcode::Register::from_physical(pair->first);
             return mcode::Operand::from_register(reg, pair->second);
+        } else if (const unsigned *size = SIZE_SPECIFIERS.try_find(token.value)) {
+            tokens.advance();
+
+            if (tokens.get().type != TokenType::LBRACKET) {
+                RETURN_ERROR("expected '[', got" + std::string{token.value} + "'");
+            }
+
+            if (std::optional<target::X8664Address> address = parse_address()) {
+                return mcode::Operand::from_x86_64_addr(*address, *size);
+            } else {
+                return {};
+            }
         } else {
             RETURN_ERROR("invalid register '" + std::string{token.value} + "'");
         }

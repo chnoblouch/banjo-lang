@@ -1,0 +1,84 @@
+# test:subtest
+# test:encoding "4883C02A"
+
+add rax, 42
+
+# test:subtest
+# test:encoding "4805FF000000"
+
+add rax, 255
+
+# test:subtest
+# test:encoding "480500010000"
+
+add rax, 256
+
+# test:subtest
+# test:encoding "4883C080"
+
+add rax, -128
+
+# test:subtest
+# test:encoding "48057FFFFFFF"
+
+add rax, -129
+
+# test:subtest
+# test:encoding "83C02A"
+
+add eax, 42
+
+# test:subtest
+# test:encoding "05FF000000"
+
+add eax, 255
+
+# test:subtest
+# test:encoding "0500010000"
+
+add eax, 256
+
+# test:subtest
+# test:encoding "83C080"
+
+add eax, -128
+
+# test:subtest
+# test:encoding "057FFFFFFF"
+
+add eax, -129
+
+# test:subtest
+# test:encoding "6683C02A"
+
+add ax, 42
+
+# test:subtest
+# test:encoding "6605FF00"
+
+add ax, 255
+
+# test:subtest
+# test:encoding "66050001"
+
+add ax, 256
+
+# test:subtest
+# test:encoding "6683C080"
+
+add ax, -128
+
+# test:subtest
+# test:encoding "042A"
+
+add al, 42
+
+# test:subtest
+# test:encoding "047F"
+
+add al, 127
+
+# test:subtest
+# test:encoding "0480"
+
+add al, -128

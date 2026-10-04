@@ -230,10 +230,10 @@ void X8664Printer::print_opcode(mcode::Instruction &instr) {
 
         if (op0.is_x86_64_addr() && op1.is_int_immediate()) {
             emit(' ');
-            print_size(op1.get_size());
+            print_size(op0.get_size());
         } else if (op0.is_int_immediate() && op1.is_x86_64_addr()) {
             emit(' ');
-            print_size(op0.get_size());
+            print_size(op1.get_size());
         }
     }
 }

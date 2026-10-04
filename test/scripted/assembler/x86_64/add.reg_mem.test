@@ -1,0 +1,39 @@
+# test:subtest
+# test:encoding "48030E"
+
+add rcx, [rsi]
+
+# test:subtest
+# test:encoding "4C031E"
+
+add r11, [rsi]
+
+# test:subtest
+# test:encoding "030E"
+
+add ecx, [rsi]
+
+# test:subtest
+# test:encoding "44031E"
+
+add r11d, [rsi]
+
+# test:subtest
+# test:encoding "66030E"
+
+add cx, [rsi]
+
+# test:subtest
+# test:encoding "6644031E"
+
+add r11w, [rsi]
+
+# test:subtest
+# test:encoding "020E"
+
+add cl, [rsi]
+
+# test:subtest
+# test:encoding "44021E"
+
+add r11b, [rsi]

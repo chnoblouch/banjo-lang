@@ -975,7 +975,20 @@ void X8664Encoder::emit_sse(std::uint8_t prefix, std::uint8_t opcode, RegCode ds
 void X8664Encoder::encode_add_family(mcode::Instruction &instr, const BasicInstrOpcodes &opcodes) {
     mcode::Operand &dst = instr.get_operand(0);
     mcode::Operand &src = instr.get_operand(1);
-    unsigned size = dst.get_size();
+
+    unsigned size;
+
+    if (is_reg(src)) {
+        size = src.get_size();
+    } else if (is_reg(dst)) {
+        size = dst.get_size();
+    } else if (is_addr(src)) {
+        size = src.get_size();
+    } else if (is_addr(dst)) {
+        size = dst.get_size();
+    } else {
+        ASSERT_UNREACHABLE;
+    }
 
     emit_16bit_prefix_if_required(size);
 
@@ -983,25 +996,30 @@ void X8664Encoder::encode_add_family(mcode::Instruction &instr, const BasicInstr
         RegOrAddr dst_roa = roa(dst);
         Immediate src_imm = imm(src);
 
-        bool is_imm8 = fits_in_i8(src_imm.value);
+        // Note: Immediates are sign-extended, so the range is -128..128 instead of 0..256
+        bool is_imm8 = src.get_int_immediate() >= -128 && src.get_int_immediate() < 128;
         bool is_rax = dst.is_physical_reg() && dst.get_physical_reg() == X8664Register::RAX;
 
-        // Use the specialized encoding if the destination is EAX and the
-        // encoding is actually smaller.
-        if (is_rax && !(is_imm8 && size > 1)) {
+        // Use the specialized encoding if the destination is RAX and the
+        // encoding is actually smaller. The encoding is never smaller if the
+        // immediate fits into 8 bits because there is another special case for
+        // encoding 8-bit immediates that is more efficient.
+        if (is_rax && (size == 1 || !is_imm8)) {
             emit_rex_rr(size, RegCode::EAX, RegCode::EAX);
             emit_opcode(size == 1 ? opcodes.rax_imm8 : opcodes.rax_imm16);
 
-            if (size == 1) text.write_u8(src_imm.value);
-            else if (size == 2) text.write_u16(src_imm.value);
-            else if (size == 4 || size == 8) text.write_u32(src_imm.value);
-
-            return;
+            switch (size) {
+                case 1: text.write_u8(src_imm.value); return;
+                case 2: text.write_u16(src_imm.value); return;
+                case 4:
+                case 8: text.write_u32(src_imm.value); return;
+                default: ASSERT_UNREACHABLE;
+            }
         }
 
         emit_rex_rroa(size, RegCode::EAX, dst_roa);
 
-        if (is_imm8) {
+        if (size == 1 || is_imm8) {
             emit_opcode(size == 1 ? opcodes.rm8_imm8 : opcodes.rm16_imm8);
             emit_modrm_sib(opcodes.digit, dst_roa);
             text.write_u8(src_imm.value);
@@ -1009,8 +1027,12 @@ void X8664Encoder::encode_add_family(mcode::Instruction &instr, const BasicInstr
             emit_opcode(opcodes.rm16_imm16);
             emit_modrm_sib(opcodes.digit, dst_roa);
 
-            if (size == 2) text.write_u16(src_imm.value);
-            else if (size == 4 || size == 8) text.write_u32(src_imm.value);
+            if (size == 2) {
+                text.write_u16(src_imm.value);
+            } else {
+                ASSERT(size == 4 || size == 8);
+                text.write_u32(src_imm.value);
+            }
         }
     } else if (is_roa(dst) && is_reg(src)) {
         RegOrAddr dst_roa = roa(dst);
@@ -1026,6 +1048,8 @@ void X8664Encoder::encode_add_family(mcode::Instruction &instr, const BasicInstr
         emit_rex_rroa(size, dst_reg, src_roa);
         emit_opcode(size == 1 ? opcodes.r8_rm8 : opcodes.r16_rm16);
         emit_modrm_sib(dst_reg, src_roa);
+    } else {
+        ASSERT_UNREACHABLE;
     }
 }
 
