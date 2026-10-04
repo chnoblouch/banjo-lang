@@ -13,6 +13,10 @@
 
 namespace banjo::target {
 
+static bool fits_in_i8(std::int64_t value) {
+    return value >= std::numeric_limits<std::int8_t>::min() && value <= std::numeric_limits<std::int8_t>::max();
+}
+
 void X8664Encoder::encode_instr(mcode::Instruction &instr, mcode::Function *func, UnwindInfo &frame_info) {
     cur_func = func;
 
@@ -168,11 +172,11 @@ void X8664Encoder::encode_movzx(mcode::Instruction &instr) {
 }
 
 void X8664Encoder::encode_add(mcode::Instruction &instr) {
-    encode_basic_instr(instr, {0, 0x04, 0x05, 0x80, 0x81, 0x83, 0x00, 0x01, 0x02, 0x03});
+    encode_add_family(instr, {0, 0x04, 0x05, 0x80, 0x81, 0x83, 0x00, 0x01, 0x02, 0x03});
 }
 
 void X8664Encoder::encode_sub(mcode::Instruction &instr) {
-    encode_basic_instr(instr, {5, 0x2C, 0x2D, 0x80, 0x81, 0x83, 0x28, 0x29, 0x2A, 0x2B});
+    encode_add_family(instr, {5, 0x2C, 0x2D, 0x80, 0x81, 0x83, 0x28, 0x29, 0x2A, 0x2B});
 }
 
 void X8664Encoder::encode_imul(mcode::Instruction &instr) {
@@ -209,15 +213,15 @@ void X8664Encoder::encode_idiv(mcode::Instruction &instr) {
 }
 
 void X8664Encoder::encode_and(mcode::Instruction &instr) {
-    encode_basic_instr(instr, {4, 0x24, 0x25, 0x80, 0x81, 0x83, 0x20, 0x21, 0x22, 0x23});
+    encode_add_family(instr, {4, 0x24, 0x25, 0x80, 0x81, 0x83, 0x20, 0x21, 0x22, 0x23});
 }
 
 void X8664Encoder::encode_or(mcode::Instruction &instr) {
-    encode_basic_instr(instr, {1, 0x0C, 0x0D, 0x80, 0x81, 0x83, 0x08, 0x09, 0x0A, 0x0B});
+    encode_add_family(instr, {1, 0x0C, 0x0D, 0x80, 0x81, 0x83, 0x08, 0x09, 0x0A, 0x0B});
 }
 
 void X8664Encoder::encode_xor(mcode::Instruction &instr) {
-    encode_basic_instr(instr, {6, 0x34, 0x35, 0x80, 0x81, 0x83, 0x30, 0x31, 0x32, 0x33});
+    encode_add_family(instr, {6, 0x34, 0x35, 0x80, 0x81, 0x83, 0x30, 0x31, 0x32, 0x33});
 }
 
 void X8664Encoder::encode_shl(mcode::Instruction &instr) {
@@ -299,7 +303,7 @@ void X8664Encoder::encode_jmp(mcode::Instruction &instr) {
 }
 
 void X8664Encoder::encode_cmp(mcode::Instruction &instr) {
-    encode_basic_instr(instr, {7, 0x3C, 0x3D, 0x80, 0x81, 0x83, 0x38, 0x39, 0x3A, 0x3B});
+    encode_add_family(instr, {7, 0x3C, 0x3D, 0x80, 0x81, 0x83, 0x38, 0x39, 0x3A, 0x3B});
 }
 
 void X8664Encoder::encode_je(mcode::Instruction &instr) {
@@ -435,7 +439,7 @@ void X8664Encoder::encode_call(mcode::Instruction &instr) {
     if (target.is_symbol()) {
         emit_opcode(0xE8);
         text.add_symbol_use(target.get_symbol().name, use_kind(target.get_symbol()), 0);
-        text.write_i32(0);
+        text.write_u32(0);
     } else if (is_reg(target)) {
         ASSERT_MESSAGE(target.get_size() == 8, "call target register must be a 64-bit register");
         emit_opcode(0xFF);
@@ -698,61 +702,6 @@ void X8664Encoder::encode_cvtsd2si(mcode::Instruction &instr) {
     encode_cvtss2si_family(instr, {0xF2});
 }
 
-void X8664Encoder::encode_basic_instr(mcode::Instruction &instr, const BasicInstrOpcodes &opcodes) {
-    mcode::Operand &dst = instr.get_operand(0);
-    mcode::Operand &src = instr.get_operand(1);
-    unsigned size = dst.get_size();
-
-    emit_16bit_prefix_if_required(size);
-
-    if (is_roa(dst) && is_imm(src)) {
-        RegOrAddr dst_roa = roa(dst);
-        Immediate src_imm = imm(src);
-
-        bool is_imm8 = fits_in_i8(src_imm.value);
-
-        // Use the specialized encoding if the destination is EAX and the encoding is actually smaller.
-        if (is_reg(dst) && dst.get_physical_reg() == target::X8664Register::RAX && !(is_imm8 && size > 1)) {
-            emit_rex_rr(size, RegCode::EAX, RegCode::EAX);
-            emit_opcode(size == 1 ? opcodes.rax_imm8 : opcodes.rax_imm16);
-
-            if (size == 1) text.write_i8(src_imm.value);
-            else if (size == 2) text.write_i16(src_imm.value);
-            else if (size == 4 || size == 8) text.write_i32(src_imm.value);
-
-            return;
-        }
-
-        emit_rex_rroa(size, RegCode::EAX, dst_roa);
-
-        if (is_imm8) {
-            emit_opcode(size == 1 ? opcodes.rm8_imm8 : opcodes.rm16_imm8);
-            emit_modrm_sib(opcodes.digit, dst_roa);
-            text.write_i8(src_imm.value);
-        } else {
-            emit_opcode(opcodes.rm16_imm16);
-            emit_modrm_sib(opcodes.digit, dst_roa);
-
-            if (size == 2) text.write_i16(src_imm.value);
-            else if (size == 4 || size == 8) text.write_i32(src_imm.value);
-        }
-    } else if (is_roa(dst) && is_reg(src)) {
-        RegOrAddr dst_roa = roa(dst);
-        RegCode src_reg = reg(src);
-
-        emit_rex_rroa(size, src_reg, dst_roa);
-        emit_opcode(size == 1 ? opcodes.rm8_r8 : opcodes.rm16_r16);
-        emit_modrm_sib(src_reg, dst_roa);
-    } else if (is_reg(dst) && is_roa(src)) {
-        RegCode dst_reg = reg(dst);
-        RegOrAddr src_roa = roa(src);
-
-        emit_rex_rroa(size, dst_reg, src_roa);
-        emit_opcode(size == 1 ? opcodes.r8_rm8 : opcodes.r16_rm16);
-        emit_modrm_sib(dst_reg, src_roa);
-    }
-}
-
 void X8664Encoder::encode_shift(mcode::Instruction &instr, std::uint8_t digit) {
     mcode::Operand &dst = instr.get_operand(0);
     mcode::Operand &src = instr.get_operand(1);
@@ -778,7 +727,7 @@ void X8664Encoder::encode_shift(mcode::Instruction &instr, std::uint8_t digit) {
         } else {
             emit_opcode(size == 1 ? 0xC0 : 0xC1);
             emit_modrm_sib(digit, dst_roa);
-            text.write_i8(src_imm.value);
+            text.write_u8(src_imm.value);
         }
     }
 }
@@ -790,7 +739,7 @@ void X8664Encoder::encode_jcc(mcode::Instruction &instr, std::uint8_t opcode) {
         text.create_relaxable_slice();
         emit_opcode(opcode);
         text.add_symbol_use(target.get_basic_block().label, BinSymbolUseKind::REL32, 0);
-        text.write_i8(0);
+        text.write_u8(0);
         text.end_relaxable_slice();
     }
 }
@@ -816,7 +765,7 @@ void X8664Encoder::emit_mov_rr(RegCode dst, RegCode src, std::uint8_t size) {
 }
 
 void X8664Encoder::emit_mov_ri(RegCode dst, Immediate imm, std::uint8_t size) {
-    if (size == 8 && fits_in_32_bits(imm)) {
+    if (size == 8 && imm.symbol_index == -1 && imm.value <= 0xFFFFFFFF) {
         size = 4;
     }
 
@@ -825,10 +774,10 @@ void X8664Encoder::emit_mov_ri(RegCode dst, Immediate imm, std::uint8_t size) {
     emit_combined_opcode(size == 1 ? 0xB0 : 0xB8, dst);
 
     if (imm.symbol_index == -1) {
-        if (size == 1) text.write_i8(imm.value);
-        else if (size == 2) text.write_i16(imm.value);
-        else if (size == 4) text.write_i32(imm.value);
-        else if (size == 8) text.write_i64(imm.value);
+        if (size == 1) text.write_u8(imm.value);
+        else if (size == 2) text.write_u16(imm.value);
+        else if (size == 4) text.write_u32(imm.value);
+        else if (size == 8) text.write_u64(imm.value);
         else ASSERT_UNREACHABLE;
     } else {
         text.add_symbol_use(imm.symbol_index, BinSymbolUseKind::ABS64, 0);
@@ -857,9 +806,9 @@ void X8664Encoder::emit_mov_mi(Address dst, Immediate imm, std::uint8_t size) {
 
     emit_mem_digit(dst, 0, size);
 
-    if (size == 1) text.write_i8(imm.value);
-    else if (size == 2) text.write_i16(imm.value);
-    else if (size == 4) text.write_i32(imm.value);
+    if (size == 1) text.write_u8(imm.value);
+    else if (size == 2) text.write_u16(imm.value);
+    else if (size == 4) text.write_u32(imm.value);
 }
 
 void X8664Encoder::emit_imul_rr(RegCode dst, RegCode src, std::uint8_t size) {
@@ -888,7 +837,7 @@ void X8664Encoder::emit_imul_rri(RegCode dst, Immediate imm, std::uint8_t size) 
     emit_rex_rr(size, dst, dst);
     emit_opcode(0x69);
     emit_modrm_rr(dst, dst);
-    text.write_i32(imm.value);
+    text.write_u32(imm.value);
 }
 
 void X8664Encoder::emit_lea_rm(RegCode dst, Address src, std::uint8_t size) {
@@ -932,19 +881,19 @@ void X8664Encoder::emit_basic_ri(
     if (size == 1) {
         emit_opcode(opcode8);
         emit_modrm_rr(modrm_reg_digit, dst);
-        text.write_i8(imm.value);
+        text.write_u8(imm.value);
     } else if (imm.value <= 255) {
         emit_opcode(opcode_imm8);
         emit_modrm_rr(modrm_reg_digit, dst);
-        text.write_i8(imm.value);
+        text.write_u8(imm.value);
     } else if (size == 2) {
         emit_opcode(opcode32);
         emit_modrm_rr(modrm_reg_digit, dst);
-        text.write_i16(imm.value);
+        text.write_u16(imm.value);
     } else if (size == 4 || size == 8) {
         emit_opcode(opcode32);
         emit_modrm_rr(modrm_reg_digit, dst);
-        text.write_i32(imm.value);
+        text.write_u32(imm.value);
     }
 }
 
@@ -991,19 +940,19 @@ void X8664Encoder::emit_basic_mi(
     if (size == 1) {
         emit_opcode(opcode8);
         emit_mem_digit(dst, modrm_reg_digit, 1);
-        text.write_i8(imm.value);
+        text.write_u8(imm.value);
     } else if (imm.value <= 255) {
         emit_opcode(opcode_imm8);
         emit_mem_digit(dst, modrm_reg_digit, 1);
-        text.write_i8(imm.value);
+        text.write_u8(imm.value);
     } else if (size == 2) {
         emit_opcode(opcode32);
         emit_mem_digit(dst, modrm_reg_digit, 2);
-        text.write_i16(imm.value);
+        text.write_u16(imm.value);
     } else if (size == 4 || size == 8) {
         emit_opcode(opcode32);
         emit_mem_digit(dst, modrm_reg_digit, 4);
-        text.write_i32(imm.value);
+        text.write_u32(imm.value);
     }
 }
 
@@ -1021,6 +970,63 @@ void X8664Encoder::emit_sse(std::uint8_t prefix, std::uint8_t opcode, RegCode ds
     emit_opcode(0x0F);
     emit_opcode(opcode);
     emit_modrm_sib(dst, src);
+}
+
+void X8664Encoder::encode_add_family(mcode::Instruction &instr, const BasicInstrOpcodes &opcodes) {
+    mcode::Operand &dst = instr.get_operand(0);
+    mcode::Operand &src = instr.get_operand(1);
+    unsigned size = dst.get_size();
+
+    emit_16bit_prefix_if_required(size);
+
+    if (is_roa(dst) && is_imm(src)) {
+        RegOrAddr dst_roa = roa(dst);
+        Immediate src_imm = imm(src);
+
+        bool is_imm8 = fits_in_i8(src_imm.value);
+        bool is_rax = dst.is_physical_reg() && dst.get_physical_reg() == X8664Register::RAX;
+
+        // Use the specialized encoding if the destination is EAX and the
+        // encoding is actually smaller.
+        if (is_rax && !(is_imm8 && size > 1)) {
+            emit_rex_rr(size, RegCode::EAX, RegCode::EAX);
+            emit_opcode(size == 1 ? opcodes.rax_imm8 : opcodes.rax_imm16);
+
+            if (size == 1) text.write_u8(src_imm.value);
+            else if (size == 2) text.write_u16(src_imm.value);
+            else if (size == 4 || size == 8) text.write_u32(src_imm.value);
+
+            return;
+        }
+
+        emit_rex_rroa(size, RegCode::EAX, dst_roa);
+
+        if (is_imm8) {
+            emit_opcode(size == 1 ? opcodes.rm8_imm8 : opcodes.rm16_imm8);
+            emit_modrm_sib(opcodes.digit, dst_roa);
+            text.write_u8(src_imm.value);
+        } else {
+            emit_opcode(opcodes.rm16_imm16);
+            emit_modrm_sib(opcodes.digit, dst_roa);
+
+            if (size == 2) text.write_u16(src_imm.value);
+            else if (size == 4 || size == 8) text.write_u32(src_imm.value);
+        }
+    } else if (is_roa(dst) && is_reg(src)) {
+        RegOrAddr dst_roa = roa(dst);
+        RegCode src_reg = reg(src);
+
+        emit_rex_rroa(size, src_reg, dst_roa);
+        emit_opcode(size == 1 ? opcodes.rm8_r8 : opcodes.rm16_r16);
+        emit_modrm_sib(src_reg, dst_roa);
+    } else if (is_reg(dst) && is_roa(src)) {
+        RegCode dst_reg = reg(dst);
+        RegOrAddr src_roa = roa(src);
+
+        emit_rex_rroa(size, dst_reg, src_roa);
+        emit_opcode(size == 1 ? opcodes.r8_rm8 : opcodes.r16_rm16);
+        emit_modrm_sib(dst_reg, src_roa);
+    }
 }
 
 void X8664Encoder::encode_setcc_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {
@@ -1141,7 +1147,7 @@ void X8664Encoder::emit_mem_digit(RegAddress addr, std::uint8_t digit) {
 void X8664Encoder::emit_mem_digit(SymbolAddress addr, std::uint8_t digit, std::uint32_t offset_to_next_instr) {
     emit_modrm(0b00, digit, 0b101);
     text.add_symbol_use(addr.symbol_index, addr.use_kind, -offset_to_next_instr);
-    text.write_i32(0);
+    text.write_u32(0);
 }
 
 void X8664Encoder::emit_combined_opcode(std::uint8_t opcode, std::uint8_t reg) {
@@ -1513,8 +1519,8 @@ void X8664Encoder::process_eh_pushreg(mcode::Instruction &instr, UnwindInfo &fra
 void X8664Encoder::relax_jmp(std::uint32_t slice_index) {
     SectionBuilder::SectionSlice &slice = text.get_slices()[slice_index];
     slice.buffer.seek(0);
-    slice.buffer.write_i8(0xE9);
-    slice.buffer.write_i32(0);
+    slice.buffer.write_u8(0xE9);
+    slice.buffer.write_u32(0);
     text.push_out_slices(slice_index + 1, 3);
 }
 
@@ -1522,23 +1528,11 @@ void X8664Encoder::relax_jcc(SymbolUse &use, std::uint32_t slice_index) {
     SectionBuilder::SectionSlice &slice = text.get_slices()[slice_index];
     std::uint8_t opcode = slice.buffer.get_data()[0];
     slice.buffer.seek(0);
-    slice.buffer.write_i8(0x0F);
-    slice.buffer.write_i8(opcode + 0x10);
-    slice.buffer.write_i32(0);
+    slice.buffer.write_u8(0x0F);
+    slice.buffer.write_u8(opcode + 0x10);
+    slice.buffer.write_u32(0);
     text.push_out_slices(slice_index + 1, 4);
     use.local_offset += 1;
-}
-
-bool X8664Encoder::fits_in_i8(std::int64_t value) {
-    return value >= std::numeric_limits<std::int8_t>::min() && value <= std::numeric_limits<std::int8_t>::max();
-}
-
-bool X8664Encoder::fits_in_32_bits(Immediate imm) {
-    if (imm.symbol_index != -1) {
-        return false;
-    }
-
-    return imm.value <= std::numeric_limits<std::uint32_t>::min();
 }
 
 } // namespace banjo::target

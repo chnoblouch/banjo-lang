@@ -191,7 +191,6 @@ private:
     void encode_cvtss2si(mcode::Instruction &instr);
     void encode_cvtsd2si(mcode::Instruction &instr);
 
-    void encode_basic_instr(mcode::Instruction &instr, const BasicInstrOpcodes &opcodes);
     void encode_shift(mcode::Instruction &instr, std::uint8_t digit);
     void encode_jcc(mcode::Instruction &instr, std::uint8_t opcode);
     void encode_cmovcc(mcode::Instruction &instr, std::uint8_t opcode);
@@ -230,6 +229,7 @@ private:
     void emit_cmovcc(std::uint8_t opcode, RegCode dst, RegOrAddr src, std::uint8_t size);
     void emit_sse(std::uint8_t prefix, std::uint8_t opcode, RegCode dst, RegOrAddr src, std::uint8_t size);
 
+    void encode_add_family(mcode::Instruction &instr, const BasicInstrOpcodes &opcodes);
     void encode_setcc_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
     void encode_cvtss2sd_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
     void encode_cvtsi2ss_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
@@ -276,9 +276,6 @@ private:
     void relax_jmp(std::uint32_t slice_index);
     void relax_jcc(SymbolUse &use, std::uint32_t slice_index);
     std::int32_t compute_branch_displacement(SectionBuilder::SectionSlice &branch_slice);
-
-    bool fits_in_i8(std::int64_t value);
-    bool fits_in_32_bits(Immediate imm);
 };
 
 } // namespace banjo::target

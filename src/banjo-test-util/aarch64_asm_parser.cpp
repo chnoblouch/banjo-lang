@@ -375,7 +375,6 @@ std::optional<target::AArch64Address> AArch64AsmParser::parse_address() {
             }
 
             tokens.advance();
-
             return target::AArch64Address::new_base_offset(*base, *offset);
         } else if (next.type == TokenType::NUMBER) {
             // TODO: Validate offset

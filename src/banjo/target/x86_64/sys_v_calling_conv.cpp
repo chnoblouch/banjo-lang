@@ -140,8 +140,6 @@ mcode::Operand SysVCallingConv::get_arg_dst(mcode::ArgStorage &storage, codegen:
 void SysVCallingConv::append_call(ssa::Operand func_operand, codegen::SSALowerer &lowerer) {
     X8664SSALowerer &x86_64_lowerer = static_cast<X8664SSALowerer &>(lowerer);
 
-    int ptr_size = X8664SSALowerer::PTR_SIZE;
-
     mcode::Operand m_callee;
     if (func_operand.is_symbol()) {
         m_callee = x86_64_lowerer.lower_as_operand(func_operand, {.is_callee = true});
@@ -154,7 +152,7 @@ void SysVCallingConv::append_call(ssa::Operand func_operand, codegen::SSALowerer
             m_callee = x86_64_lowerer.lower_addr_mem_access(addr);
             lowerer.discard_use(func_operand.get_register());
         } else {
-            m_callee = lowerer.map_vreg_as_operand(func_operand.get_register(), ptr_size);
+            m_callee = lowerer.map_vreg_as_operand(func_operand.get_register(), 8);
         }
     }
 

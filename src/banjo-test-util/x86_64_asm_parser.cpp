@@ -2,6 +2,7 @@
 
 #include "banjo/mcode/instruction.hpp"
 #include "banjo/mcode/register.hpp"
+#include "banjo/target/x86_64/x86_64_address.hpp"
 #include "banjo/target/x86_64/x86_64_opcode.hpp"
 #include "banjo/target/x86_64/x86_64_register.hpp"
 #include "banjo/utils/hash_map.hpp"
@@ -261,6 +262,15 @@ std::optional<mcode::Operand> X8664AsmParser::parse_operand() {
         } else {
             RETURN_ERROR("invalid register '" + std::string{token.value} + "'");
         }
+    } else if (token.type == TokenType::NUMBER) {
+        // TODO: Validation
+        tokens.advance();
+
+        if (token.value.find('.') == std::string::npos) {
+            return mcode::Operand::from_int_immediate(LargeInt{token.value});
+        } else {
+            return mcode::Operand::from_fp_immediate(std::stod(std::string{token.value}));
+        }
     } else if (token.type == TokenType::LBRACKET) {
         if (std::optional<target::X8664Address> address = parse_address()) {
             return mcode::Operand::from_x86_64_addr(*address);
@@ -287,8 +297,33 @@ std::optional<target::X8664Address> X8664AsmParser::parse_address() {
     if (next.type == TokenType::RBRACKET) {
         tokens.advance();
         return target::X8664Address{.base = *base};
+    } else if (next.type == TokenType::PLUS) {
+        tokens.advance();
+        Token &next = tokens.get();
+
+        if (next.type == TokenType::IDENTIFIER) {
+            std::optional<mcode::Register> offset = parse_register();
+            if (!offset) {
+                return {};
+            }
+
+            Token &next = tokens.get();
+            if (next.type != TokenType::RBRACKET) {
+                RETURN_ERROR("expected ']', got '" + std::string{next.value} + "'");
+            }
+
+            tokens.advance();
+
+            return target::X8664Address{
+                .base = *base,
+                .offset_reg = target::X8664Address::RegOffset{*offset},
+            };
+
+        } else {
+            RETURN_ERROR("expected number or register, got '" + std::string{next.value} + "'");
+        }
     } else {
-        RETURN_ERROR("expected ']', got '" + std::string{next.value} + "'");
+        RETURN_ERROR("expected ']' or '+', got '" + std::string{next.value} + "'");
     }
 }
 

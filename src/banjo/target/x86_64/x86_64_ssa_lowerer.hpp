@@ -28,8 +28,6 @@ private:
     std::optional<std::string> const_neg_zero;
 
 public:
-    constexpr static int PTR_SIZE = 8;
-
     X8664SSALowerer(Target *target);
 
     mcode::Operand into_reg_or_addr(ssa::Operand &operand);

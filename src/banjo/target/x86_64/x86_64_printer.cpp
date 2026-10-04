@@ -273,6 +273,18 @@ void X8664Printer::print_register(mcode::Register reg, unsigned size) {
 void X8664Printer::print_address([[maybe_unused]] const X8664Address &address) {
     emit('[');
     print_register(address.get_base_reg(), 8);
+
+    if (auto offset = address.offset_reg) {
+        emit(" + ");
+
+        if (offset->scale != 1) {
+            emit(offset->scale);
+            emit(" * ");
+        }
+
+        print_register(offset->reg, 8);
+    }
+
     emit(']');
 }
 

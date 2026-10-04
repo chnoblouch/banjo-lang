@@ -1267,7 +1267,7 @@ mcode::Operand X8664SSALowerer::lower_symbol_as_operand(const ssa::Value &value,
     mcode::Symbol symbol(symbol_name, reloc);
 
     if (target->get_descr().is_darwin() && (value.is_func() || value.is_extern_func())) {
-        return mcode::Operand::from_symbol(symbol, PTR_SIZE);
+        return mcode::Operand::from_symbol(symbol, 8);
     }
 
     if (flags.is_callee) {
@@ -1282,7 +1282,7 @@ mcode::Operand X8664SSALowerer::lower_symbol_as_operand(const ssa::Value &value,
             return m_dst;
         } else {
             mcode::Operand m_src = mcode::Operand::from_symbol_deref(symbol, size);
-            mcode::Operand m_dst = mcode::Operand::from_register(create_reg(), PTR_SIZE);
+            mcode::Operand m_dst = mcode::Operand::from_register(create_reg(), 8);
             emit({X8664Opcode::LEA, {m_dst, m_src}});
             return m_dst;
         }

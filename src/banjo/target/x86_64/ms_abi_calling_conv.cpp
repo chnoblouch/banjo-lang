@@ -161,8 +161,6 @@ void MSABICallingConv::emit_stack_arg_move(codegen::SSALowerer &lowerer, ssa::Op
 void MSABICallingConv::emit_call(codegen::SSALowerer &lowerer, const ssa::Operand &func_operand) {
     X8664SSALowerer &x86_64_lowerer = static_cast<X8664SSALowerer &>(lowerer);
 
-    int ptr_size = X8664SSALowerer::PTR_SIZE;
-
     mcode::Operand operand;
     if (func_operand.is_symbol()) {
         operand = x86_64_lowerer.read_symbol_addr(func_operand.get_symbol_name());
@@ -175,7 +173,7 @@ void MSABICallingConv::emit_call(codegen::SSALowerer &lowerer, const ssa::Operan
             operand = x86_64_lowerer.lower_addr_mem_access(addr);
             lowerer.discard_use(func_operand.get_register());
         } else {
-            operand = lowerer.map_vreg_as_operand(func_operand.get_register(), ptr_size);
+            operand = lowerer.map_vreg_as_operand(func_operand.get_register(), 8);
         }
     }
 
