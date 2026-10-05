@@ -25,7 +25,7 @@ private:
 
     X8664ConstLowering const_lowering;
     std::unordered_map<ssa::VirtualRegister, ssa::VirtualRegister> block_arg_tmps;
-    std::optional<std::string> const_neg_zero;
+    std::optional<mcode::Symbol> const_neg_zero;
 
 public:
     X8664SSALowerer(Target *target);
@@ -39,7 +39,6 @@ public:
     void append_mov_and_operation(mcode::Opcode m_opcode, ssa::VirtualRegister dst, ssa::Value &lhs, ssa::Value &rhs);
     bool lower_stored_operation(ssa::Instruction &store);
 
-    void init_module(ssa::Module &mod) override;
     void init_func(ssa::Function &func) override;
     void emit_block_prologue(ssa::BasicBlock &block) override;
 
@@ -127,6 +126,7 @@ public:
 
     mcode::Register create_reg();
     mcode::Operand create_fp_const_load(double value, unsigned size);
+    mcode::Symbol &create_const_neg_zero();
 };
 
 } // namespace banjo::target

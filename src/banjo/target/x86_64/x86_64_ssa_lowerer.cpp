@@ -32,26 +32,6 @@ namespace banjo::target {
 
 X8664SSALowerer::X8664SSALowerer(Target *target) : SSALowerer(target), const_lowering(*this) {}
 
-void X8664SSALowerer::init_module(ssa::Module & /* mod */) {
-    // clang-format off
-    mcode::Global::Bytes const_neg_zero{
-        0, 0, 0, 1u << 7,
-        0, 0, 0, 1u << 7,
-        0, 0, 0, 1u << 7,
-        0, 0, 0, 1u << 7,
-    };
-    // clang-format on
-
-    get_machine_module().add(
-        mcode::Global{
-            .name = "const.neg_zero",
-            .size = 4,
-            .alignment = 16,
-            .value = const_neg_zero,
-        }
-    );
-}
-
 void X8664SSALowerer::init_func(ssa::Function &func) {
     block_arg_tmps.clear();
 
@@ -305,18 +285,15 @@ void X8664SSALowerer::lower_fsub(ssa::Instruction &instr) {
 
     if (type == ssa::Primitive::F32 && instr.get_operand(0).is_fp_immediate() &&
         instr.get_operand(0).get_fp_immediate() == 0.0) {
-        if (!const_neg_zero) {
-            const_neg_zero = {"const.neg_zero"};
-        }
 
-        X8664Address const_addr{mcode::Symbol{*const_neg_zero, mcode::Relocation::NONE}};
+        X8664Address const_addr{create_const_neg_zero()};
 
         mcode::Operand m_dst = map_vreg_dst(instr, 4);
         mcode::Operand m_src = lower_as_operand(instr.get_operand(1));
-        mcode::Operand m_const_addr = mcode::Operand::from_x86_64_addr(const_addr, 16);
+        mcode::Operand m_const_addr = mcode::Operand::from_x86_64_addr(const_addr);
 
-        emit(mcode::Instruction(get_move_opcode(type), {m_dst, m_src}));
-        emit(mcode::Instruction(X8664Opcode::XORPS, {m_dst.with_size(16), m_const_addr}));
+        emit({get_move_opcode(type), {m_dst, m_src}});
+        emit({X8664Opcode::XORPS, {m_dst, m_const_addr}});
 
         return;
     }
@@ -1375,6 +1352,31 @@ mcode::Operand X8664SSALowerer::create_fp_const_load(double value, unsigned size
     } else {
         ASSERT_UNREACHABLE;
     }
+}
+
+mcode::Symbol &X8664SSALowerer::create_const_neg_zero() {
+    if (!const_neg_zero) {
+        // clang-format off
+        mcode::Global::Bytes data{
+            0, 0, 0, 1u << 7,
+            0, 0, 0, 1u << 7,
+            0, 0, 0, 1u << 7,
+            0, 0, 0, 1u << 7,
+        };
+        // clang-format on
+
+        mcode::Global global{
+            .name = "const.neg_zero",
+            .size = 4,
+            .alignment = 16,
+            .value = data,
+        };
+
+        const_neg_zero = mcode::Symbol{global.name, mcode::Relocation::NONE};
+        m_module.add(std::move(global));
+    }
+
+    return *const_neg_zero;
 }
 
 } // namespace banjo::target
