@@ -1,18 +1,19 @@
-#include "assembler_lexer.hpp"
+#include "generic_lexer.hpp"
+
 #include "banjo/utils/macros.hpp"
 
 #include <string_view>
 #include <vector>
 
-namespace banjo::test::assembler {
+namespace banjo::utils {
 
 static bool is_digit(char c) {
     return c >= '0' && c <= '9';
 }
 
-Lexer::Lexer(std::string_view source) : source{source}, position{0} {}
+GenericLexer::GenericLexer(std::string_view source) : source{source}, position{0} {}
 
-TokenStream Lexer::tokenize() {
+TokenStream GenericLexer::tokenize() {
     while (position < source.size()) {
         skip_whitespace();
 
@@ -28,21 +29,21 @@ TokenStream Lexer::tokenize() {
         } else if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_') {
             read_identifier();
         } else if (c == '+') {
-            read_plus();
+            read_punctuation(TokenType::PLUS);
         } else if (c == '-') {
-            read_minus();
+            read_punctuation(TokenType::MINUS);
         } else if (c == '*') {
-            read_star();
+            read_punctuation(TokenType::STAR);
         } else if (c == ',') {
-            read_comma();
+            read_punctuation(TokenType::COMMA);
         } else if (c == ':') {
-            read_colon();
+            read_punctuation(TokenType::COLON);
         } else if (c == '!') {
-            read_exclamation();
+            read_punctuation(TokenType::EXCLAMATION);
         } else if (c == '[') {
-            read_lbracket();
+            read_punctuation(TokenType::LBRACKET);
         } else if (c == ']') {
-            read_rbracket();
+            read_punctuation(TokenType::RBRACKET);
         } else if (c == '\n') {
             read_end_of_line();
         } else if (c == '#') {
@@ -61,7 +62,7 @@ TokenStream Lexer::tokenize() {
     };
 }
 
-void Lexer::read_identifier() {
+void GenericLexer::read_identifier() {
     consume();
 
     while (position < source.size()) {
@@ -77,7 +78,7 @@ void Lexer::read_identifier() {
     emit_token(TokenType::IDENTIFIER);
 }
 
-void Lexer::read_number() {
+void GenericLexer::read_number() {
     consume();
 
     while (position < source.size()) {
@@ -93,52 +94,17 @@ void Lexer::read_number() {
     emit_token(TokenType::NUMBER);
 }
 
-void Lexer::read_plus() {
+void GenericLexer::read_punctuation(TokenType type) {
     consume();
-    emit_token(TokenType::PLUS);
+    emit_token(type);
 }
 
-void Lexer::read_minus() {
-    consume();
-    emit_token(TokenType::MINUS);
-}
-
-void Lexer::read_star() {
-    consume();
-    emit_token(TokenType::STAR);
-}
-
-void Lexer::read_comma() {
-    consume();
-    emit_token(TokenType::COMMA);
-}
-
-void Lexer::read_colon() {
-    consume();
-    emit_token(TokenType::COLON);
-}
-
-void Lexer::read_exclamation() {
-    consume();
-    emit_token(TokenType::EXCLAMATION);
-}
-
-void Lexer::read_lbracket() {
-    consume();
-    emit_token(TokenType::LBRACKET);
-}
-
-void Lexer::read_rbracket() {
-    consume();
-    emit_token(TokenType::RBRACKET);
-}
-
-void Lexer::read_end_of_line() {
+void GenericLexer::read_end_of_line() {
     consume();
     emit_token(TokenType::END_OF_LINE);
 }
 
-void Lexer::skip_whitespace() {
+void GenericLexer::skip_whitespace() {
     while (position < source.size()) {
         char c = get();
 
@@ -150,7 +116,7 @@ void Lexer::skip_whitespace() {
     }
 }
 
-void Lexer::skip_comment() {
+void GenericLexer::skip_comment() {
     while (position < source.size()) {
         char c = consume();
 
@@ -160,7 +126,7 @@ void Lexer::skip_comment() {
     }
 }
 
-void Lexer::emit_token(TokenType type) {
+void GenericLexer::emit_token(TokenType type) {
     Token token{
         .type = type,
         .value = source.substr(token_start, position - token_start),
@@ -169,4 +135,4 @@ void Lexer::emit_token(TokenType type) {
     tokens.push_back(token);
 }
 
-} // namespace banjo::test::assembler
+} // namespace banjo::utils

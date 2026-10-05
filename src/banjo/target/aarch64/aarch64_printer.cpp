@@ -220,8 +220,6 @@ static const HashMap<mcode::PhysicalReg, std::string_view> REGISTERS_8{
 };
 // clang-format on
 
-AArch64Printer::AArch64Printer(std::string &buffer) : mcode::Printer{buffer} {}
-
 void AArch64Printer::print_opcode(mcode::Instruction &instr) {
     emit(OPCODES.find(instr.get_opcode()));
 }

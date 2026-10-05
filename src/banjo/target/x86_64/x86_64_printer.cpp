@@ -219,8 +219,6 @@ static const HashMap<mcode::PhysicalReg, std::string_view> REGISTERS_1{
 };
 // clang-format on
 
-X8664Printer::X8664Printer(std::string &buffer) : mcode::Printer{buffer} {}
-
 void X8664Printer::print_opcode(mcode::Instruction &instr) {
     emit(OPCODES.find(instr.get_opcode()));
 

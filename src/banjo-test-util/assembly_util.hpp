@@ -1,7 +1,6 @@
 #ifndef BANJO_TEST_UTIL_ASSEMBLY_UTIL_H
 #define BANJO_TEST_UTIL_ASSEMBLY_UTIL_H
 
-#include "assembler_lexer.hpp"
 #include "banjo/target/target_description.hpp"
 #include "banjo/utils/write_buffer.hpp"
 
@@ -13,12 +12,10 @@ class AssemblyUtil {
 
 private:
     target::Architecture arch;
-    std::string_view source;
-    assembler::TokenStream tokens;
 
 public:
-    AssemblyUtil(target::Architecture arch, std::string_view source);
-    WriteBuffer assemble();
+    AssemblyUtil(target::Architecture arch);
+    WriteBuffer assemble(std::string_view source);
 };
 
 } // namespace banjo::test

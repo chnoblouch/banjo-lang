@@ -1,4 +1,4 @@
-#include "x86_64_asm_parser.hpp"
+#include "x86_64_parser.hpp"
 
 #include "banjo/mcode/instruction.hpp"
 #include "banjo/mcode/register.hpp"
@@ -17,7 +17,7 @@
         return {};                                                                                                     \
     }
 
-namespace banjo::test::assembler {
+namespace banjo::target {
 
 // clang-format off
 static const HashMap<std::string_view, mcode::Opcode> OPCODES{
@@ -202,51 +202,10 @@ static const HashMap<std::string_view, unsigned> SIZE_SPECIFIERS{
     {"qword", 8},
 };
 
-X8664AsmParser::X8664AsmParser(TokenStream &tokens) : tokens{tokens} {}
+std::optional<mcode::Opcode> X8664Parser::parse_opcode() {
+    utils::Token &token = tokens.get();
 
-std::optional<mcode::Instruction> X8664AsmParser::parse_instr() {
-    std::optional<mcode::Opcode> opcode = parse_opcode();
-    if (!opcode) {
-        return {};
-    }
-
-    if (tokens.get().type == TokenType::END_OF_LINE) {
-        tokens.advance();
-        return mcode::Instruction{*opcode};
-    } else if (tokens.get().type == TokenType::END_OF_FILE) {
-        return mcode::Instruction{*opcode};
-    }
-
-    std::vector<mcode::Operand> operands;
-
-    while (true) {
-        if (std::optional<mcode::Operand> operand = parse_operand()) {
-            operands.push_back(*std::move(operand));
-        } else {
-            return {};
-        }
-
-        Token &token = tokens.get();
-
-        if (token.type == TokenType::COMMA) {
-            tokens.advance();
-        } else if (token.type == TokenType::END_OF_LINE) {
-            tokens.advance();
-            break;
-        } else if (token.type == TokenType::END_OF_FILE) {
-            break;
-        } else {
-            RETURN_ERROR("expected comma or end of line, got '" + std::string{token.value} + "'");
-        }
-    }
-
-    return mcode::Instruction{*opcode, std::move(operands)};
-}
-
-std::optional<mcode::Opcode> X8664AsmParser::parse_opcode() {
-    Token &token = tokens.get();
-
-    if (token.type != TokenType::IDENTIFIER) {
+    if (token.type != utils::TokenType::IDENTIFIER) {
         RETURN_ERROR("expected opcode, got '" + std::string{token.value} + "'");
     }
 
@@ -258,10 +217,10 @@ std::optional<mcode::Opcode> X8664AsmParser::parse_opcode() {
     }
 }
 
-std::optional<mcode::Operand> X8664AsmParser::parse_operand() {
-    Token &token = tokens.get();
+std::optional<mcode::Operand> X8664Parser::parse_operand() {
+    utils::Token &token = tokens.get();
 
-    if (token.type == TokenType::IDENTIFIER) {
+    if (token.type == utils::TokenType::IDENTIFIER) {
         if (const auto *pair = REGISTERS.try_find(token.value)) {
             tokens.advance();
 
@@ -270,7 +229,7 @@ std::optional<mcode::Operand> X8664AsmParser::parse_operand() {
         } else if (const unsigned *size = SIZE_SPECIFIERS.try_find(token.value)) {
             tokens.advance();
 
-            if (tokens.get().type != TokenType::LBRACKET) {
+            if (tokens.get().type != utils::TokenType::LBRACKET) {
                 RETURN_ERROR("expected '[', got" + std::string{token.value} + "'");
             }
 
@@ -282,7 +241,7 @@ std::optional<mcode::Operand> X8664AsmParser::parse_operand() {
         } else {
             RETURN_ERROR("invalid register '" + std::string{token.value} + "'");
         }
-    } else if (token.type == TokenType::NUMBER) {
+    } else if (token.type == utils::TokenType::NUMBER) {
         // TODO: Validation
         tokens.advance();
 
@@ -291,7 +250,7 @@ std::optional<mcode::Operand> X8664AsmParser::parse_operand() {
         } else {
             return mcode::Operand::from_fp_immediate(std::stod(std::string{token.value}));
         }
-    } else if (token.type == TokenType::LBRACKET) {
+    } else if (token.type == utils::TokenType::LBRACKET) {
         if (std::optional<target::X8664Address> address = parse_address()) {
             return mcode::Operand::from_x86_64_addr(*address);
         } else {
@@ -302,7 +261,7 @@ std::optional<mcode::Operand> X8664AsmParser::parse_operand() {
     }
 }
 
-std::optional<target::X8664Address> X8664AsmParser::parse_address() {
+std::optional<target::X8664Address> X8664Parser::parse_address() {
     // TODO: Check register sizes
 
     tokens.advance();
@@ -312,23 +271,23 @@ std::optional<target::X8664Address> X8664AsmParser::parse_address() {
         return {};
     }
 
-    Token &next = tokens.get();
+    utils::Token &next = tokens.get();
 
-    if (next.type == TokenType::RBRACKET) {
+    if (next.type == utils::TokenType::RBRACKET) {
         tokens.advance();
         return target::X8664Address{.base = *base};
-    } else if (next.type == TokenType::PLUS) {
+    } else if (next.type == utils::TokenType::PLUS) {
         tokens.advance();
-        Token &next = tokens.get();
+        utils::Token &next = tokens.get();
 
-        if (next.type == TokenType::IDENTIFIER) {
+        if (next.type == utils::TokenType::IDENTIFIER) {
             std::optional<mcode::Register> offset = parse_register();
             if (!offset) {
                 return {};
             }
 
-            Token &next = tokens.get();
-            if (next.type != TokenType::RBRACKET) {
+            utils::Token &next = tokens.get();
+            if (next.type != utils::TokenType::RBRACKET) {
                 RETURN_ERROR("expected ']', got '" + std::string{next.value} + "'");
             }
 
@@ -347,10 +306,10 @@ std::optional<target::X8664Address> X8664AsmParser::parse_address() {
     }
 }
 
-std::optional<mcode::Register> X8664AsmParser::parse_register() {
-    Token &token = tokens.get();
+std::optional<mcode::Register> X8664Parser::parse_register() {
+    utils::Token &token = tokens.get();
 
-    if (token.type != TokenType::IDENTIFIER) {
+    if (token.type != utils::TokenType::IDENTIFIER) {
         RETURN_ERROR("expected register, got '" + std::string{token.value} + "'");
     }
 
@@ -362,4 +321,4 @@ std::optional<mcode::Register> X8664AsmParser::parse_register() {
     }
 }
 
-} // namespace banjo::test::assembler
+} // namespace banjo::target

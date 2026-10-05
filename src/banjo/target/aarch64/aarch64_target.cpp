@@ -8,6 +8,7 @@
 #include "banjo/emit/elf/elf_emitter.hpp"
 #include "banjo/emit/macho/macho_emitter.hpp"
 #include "banjo/mcode/register.hpp"
+#include "banjo/target/aarch64/aarch64_parser.hpp"
 #include "banjo/target/aarch64/aarch64_printer.hpp"
 #include "banjo/target/aarch64/aarch64_reg_analyzer.hpp"
 #include "banjo/target/aarch64/aarch64_ssa_lowerer.hpp"
@@ -40,6 +41,10 @@ std::vector<std::unique_ptr<codegen::MachinePass>> AArch64Target::create_passes(
 
 std::unique_ptr<mcode::Printer> AArch64Target::create_printer(std::string &buffer) {
     return std::make_unique<AArch64Printer>(AArch64Printer{buffer});
+}
+
+std::unique_ptr<mcode::Parser> AArch64Target::create_parser(utils::TokenStream &tokens) {
+    return std::make_unique<AArch64Parser>(AArch64Parser{tokens});
 }
 
 std::string AArch64Target::get_output_file_ext() {

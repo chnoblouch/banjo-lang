@@ -9,6 +9,7 @@
 #include "banjo/emit/pe/pe_emitter.hpp"
 #include "banjo/target/standard_data_layout.hpp"
 #include "banjo/target/target_description.hpp"
+#include "banjo/target/x86_64/x86_64_parser.hpp"
 #include "banjo/target/x86_64/x86_64_peephole_opt_pass.hpp"
 #include "banjo/target/x86_64/x86_64_printer.hpp"
 #include "banjo/target/x86_64/x86_64_ssa_lowerer.hpp"
@@ -39,6 +40,10 @@ std::vector<std::unique_ptr<codegen::MachinePass>> X8664Target::create_passes() 
 
 std::unique_ptr<mcode::Printer> X8664Target::create_printer(std::string &buffer) {
     return std::make_unique<X8664Printer>(X8664Printer{buffer});
+}
+
+std::unique_ptr<mcode::Parser> X8664Target::create_parser(utils::TokenStream &tokens) {
+    return std::make_unique<X8664Parser>(X8664Parser{tokens});
 }
 
 std::string X8664Target::get_output_file_ext() {

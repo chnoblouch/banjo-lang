@@ -41,7 +41,7 @@ int main(int argc, const char *argv[]) {
     } else if (strcmp(argv[1], "assemble") == 0) {
         banjo::target::Architecture arch = parse_arch(argv[2]);
         std::string input = read_stdin();
-        banjo::WriteBuffer data = banjo::test::AssemblyUtil{arch, input}.assemble();
+        banjo::WriteBuffer data = banjo::test::AssemblyUtil{arch}.assemble(input);
 
         for (unsigned i = 0; i < data.get_size(); i++) {
             std::cout << std::hex << std::setw(2) << std::setfill('0') << std::uppercase;

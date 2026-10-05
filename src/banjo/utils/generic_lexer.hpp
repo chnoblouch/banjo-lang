@@ -1,10 +1,10 @@
-#ifndef BANJO_TEST_UTIL_ASSEMBLER_LEXER_H
-#define BANJO_TEST_UTIL_ASSEMBLER_LEXER_H
+#ifndef BANJO_UTILS_GENERIC_LEXER_H
+#define BANJO_UTILS_GENERIC_LEXER_H
 
 #include <string_view>
 #include <vector>
 
-namespace banjo::test::assembler {
+namespace banjo::utils {
 
 enum class TokenType {
     IDENTIFIER,
@@ -34,7 +34,7 @@ struct TokenStream {
     void advance() { position += 1; }
 };
 
-class Lexer {
+class GenericLexer {
 
 private:
     std::string_view source;
@@ -44,20 +44,13 @@ private:
     unsigned token_start;
 
 public:
-    Lexer(std::string_view source);
+    GenericLexer(std::string_view source);
     TokenStream tokenize();
 
 private:
     void read_identifier();
     void read_number();
-    void read_plus();
-    void read_minus();
-    void read_star();
-    void read_comma();
-    void read_colon();
-    void read_exclamation();
-    void read_lbracket();
-    void read_rbracket();
+    void read_punctuation(TokenType type);
     void read_end_of_line();
     void skip_whitespace();
     void skip_comment();
@@ -68,6 +61,6 @@ private:
     char get() { return source[position]; }
 };
 
-} // namespace banjo::test::assembler
+} // namespace banjo::utils
 
 #endif

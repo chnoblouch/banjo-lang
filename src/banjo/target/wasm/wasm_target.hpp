@@ -23,6 +23,7 @@ public:
     codegen::SSALowerer *create_ssa_lowerer() override;
     std::vector<std::unique_ptr<codegen::MachinePass>> create_passes() override;
     std::unique_ptr<mcode::Printer> create_printer(std::string &buffer) override;
+    std::unique_ptr<mcode::Parser> create_parser(utils::TokenStream &tokens) override;
     std::string get_output_file_ext() override;
     codegen::Emitter *create_emitter(mcode::Module &module, std::ostream &stream) override;
 };

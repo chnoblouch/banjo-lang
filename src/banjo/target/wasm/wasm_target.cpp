@@ -29,7 +29,12 @@ std::vector<std::unique_ptr<codegen::MachinePass>> WasmTarget::create_passes() {
     return passes;
 }
 
-std::unique_ptr<mcode::Printer> WasmTarget::create_printer([[maybe_unused]] std::string &buffer) {
+std::unique_ptr<mcode::Printer> WasmTarget::create_printer(std::string & /* buffer */) {
+    // TODO
+    return nullptr;
+}
+
+std::unique_ptr<mcode::Parser> WasmTarget::create_parser(utils::TokenStream & /* tokens */) {
     // TODO
     return nullptr;
 }

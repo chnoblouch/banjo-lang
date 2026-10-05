@@ -3,11 +3,12 @@
 
 #include "banjo/codegen/machine_pass.hpp"
 #include "banjo/emit/emitter.hpp"
+#include "banjo/mcode/parser.hpp"
 #include "banjo/mcode/printer.hpp"
 #include "banjo/ssa/function_type.hpp"
 #include "banjo/target/target_data_layout.hpp"
 #include "banjo/target/target_description.hpp"
-#include "banjo/target/target_reg_analyzer.hpp"
+#include "banjo/utils/generic_lexer.hpp"
 
 #include <memory>
 #include <vector>
@@ -40,6 +41,7 @@ public:
     virtual codegen::SSALowerer *create_ssa_lowerer() = 0;
     virtual std::vector<std::unique_ptr<codegen::MachinePass>> create_passes() = 0;
     virtual std::unique_ptr<mcode::Printer> create_printer(std::string &buffer) = 0;
+    virtual std::unique_ptr<mcode::Parser> create_parser(utils::TokenStream &tokens) = 0;
     virtual std::string get_output_file_ext() = 0;
     virtual codegen::Emitter *create_emitter(mcode::Module &module, std::ostream &stream) = 0;
     ssa::CallingConv get_default_calling_conv();

@@ -10,13 +10,12 @@ namespace banjo::target {
 class AArch64Printer final : public mcode::Printer {
 
 public:
-    AArch64Printer(std::string &buffer);
+    using mcode::Printer::Printer;
 
-protected:
+private:
     void print_opcode(mcode::Instruction &instr) override;
     void print_operand(mcode::Instruction &instr, unsigned index) override;
 
-private:
     void print_register(mcode::Register reg, unsigned size);
     void print_address(const AArch64Address &address);
 };

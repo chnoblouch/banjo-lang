@@ -1,4 +1,4 @@
-#include "aarch64_asm_parser.hpp"
+#include "aarch64_parser.hpp"
 
 #include "banjo/mcode/instruction.hpp"
 #include "banjo/mcode/register.hpp"
@@ -17,7 +17,7 @@
         return {};                                                                                                     \
     }
 
-namespace banjo::test::assembler {
+namespace banjo::target {
 
 // clang-format off
 static const HashMap<std::string_view, mcode::Opcode> OPCODES{
@@ -239,51 +239,10 @@ static const HashMap<std::string_view, target::AArch64Condition> CONDITIONS{
 };
 // clang-format on
 
-AArch64AsmParser::AArch64AsmParser(TokenStream &tokens) : tokens{tokens} {}
+std::optional<mcode::Opcode> AArch64Parser::parse_opcode() {
+    utils::Token &token = tokens.get();
 
-std::optional<mcode::Instruction> AArch64AsmParser::parse_instr() {
-    std::optional<mcode::Opcode> opcode = parse_opcode();
-    if (!opcode) {
-        return {};
-    }
-
-    if (tokens.get().type == TokenType::END_OF_LINE) {
-        tokens.advance();
-        return mcode::Instruction{*opcode};
-    } else if (tokens.get().type == TokenType::END_OF_FILE) {
-        return mcode::Instruction{*opcode};
-    }
-
-    std::vector<mcode::Operand> operands;
-
-    while (true) {
-        if (std::optional<mcode::Operand> operand = parse_operand()) {
-            operands.push_back(*std::move(operand));
-        } else {
-            return {};
-        }
-
-        Token &token = tokens.get();
-
-        if (token.type == TokenType::COMMA) {
-            tokens.advance();
-        } else if (token.type == TokenType::END_OF_LINE) {
-            tokens.advance();
-            break;
-        } else if (token.type == TokenType::END_OF_FILE) {
-            break;
-        } else {
-            RETURN_ERROR("expected comma or end of line, got '" + std::string{token.value} + "'");
-        }
-    }
-
-    return mcode::Instruction{*opcode, std::move(operands)};
-}
-
-std::optional<mcode::Opcode> AArch64AsmParser::parse_opcode() {
-    Token &token = tokens.get();
-
-    if (token.type != TokenType::IDENTIFIER) {
+    if (token.type != utils::TokenType::IDENTIFIER) {
         RETURN_ERROR("expected opcode, got '" + std::string{token.value} + "'");
     }
 
@@ -295,10 +254,10 @@ std::optional<mcode::Opcode> AArch64AsmParser::parse_opcode() {
     }
 }
 
-std::optional<mcode::Operand> AArch64AsmParser::parse_operand() {
-    Token &token = tokens.get();
+std::optional<mcode::Operand> AArch64Parser::parse_operand() {
+    utils::Token &token = tokens.get();
 
-    if (token.type == TokenType::IDENTIFIER) {
+    if (token.type == utils::TokenType::IDENTIFIER) {
         if (const auto *pair = REGISTERS.try_find(token.value)) {
             tokens.advance();
             mcode::Register reg = mcode::Register::from_physical(pair->first);
@@ -308,9 +267,9 @@ std::optional<mcode::Operand> AArch64AsmParser::parse_operand() {
             return mcode::Operand::from_aarch64_condition(*condition);
         } else if (token.value == "lsl") {
             tokens.advance();
-            Token &shift = tokens.get();
+            utils::Token &shift = tokens.get();
 
-            if (shift.type != TokenType::NUMBER) {
+            if (shift.type != utils::TokenType::NUMBER) {
                 RETURN_ERROR("expected number, got '" + std::string{shift.value} + "'");
             }
 
@@ -324,7 +283,7 @@ std::optional<mcode::Operand> AArch64AsmParser::parse_operand() {
         } else {
             RETURN_ERROR("invalid register '" + std::string{token.value} + "'");
         }
-    } else if (token.type == TokenType::NUMBER) {
+    } else if (token.type == utils::TokenType::NUMBER) {
         // TODO: Validation
         tokens.advance();
 
@@ -333,7 +292,7 @@ std::optional<mcode::Operand> AArch64AsmParser::parse_operand() {
         } else {
             return mcode::Operand::from_fp_immediate(std::stod(std::string{token.value}));
         }
-    } else if (token.type == TokenType::LBRACKET) {
+    } else if (token.type == utils::TokenType::LBRACKET) {
         if (std::optional<target::AArch64Address> address = parse_address()) {
             return mcode::Operand::from_aarch64_addr(*address);
         } else {
@@ -344,7 +303,7 @@ std::optional<mcode::Operand> AArch64AsmParser::parse_operand() {
     }
 }
 
-std::optional<target::AArch64Address> AArch64AsmParser::parse_address() {
+std::optional<target::AArch64Address> AArch64Parser::parse_address() {
     // TODO: Check register sizes
 
     tokens.advance();
@@ -354,42 +313,42 @@ std::optional<target::AArch64Address> AArch64AsmParser::parse_address() {
         return {};
     }
 
-    Token &next = tokens.get();
+    utils::Token &next = tokens.get();
 
-    if (next.type == TokenType::RBRACKET) {
+    if (next.type == utils::TokenType::RBRACKET) {
         tokens.advance();
         return target::AArch64Address::new_base(*base);
-    } else if (next.type == TokenType::COMMA) {
+    } else if (next.type == utils::TokenType::COMMA) {
         tokens.advance();
-        Token &next = tokens.get();
+        utils::Token &next = tokens.get();
 
-        if (next.type == TokenType::IDENTIFIER) {
+        if (next.type == utils::TokenType::IDENTIFIER) {
             std::optional<mcode::Register> offset = parse_register();
             if (!offset) {
                 return {};
             }
 
-            Token &next = tokens.get();
-            if (next.type != TokenType::RBRACKET) {
+            utils::Token &next = tokens.get();
+            if (next.type != utils::TokenType::RBRACKET) {
                 RETURN_ERROR("expected ']', got '" + std::string{next.value} + "'");
             }
 
             tokens.advance();
             return target::AArch64Address::new_base_offset(*base, *offset);
-        } else if (next.type == TokenType::NUMBER) {
+        } else if (next.type == utils::TokenType::NUMBER) {
             // TODO: Validate offset
 
             int offset = std::stol(std::string{next.value});
             tokens.advance();
 
-            Token &next = tokens.get();
-            if (next.type != TokenType::RBRACKET) {
+            utils::Token &next = tokens.get();
+            if (next.type != utils::TokenType::RBRACKET) {
                 RETURN_ERROR("expected ']', got '" + std::string{next.value} + "'");
             }
 
             tokens.advance();
 
-            if (tokens.get().type == TokenType::EXCLAMATION) {
+            if (tokens.get().type == utils::TokenType::EXCLAMATION) {
                 tokens.advance();
                 return target::AArch64Address::new_base_offset_write(*base, offset);
             } else {
@@ -403,10 +362,10 @@ std::optional<target::AArch64Address> AArch64AsmParser::parse_address() {
     }
 }
 
-std::optional<mcode::Register> AArch64AsmParser::parse_register() {
-    Token &token = tokens.get();
+std::optional<mcode::Register> AArch64Parser::parse_register() {
+    utils::Token &token = tokens.get();
 
-    if (token.type != TokenType::IDENTIFIER) {
+    if (token.type != utils::TokenType::IDENTIFIER) {
         RETURN_ERROR("expected register, got '" + std::string{token.value} + "'");
     }
 
@@ -418,4 +377,4 @@ std::optional<mcode::Register> AArch64AsmParser::parse_register() {
     }
 }
 
-} // namespace banjo::test::assembler
+} // namespace banjo::target
