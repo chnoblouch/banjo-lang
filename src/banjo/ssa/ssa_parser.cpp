@@ -17,6 +17,7 @@
 #include <cstdint>
 #include <iostream>
 #include <optional>
+#include <string>
 #include <string_view>
 #include <vector>
 
@@ -91,6 +92,16 @@ static const HashMap<std::string_view, ssa::Primitive> PRIMITIVES{
     {"addr", ssa::Primitive::ADDR},
 };
 
+static std::string token_to_string(utils::Token &token) {
+    if (token.type == utils::TokenType::END_OF_LINE) {
+        return "end of line";
+    } else if (token.type == utils::TokenType::END_OF_FILE) {
+        return "end of file";
+    } else {
+        return '\'' + std::string{token.value} + '\'';
+    }
+}
+
 Parser::Parser(utils::TokenStream &tokens, ssa::CallingConv calling_conv)
   : tokens{tokens},
     calling_conv{calling_conv} {}
@@ -103,6 +114,8 @@ ssa::Module Parser::parse() {
 
         if (token.type == utils::TokenType::IDENTIFIER) {
             if (token.value == "func") {
+                operand_context.func_index = mod.get_functions().size();
+
                 if (ssa::Function *func = parse_func()) {
                     mod.add(func);
                     continue;
@@ -119,6 +132,14 @@ ssa::Module Parser::parse() {
 
         report_unexpected();
         break;
+    }
+
+    for (unsigned i = 0; i < mod.get_functions().size(); i++) {
+        Function &func = *mod.get_functions()[i];
+
+        if (!resolve_idents({.func_index = i}, func)) {
+            return {};
+        }
     }
 
     return mod;
@@ -142,10 +163,10 @@ ssa::Function *Parser::parse_func() {
         return nullptr;
     }
 
-    if (tokens.get().type == utils::TokenType::COLON) {
+    if (tokens.get().type == utils::TokenType::LBRACE) {
         tokens.advance();
     } else {
-        report_unexpected("':'");
+        report_unexpected("'{'");
         return nullptr;
     }
 
@@ -167,11 +188,23 @@ ssa::Function *Parser::parse_func() {
         },
     };
 
-    if (std::optional<BasicBlock> block = parse_block()) {
-        func->basic_blocks.append(*block);
-    } else {
-        delete func;
-        return nullptr;
+    while (true) {
+        operand_context.block_index = func->basic_blocks.get_size();
+
+        if (std::optional<BasicBlock> block = parse_block()) {
+            BasicBlockIter iter = func->basic_blocks.append(*block);
+            blocks_by_name.insert(block->get_label(), iter);
+        } else {
+            delete func;
+            return nullptr;
+        }
+
+        utils::Token &token = tokens.get();
+
+        if (token.type == utils::TokenType::RBRACE) {
+            tokens.advance();
+            break;
+        }
     }
 
     return func;
@@ -216,14 +249,33 @@ std::optional<std::vector<ssa::Type>> Parser::parse_params() {
 
 std::optional<ssa::BasicBlock> Parser::parse_block() {
     ssa::BasicBlock block;
+    utils::Token &token = tokens.get();
+
+    if (token.type == utils::TokenType::IDENTIFIER && tokens.next().type == utils::TokenType::COLON) {
+        tokens.advance();
+
+        if (token.value[0] != 'b') {
+            report_error("invalid block label '" + std::string{token.value} + "'");
+            return {};
+        }
+
+        block = BasicBlock{std::string{token.value}};
+        tokens.advance();
+    }
 
     while (true) {
         if (tokens.get().type == utils::TokenType::END_OF_LINE) {
             tokens.advance();
             continue;
-        } else if (tokens.get().type == utils::TokenType::END_OF_FILE) {
+        } else if (tokens.get().type == utils::TokenType::RBRACE) {
             break;
         }
+
+        if (tokens.get().type == utils::TokenType::IDENTIFIER && tokens.next().type == utils::TokenType::COLON) {
+            break;
+        }
+
+        operand_context.instr_index = block.get_instrs().get_size();
 
         std::optional<ssa::Instruction> instr = parse_instr();
         if (!instr) {
@@ -234,8 +286,6 @@ std::optional<ssa::BasicBlock> Parser::parse_block() {
 
         if (tokens.get().type == utils::TokenType::END_OF_LINE) {
             tokens.advance();
-        } else if (tokens.get().type == utils::TokenType::END_OF_FILE) {
-            break;
         } else {
             report_unexpected();
             return {};
@@ -273,6 +323,8 @@ std::optional<ssa::Instruction> Parser::parse_instr() {
 
     if (token.type != utils::TokenType::END_OF_LINE && token.type != utils::TokenType::END_OF_FILE) {
         while (true) {
+            operand_context.operand_index = operands.size();
+
             if (std::optional<Operand> operand = parse_operand()) {
                 operands.push_back(*operand);
             } else {
@@ -324,6 +376,16 @@ std::optional<ssa::Operand> Parser::parse_operand() {
                 return ssa::Operand::from_register(*reg, *type);
             } else {
                 return {};
+            }
+        }
+
+        case utils::TokenType::IDENTIFIER: {
+            if (token.value[0] == 'b') {
+                tokens.advance();
+                unresolved_blocks.push_back({operand_context, std::string{token.value}});
+                return ssa::Operand::from_branch_target({.block = nullptr});
+            } else {
+                break;
             }
         }
 
@@ -386,12 +448,54 @@ std::optional<std::string> Parser::parse_ident() {
     return {};
 }
 
+bool Parser::resolve_idents(OperandContext context, Function &func) {
+    context.block_index = 0;
+
+    for (BasicBlock &block : func.basic_blocks) {
+        context.instr_index = 0;
+
+        for (Instruction &instr : block.get_instrs()) {
+            if (!resolve_idents(context, instr)) {
+                return false;
+            }
+
+            context.instr_index += 1;
+        }
+
+        context.block_index += 1;
+    }
+
+    return true;
+}
+
+bool Parser::resolve_idents(OperandContext context, Instruction &instr) {
+    for (unsigned i = 0; i < instr.get_operands().size(); i++) {
+        Operand &operand = instr.get_operand(i);
+        context.operand_index = i;
+
+        for (const auto &[placeholder_context, block_name] : unresolved_blocks) {
+            if (placeholder_context != context) {
+                continue;
+            }
+
+            if (BasicBlockIter *block = blocks_by_name.try_find(block_name)) {
+                operand.get_branch_target().block = *block;
+            } else {
+                report_error("cannot find block '" + std::string{block_name} + "'");
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
 void Parser::report_unexpected(const std::string &expected) {
-    report_error("expected " + expected + ", got '" + std::string{tokens.get().value} + "'");
+    report_error("expected " + expected + ", got " + token_to_string(tokens.get()));
 }
 
 void Parser::report_unexpected() {
-    report_error("unexpected token '" + std::string{tokens.get().value} + "'");
+    report_error("unexpected token " + token_to_string(tokens.get()));
 }
 
 void Parser::report_error(const std::string &message) {

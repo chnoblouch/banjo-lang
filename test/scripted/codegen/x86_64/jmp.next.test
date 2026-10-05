@@ -1,0 +1,14 @@
+# test:section ssa
+
+func void @f() {
+    jmp void b0
+
+b0:
+    ret
+}
+
+# test:section mcode
+
+func f:
+b0:
+    ret

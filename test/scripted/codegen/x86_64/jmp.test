@@ -1,0 +1,21 @@
+# test:section ssa
+
+func void @f(addr) {
+    jmp void b1
+
+b0:
+    %0 = loadarg i32, void 0
+    store i32 0, addr %0
+
+b1:
+    ret
+}
+
+# test:section mcode
+
+func f:
+    jmp b1
+b0:
+    mov dword [rdi], 0
+b1:
+    ret

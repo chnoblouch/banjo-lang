@@ -6,9 +6,7 @@
 #include <ostream>
 #include <string>
 
-namespace banjo {
-
-namespace ssa {
+namespace banjo::ssa {
 
 class Writer {
 
@@ -31,8 +29,6 @@ private:
     std::string calling_conv_to_str(CallingConv calling_conv);
 };
 
-} // namespace ssa
-
-} // namespace banjo
+} // namespace banjo::ssa
 
 #endif

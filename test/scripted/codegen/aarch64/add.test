@@ -1,11 +1,12 @@
 # test:subtest
 # test:section ssa
 
-func void @f(i16, i16):
+func void @f(i16, i16) {
     %0 = loadarg i16, void 0
     %1 = loadarg i16, void 1
     %2 = add i16 %0, i16 %1
     ret i16 %2
+}
 
 # test:section mcode
 
@@ -16,11 +17,12 @@ func f:
 # test:subtest
 # test:section ssa
 
-func void @f(i16, i16):
+func void @f(i16, i16) {
     %0 = loadarg i16, void 0
     %1 = loadarg i16, void 1
     %2 = add i16 %0, i16 %1
     ret i16 %2
+}
 
 # test:section mcode
 
@@ -31,11 +33,12 @@ func f:
 # test:subtest
 # test:section ssa
 
-func void @f(i32, i32):
+func void @f(i32, i32) {
     %0 = loadarg i32, void 0
     %1 = loadarg i32, void 1
     %2 = add i32 %0, i32 %1
     ret i32 %2
+}
 
 # test:section mcode
 
@@ -46,11 +49,12 @@ func f:
 # test:subtest
 # test:section ssa
 
-func void @f(i64, i64):
+func void @f(i64, i64) {
     %0 = loadarg i64, void 0
     %1 = loadarg i64, void 1
     %2 = add i64 %0, i64 %1
     ret i64 %2
+}
 
 # test:section mcode
 

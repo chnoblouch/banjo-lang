@@ -2,9 +2,7 @@
 
 #include <sstream>
 
-namespace banjo {
-
-namespace ssa {
+namespace banjo::ssa {
 
 Writer::Writer(std::ostream &stream) : stream(stream) {}
 
@@ -123,11 +121,17 @@ void Writer::write_func_def(Function *func_def) {
         stream << " global";
     }
 
-    stream << ":\n";
+    stream << " {\n";
 
-    for (BasicBlock &basic_block : func_def->get_basic_blocks()) {
+    for (BasicBlock &basic_block : func_def->basic_blocks) {
         write_basic_block(basic_block);
+
+        if (&basic_block != &func_def->basic_blocks.get_last()) {
+            stream << "\n";
+        }
     }
+
+    stream << "}\n\n";
 }
 
 void Writer::write_basic_block(BasicBlock &basic_block) {
@@ -248,8 +252,6 @@ void Writer::write_basic_block(BasicBlock &basic_block) {
 
         stream << "\n";
     }
-
-    stream << "\n";
 }
 
 std::string Writer::reg_to_str(VirtualRegister reg) {
@@ -392,6 +394,4 @@ std::string Writer::calling_conv_to_str(CallingConv calling_conv) {
     }
 }
 
-} // namespace ssa
-
-} // namespace banjo
+} // namespace banjo::ssa

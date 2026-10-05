@@ -20,6 +20,8 @@ enum class TokenType {
     AT,
     LPAREN,
     RPAREN,
+    LBRACE,
+    RBRACE,
     LBRACKET,
     RBRACKET,
     END_OF_LINE,
@@ -36,6 +38,7 @@ struct TokenStream {
     unsigned position;
 
     Token &get() { return tokens[position]; }
+    Token &next() { return tokens[position + 1]; }
     void advance() { position += 1; }
 };
 

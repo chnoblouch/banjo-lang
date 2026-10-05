@@ -50,6 +50,10 @@ TokenStream GenericLexer::tokenize() {
             read_punctuation(TokenType::LPAREN);
         } else if (c == ')') {
             read_punctuation(TokenType::RPAREN);
+        } else if (c == '{') {
+            read_punctuation(TokenType::LBRACE);
+        } else if (c == '}') {
+            read_punctuation(TokenType::RBRACE);
         } else if (c == '[') {
             read_punctuation(TokenType::LBRACKET);
         } else if (c == ']') {
@@ -64,7 +68,9 @@ TokenStream GenericLexer::tokenize() {
         }
     }
 
-    tokens.push_back(Token{.type = TokenType::END_OF_FILE, .value{}});
+    for (unsigned i = 0; i < 2; i++) {
+        tokens.push_back(Token{.type = TokenType::END_OF_FILE, .value{}});
+    }
 
     return TokenStream{
         .tokens = std::move(tokens),
