@@ -1,6 +1,7 @@
 #include "aarch64_printer.hpp"
 
 #include "banjo/target/aarch64/aarch64_address.hpp"
+#include "banjo/target/aarch64/aarch64_condition.hpp"
 #include "banjo/target/aarch64/aarch64_opcode.hpp"
 #include "banjo/target/aarch64/aarch64_register.hpp"
 #include "banjo/utils/hash_map.hpp"
@@ -224,19 +225,29 @@ void AArch64Printer::print_opcode(mcode::Instruction &instr) {
     emit(OPCODES.find(instr.get_opcode()));
 }
 
-void AArch64Printer::print_operand(mcode::Instruction &instr, unsigned index) {
+void AArch64Printer::print_operand(mcode::Function &func, mcode::Instruction &instr, unsigned index) {
     mcode::Operand &operand = instr.get_operand(index);
 
-    if (operand.is_int_immediate()) {
-        emit(operand.get_int_immediate().to_string());
-    } else if (operand.is_fp_immediate()) {
-        emit(operand.get_fp_immediate());
-    } else if (operand.is_register()) {
-        print_register(operand.get_register(), operand.get_size());
-    } else if (operand.is_aarch64_addr()) {
-        print_address(operand.get_aarch64_addr());
+    if (print_common_operand(func, operand)) {
+        return;
+    }
+
+    if (operand.is_aarch64_addr()) {
+        print_address(func, operand.get_aarch64_addr());
+    } else if (operand.is_aarch64_left_shift()) {
+        print_left_shift(operand.get_aarch64_left_shift());
+    } else if (operand.is_aarch64_condition()) {
+        print_condition(operand.get_aarch64_condition());
     } else {
-        emit("<operand>");
+        ASSERT_UNREACHABLE;
+    }
+}
+
+void AArch64Printer::print_physical_reg(mcode::PhysicalReg reg, unsigned size) {
+    if (size == 8) {
+        emit(REGISTERS_8.find(reg));
+    } else {
+        emit(REGISTERS_4.find(reg));
     }
 }
 
@@ -244,37 +255,79 @@ void AArch64Printer::print_register(mcode::Register reg, unsigned size) {
     if (reg.is_virtual()) {
         print_virtual_reg(reg.get_virtual_reg(), size);
     } else if (reg.is_physical()) {
-        if (size == 8) {
-            emit(REGISTERS_8.find(reg.get_physical_reg()));
-        } else {
-            emit(REGISTERS_4.find(reg.get_physical_reg()));
-        }
+        print_physical_reg(reg.get_physical_reg(), size);
     } else {
         ASSERT_UNREACHABLE;
     }
 }
 
-void AArch64Printer::print_address(const AArch64Address &address) {
+void AArch64Printer::print_address(mcode::Function &func, const AArch64Address &addr) {
     emit('[');
-    print_register(address.get_base(), 8);
+    print_register(addr.get_base(), 8);
 
-    switch (address.get_type()) {
-        case AArch64Address::Type::BASE: break;
-        case AArch64Address::Type::BASE_OFFSET_IMM:
-        case AArch64Address::Type::BASE_OFFSET_IMM_WRITE:
-            emit(", ");
-            emit(address.get_offset_imm());
+    switch (addr.get_type()) {
+        case AArch64Address::Type::BASE: {
+            emit("]");
             break;
+        }
+        case AArch64Address::Type::BASE_OFFSET_IMM: {
+            emit(", ");
+            emit(addr.get_offset_imm());
+            emit(']');
+            break;
+        }
+        case AArch64Address::Type::BASE_OFFSET_IMM_WRITE: {
+            emit(", ");
+            emit(addr.get_offset_imm());
+            emit("]!");
+            break;
+        }
+        case AArch64Address::Type::BASE_OFFSET_STACK_ADDR: {
+            emit(", ");
+            print_stack_addr(func, addr.get_offset_stack_addr());
+            emit(']');
+            break;
+        }
+        case AArch64Address::Type::BASE_OFFSET_REG: {
+            const AArch64Address::RegOffset &offset = addr.get_offset_reg();
 
-        case AArch64Address::Type::BASE_OFFSET_STACK_ADDR: ASSERT_UNREACHABLE; // TODO
-        case AArch64Address::Type::BASE_OFFSET_REG: ASSERT_UNREACHABLE;        // TODO
-        case AArch64Address::Type::BASE_OFFSET_SYMBOL: ASSERT_UNREACHABLE;     // TODO
+            emit(", ");
+            print_register(offset.reg, 8);
+
+            if (offset.shift != 0) {
+                emit(", lsl ");
+                emit(offset.shift);
+            }
+
+            emit(']');
+            break;
+        }
+        case AArch64Address::Type::BASE_OFFSET_SYMBOL: {
+            emit(", ");
+            print_symbol(addr.get_offset_symbol());
+            emit(']');
+            break;
+        }
     }
+}
 
-    emit(']');
+void AArch64Printer::print_left_shift(unsigned shift) {
+    emit("lsl ");
+    emit(shift);
+}
 
-    if (address.get_type() == AArch64Address::Type::BASE_OFFSET_IMM_WRITE) {
-        emit('!');
+void AArch64Printer::print_condition(AArch64Condition condition) {
+    switch (condition) {
+        case target::AArch64Condition::EQ: emit("eq"); break;
+        case target::AArch64Condition::NE: emit("ne"); break;
+        case target::AArch64Condition::HS: emit("hs"); break;
+        case target::AArch64Condition::LO: emit("lo"); break;
+        case target::AArch64Condition::HI: emit("hi"); break;
+        case target::AArch64Condition::LS: emit("ls"); break;
+        case target::AArch64Condition::GE: emit("ge"); break;
+        case target::AArch64Condition::LT: emit("lt"); break;
+        case target::AArch64Condition::GT: emit("gt"); break;
+        case target::AArch64Condition::LE: emit("le"); break;
     }
 }
 

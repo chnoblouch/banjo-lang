@@ -226,29 +226,39 @@ void X8664Printer::print_opcode(mcode::Instruction &instr) {
         mcode::Operand &op0 = instr.get_operand(0);
         mcode::Operand &op1 = instr.get_operand(1);
 
-        if (op0.is_x86_64_addr() && op1.is_int_immediate()) {
+        if ((op0.is_x86_64_addr() || op0.is_symbol_deref()) && op1.is_int_immediate()) {
             emit(' ');
             print_size(op0.get_size());
-        } else if (op0.is_int_immediate() && op1.is_x86_64_addr()) {
+        } else if (op0.is_int_immediate() && (op1.is_x86_64_addr() || op1.is_symbol_deref())) {
             emit(' ');
             print_size(op1.get_size());
         }
     }
 }
 
-void X8664Printer::print_operand(mcode::Instruction &instr, unsigned index) {
+void X8664Printer::print_operand(mcode::Function &func, mcode::Instruction &instr, unsigned index) {
     mcode::Operand &operand = instr.get_operand(index);
 
-    if (operand.is_int_immediate()) {
-        emit(operand.get_int_immediate().to_string());
-    } else if (operand.is_fp_immediate()) {
-        emit(operand.get_fp_immediate());
-    } else if (operand.is_register()) {
-        print_register(operand.get_register(), operand.get_size());
-    } else if (operand.is_x86_64_addr()) {
-        print_address(operand.get_x86_64_addr());
+    if (print_common_operand(func, operand)) {
+        return;
+    }
+
+    if (operand.is_x86_64_addr()) {
+        print_address(func, operand.get_x86_64_addr());
+    } else if (operand.is_symbol_deref()) {
+        print_symbol_deref(operand.get_deref_symbol());
     } else {
-        emit("<operand>");
+        ASSERT_UNREACHABLE;
+    }
+}
+
+void X8664Printer::print_physical_reg(mcode::PhysicalReg reg, unsigned size) {
+    switch (size) {
+        case 1: emit(REGISTERS_1.find(reg)); break;
+        case 2: emit(REGISTERS_2.find(reg)); break;
+        case 4: emit(REGISTERS_4.find(reg)); break;
+        case 8: emit(REGISTERS_8.find(reg)); break;
+        default: ASSERT_UNREACHABLE;
     }
 }
 
@@ -256,23 +266,24 @@ void X8664Printer::print_register(mcode::Register reg, unsigned size) {
     if (reg.is_virtual()) {
         print_virtual_reg(reg.get_virtual_reg(), size);
     } else if (reg.is_physical()) {
-        switch (size) {
-            case 1: emit(REGISTERS_1.find(reg.get_physical_reg())); break;
-            case 2: emit(REGISTERS_2.find(reg.get_physical_reg())); break;
-            case 4: emit(REGISTERS_4.find(reg.get_physical_reg())); break;
-            case 8: emit(REGISTERS_8.find(reg.get_physical_reg())); break;
-            default: ASSERT_UNREACHABLE;
-        }
+        print_physical_reg(reg.get_physical_reg(), size);
     } else {
         ASSERT_UNREACHABLE;
     }
 }
 
-void X8664Printer::print_address([[maybe_unused]] const X8664Address &address) {
+void X8664Printer::print_address(mcode::Function &func, const X8664Address &addr) {
     emit('[');
-    print_register(address.get_base_reg(), 8);
 
-    if (auto offset = address.offset_reg) {
+    if (addr.is_base_reg()) {
+        print_register(addr.get_base_reg(), 8);
+    } else if (addr.is_base_symbol()) {
+        print_symbol(addr.get_base_symbol());
+    } else {
+        ASSERT_UNREACHABLE;
+    }
+
+    if (auto offset = addr.offset_reg) {
         emit(" + ");
 
         if (offset->scale != 1) {
@@ -283,6 +294,22 @@ void X8664Printer::print_address([[maybe_unused]] const X8664Address &address) {
         print_register(offset->reg, 8);
     }
 
+    if (addr.has_offset_imm()) {
+        if (addr.get_offset_imm() != 0) {
+            emit(" + ");
+            emit(addr.get_offset_imm());
+        }
+    } else if (addr.has_offset_stack_addr()) {
+        emit(" + ");
+        print_stack_addr(func, addr.get_offset_stack_addr());
+    }
+
+    emit(']');
+}
+
+void X8664Printer::print_symbol_deref(const mcode::Symbol &symbol) {
+    emit('[');
+    print_symbol(symbol.name);
     emit(']');
 }
 

@@ -31,15 +31,15 @@ codegen::SSALowerer *X8664Target::create_ssa_lowerer() {
 
 std::vector<std::unique_ptr<codegen::MachinePass>> X8664Target::create_passes() {
     std::vector<std::unique_ptr<codegen::MachinePass>> passes;
-    passes.emplace_back(std::make_unique<codegen::RegAllocPass>(reg_analyzer));
+    passes.emplace_back(std::make_unique<codegen::RegAllocPass>(*this, reg_analyzer));
     passes.emplace_back(std::make_unique<codegen::StackFramePass>());
     passes.emplace_back(std::make_unique<codegen::PrologEpilogPass>());
     passes.emplace_back(std::make_unique<X8664PeepholeOptPass>());
     return passes;
 }
 
-std::unique_ptr<mcode::Printer> X8664Target::create_printer(std::string &buffer) {
-    return std::make_unique<X8664Printer>(X8664Printer{buffer});
+std::unique_ptr<mcode::Printer> X8664Target::create_printer() {
+    return std::make_unique<X8664Printer>(X8664Printer{});
 }
 
 std::unique_ptr<mcode::Parser> X8664Target::create_parser(utils::TokenStream &tokens) {

@@ -1,7 +1,6 @@
 #include "liveness.hpp"
 
 #include "banjo/codegen/reg_alloc_func.hpp"
-#include "banjo/emit/debug_emitter.hpp"
 #include "banjo/mcode/register.hpp"
 
 #include <iomanip>
@@ -166,7 +165,7 @@ void LivenessAnalysis::compute_precise_live_ranges(RegAllocFunc &func, LivenessA
     }
 }
 
-void LivenessAnalysis::dump(std::ostream &stream) {
+void LivenessAnalysis::dump(mcode::Printer &printer, std::ostream &stream) {
     stream << "useless:";
 
     for (const auto &[reg, ranges] : reg_ranges) {
@@ -200,7 +199,7 @@ void LivenessAnalysis::dump(std::ostream &stream) {
         if (reg.is_virtual()) {
             vreg_header = '%' + std::to_string(reg.get_virtual_reg());
         } else {
-            vreg_header = DebugEmitter::get_physical_reg_name(reg.get_physical_reg(), 8);
+            printer.set_buffer(vreg_header).print_physical_reg(reg.get_physical_reg(), 8);
         }
 
         header += vreg_header + ' ';
@@ -247,7 +246,8 @@ void LivenessAnalysis::dump(std::ostream &stream) {
         }
 
         for (unsigned j = 0; j < block.instrs.size(); j++) {
-            std::string instr = DebugEmitter::instr_to_string(&func.m_func, *block.m_block, *block.instrs[j].iter);
+            std::string instr;
+            printer.set_buffer(instr).print_instr(func.m_func, *block.instrs[j].iter);
             instr = instr.substr(0, interval_spacing);
 
             std::string spaces = std::string(std::min(interval_spacing - instr.size(), interval_spacing), ' ');
@@ -265,7 +265,7 @@ void LivenessAnalysis::dump(std::ostream &stream) {
             std::string killed_str;
             for (KillPoint &kill_point : kill_points) {
                 if (kill_point.block == i && kill_point.instr == j) {
-                    killed_str += DebugEmitter::get_physical_reg_name(kill_point.reg, 8) + " ";
+                    printer.set_buffer(killed_str).print_physical_reg(kill_point.reg, 8);
                 }
             }
 

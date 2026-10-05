@@ -2,6 +2,7 @@
 #define BANJO_CODEGEN_LIVENESS_H
 
 #include "banjo/codegen/reg_alloc_func.hpp"
+#include "banjo/mcode/printer.hpp"
 #include "banjo/mcode/register.hpp"
 
 #include <ostream>
@@ -37,7 +38,7 @@ private:
 
 public:
     static LivenessAnalysis compute(RegAllocFunc &func);
-    void dump(std::ostream &stream);
+    void dump(mcode::Printer &printer, std::ostream &stream);
 
 private:
     static void collect_uses_and_defs(RegAllocBlock &block, BlockLiveness &liveness);

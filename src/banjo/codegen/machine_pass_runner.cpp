@@ -1,8 +1,7 @@
 #include "machine_pass_runner.hpp"
 
 #include "banjo/config/config.hpp"
-#include "banjo/emit/debug_emitter.hpp"
-#include "banjo/target/target_description.hpp"
+#include "banjo/mcode/printer.hpp"
 
 #include <fstream>
 #include <memory>
@@ -28,8 +27,13 @@ void MachinePassRunner::create_and_run(mcode::Module &mod) {
 }
 
 void MachinePassRunner::emit(mcode::Module &mod, const std::string &file_name) {
-    std::ofstream stream("dumps/" + file_name + ".bnjasm");
-    DebugEmitter(mod, stream, target->get_descr()).generate();
+    std::string buffer;
+
+    std::unique_ptr<mcode::Printer> printer = target->create_printer();
+    printer->set_buffer(buffer);
+    printer->print(mod);
+
+    std::ofstream{"dumps/" + file_name + ".bnjasm"} << buffer;
 }
 
 } // namespace banjo::codegen

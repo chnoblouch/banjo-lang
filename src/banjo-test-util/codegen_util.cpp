@@ -22,7 +22,7 @@ void CodegenUtil::lower(target::Architecture arch) {
     codegen::MachinePassRunner{target}.create_and_run(mcode_mod);
 
     std::string buffer;
-    target->create_printer(buffer)->print(mcode_mod);
+    target->create_printer()->set_buffer(buffer).print(mcode_mod);
     std::cout << buffer;
 
     delete ssa_lowerer;

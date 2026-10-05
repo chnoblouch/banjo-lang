@@ -32,15 +32,15 @@ codegen::SSALowerer *AArch64Target::create_ssa_lowerer() {
 
 std::vector<std::unique_ptr<codegen::MachinePass>> AArch64Target::create_passes() {
     std::vector<std::unique_ptr<codegen::MachinePass>> passes;
-    passes.emplace_back(std::make_unique<codegen::RegAllocPass>(reg_analyzer));
+    passes.emplace_back(std::make_unique<codegen::RegAllocPass>(*this, reg_analyzer));
     passes.emplace_back(std::make_unique<codegen::StackFramePass>());
     passes.emplace_back(std::make_unique<codegen::PrologEpilogPass>());
     passes.emplace_back(std::make_unique<AArch64StackAddrFixupPass>());
     return passes;
 }
 
-std::unique_ptr<mcode::Printer> AArch64Target::create_printer(std::string &buffer) {
-    return std::make_unique<AArch64Printer>(AArch64Printer{buffer});
+std::unique_ptr<mcode::Printer> AArch64Target::create_printer() {
+    return std::make_unique<AArch64Printer>(AArch64Printer{});
 }
 
 std::unique_ptr<mcode::Parser> AArch64Target::create_parser(utils::TokenStream &tokens) {

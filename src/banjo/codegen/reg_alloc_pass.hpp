@@ -5,14 +5,13 @@
 #include "banjo/codegen/machine_pass.hpp"
 #include "banjo/codegen/reg_alloc_func.hpp"
 #include "banjo/mcode/register.hpp"
-#include "banjo/mcode/stack_frame.hpp"
+#include "banjo/target/target.hpp"
 #include "banjo/target/target_reg_analyzer.hpp"
 
 #include <fstream>
+#include <optional>
 #include <queue>
 #include <vector>
-
-#define DEBUG_REG_ALLOC 0
 
 namespace banjo::codegen {
 
@@ -40,15 +39,14 @@ private:
         std::vector<Alloc> allocs;
     };
 
+    target::Target &target;
     target::TargetRegAnalyzer &analyzer;
-    std::vector<mcode::PhysicalReg> suggested_regs;
 
-#if DEBUG_REG_ALLOC
-    std::ofstream stream{"liveness.txt"};
-#endif
+    std::vector<mcode::PhysicalReg> suggested_regs;
+    std::optional<std::ofstream> stream;
 
 public:
-    RegAllocPass(target::TargetRegAnalyzer &analyzer);
+    RegAllocPass(target::Target &target, target::TargetRegAnalyzer &analyzer);
     void run(mcode::Module &mod);
     void run(mcode::Function &func);
 

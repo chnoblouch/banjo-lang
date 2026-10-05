@@ -39,8 +39,6 @@ add_library(banjo STATIC
     "emit/binary_builder_symbol.hpp"
     "emit/binary_emitter.hpp"
     "emit/binary_module.hpp"
-    "emit/debug_emitter.cpp"
-    "emit/debug_emitter.hpp"
     "emit/emitter.hpp"
     "emit/nasm_emitter.cpp"
     "emit/nasm_emitter.hpp"

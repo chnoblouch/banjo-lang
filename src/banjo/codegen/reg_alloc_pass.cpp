@@ -2,8 +2,9 @@
 
 #include "banjo/codegen/liveness.hpp"
 #include "banjo/codegen/reg_alloc_func.hpp"
-#include "banjo/emit/debug_emitter.hpp" // IWYU pragma: keep
+#include "banjo/config/config.hpp"
 #include "banjo/mcode/instruction.hpp"
+#include "banjo/mcode/printer.hpp"
 #include "banjo/mcode/register.hpp"
 #include "banjo/mcode/stack_frame.hpp"
 #include "banjo/mcode/stack_slot.hpp"
@@ -11,12 +12,16 @@
 #include "banjo/target/target_reg_analyzer.hpp"
 #include "banjo/utils/timing.hpp"
 
-#include <iostream> // IWYU pragma: keep
+#include <fstream>
+#include <iostream>
+#include <memory>
 #include <vector>
 
 namespace banjo::codegen {
 
-RegAllocPass::RegAllocPass(target::TargetRegAnalyzer &analyzer) : analyzer{analyzer} {}
+RegAllocPass::RegAllocPass(target::Target &target, target::TargetRegAnalyzer &analyzer)
+  : target{target},
+    analyzer{analyzer} {}
 
 void RegAllocPass::run(mcode::Module &mod) {
     PROFILE_SCOPE("register allocation");
@@ -28,6 +33,10 @@ void RegAllocPass::run(mcode::Module &mod) {
     //   if the register is only read from during the intersection of the two ranges
     // - Improving weight calculation (e.g. assign a higher score for bundles in loops)
     // - Smarter load/store placement for spilled bundles
+
+    if (Config::instance().debug) {
+        stream = std::ofstream{"dumps/regalloc.txt"};
+    }
 
     for (mcode::Function *func : mod.get_functions()) {
         run(*func);
@@ -55,7 +64,9 @@ void RegAllocPass::run(mcode::Function &func) {
         alloc_bundle(ctx, bundle);
     }
 
-    write_debug_report(ctx);
+    if (Config::instance().debug) {
+        write_debug_report(ctx);
+    }
 
     for (const Alloc &alloc : ctx.allocs) {
         apply_alloc(ctx, alloc);
@@ -570,16 +581,20 @@ unsigned RegAllocPass::BundleComparator::get_weight(const Bundle &bundle) {
 }
 
 void RegAllocPass::write_debug_report(Context &ctx) {
-#if DEBUG_REG_ALLOC
-    stream << "--- LIVENESS FOR " << ctx.func.m_func.get_name() << " ---" << std::endl;
-    ctx.liveness.dump(stream);
-    stream << std::endl;
+    std::ofstream &stream = *this->stream;
+    std::unique_ptr<mcode::Printer> printer = target.create_printer();
+
+    stream << "--- LIVENESS FOR " << ctx.func.m_func.name << " ---\n";
+    ctx.liveness.dump(*printer, stream);
+    stream << '\n';
 
     for (const Alloc &alloc : ctx.allocs) {
         for (const Segment &segment : alloc.bundle.segments) {
-            std::string physical_reg_name = DebugEmitter::get_physical_reg_name(alloc.physical_reg, 8);
-            stream << "%" << segment.reg << " -> " << physical_reg_name << " in ";
-            stream << ctx.func.blocks[segment.range.block].m_block->get_debug_label() << " ";
+            std::string reg_name;
+            printer->set_buffer(reg_name).print_physical_reg(alloc.physical_reg, 8);
+
+            stream << "%" << segment.reg << " -> " << reg_name << " in ";
+            stream << ctx.func.blocks[segment.range.block].m_block->debug_label() << " ";
             stream << "[" << segment.range.start.instr << ":" << segment.range.end.instr << "]";
 
             if (alloc.bundle.src_stack_slot) {
@@ -590,12 +605,11 @@ void RegAllocPass::write_debug_report(Context &ctx) {
                 stream << ", to stack slot %" << *alloc.bundle.dst_stack_slot;
             }
 
-            stream << "\n";
+            stream << '\n';
         }
     }
 
-    stream << std::endl;
-#endif
+    stream << '\n';
 }
 
 } // namespace banjo::codegen

@@ -17,7 +17,7 @@ struct AddrTable {
 
 class Module {
 
-private:
+public:
     std::vector<Function *> functions;
     std::vector<Global> globals;
     std::unordered_set<std::string> external_symbols;
