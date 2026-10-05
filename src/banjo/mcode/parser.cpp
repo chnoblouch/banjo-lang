@@ -2,6 +2,8 @@
 
 #include "banjo/utils/generic_lexer.hpp"
 
+#include <iostream>
+
 namespace banjo::mcode {
 
 Parser::Parser(utils::TokenStream &tokens) : tokens{tokens} {}

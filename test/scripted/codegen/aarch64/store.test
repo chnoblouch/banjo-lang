@@ -1,9 +1,7 @@
 # test:subtest
 # test:section ssa
 
-func void @f(i8, addr) {
-    %0 = loadarg i8, void 0
-    %1 = loadarg addr, void 1
+func void @f(i8 %0, addr %1) {
     store i8 %0, addr %1
     ret
 }
@@ -17,9 +15,7 @@ func f:
 # test:subtest
 # test:section ssa
 
-func void @f(i16, addr) {
-    %0 = loadarg i16, void 0
-    %1 = loadarg addr, void 1
+func void @f(i16 %0, addr %1) {
     store i16 %0, addr %1
     ret
 }
@@ -33,9 +29,7 @@ func f:
 # test:subtest
 # test:section ssa
 
-func void @f(i32, addr) {
-    %0 = loadarg i32, void 0
-    %1 = loadarg addr, void 1
+func void @f(i32 %0, addr %1) {
     store i32 %0, addr %1
     ret
 }
@@ -49,9 +43,7 @@ func f:
 # test:subtest
 # test:section ssa
 
-func void @f(i64, addr) {
-    %0 = loadarg i64, void 0
-    %1 = loadarg addr, void 1
+func void @f(i64 %0, addr %1) {
     store i64 %0, addr %1
     ret
 }

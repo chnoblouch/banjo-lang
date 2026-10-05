@@ -7,13 +7,11 @@
 #include <string>
 #include <vector>
 
-namespace banjo {
-
-namespace ssa {
+namespace banjo::ssa {
 
 class BasicBlock {
 
-private:
+public:
     LinkedList<Instruction> instrs;
     std::vector<ssa::VirtualRegister> param_regs;
     std::vector<ssa::Type> param_types;
@@ -54,8 +52,6 @@ public:
 typedef LinkedListNode<BasicBlock> BasicBlockNode;
 typedef LinkedListIter<BasicBlock> BasicBlockIter;
 
-} // namespace ssa
-
-} // namespace banjo
+} // namespace banjo::ssa
 
 #endif

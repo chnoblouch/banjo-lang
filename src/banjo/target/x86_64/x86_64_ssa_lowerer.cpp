@@ -120,17 +120,42 @@ bool X8664SSALowerer::lower_stored_operation(ssa::Instruction &store) {
 }
 
 void X8664SSALowerer::emit_block_prologue(ssa::BasicBlock &block) {
-    for (unsigned i = 0; i < block.get_param_regs().size(); i++) {
-        ssa::VirtualRegister arg_reg = block.get_param_regs()[i];
-        ssa::Type type = block.get_param_types()[i];
+    if (&block == &ssa_func->get_entry_block()) {
+        mcode::Function &m_func = *instr_ctx.func;
+        std::vector<mcode::ArgStorage> arg_storage = m_func.calling_conv->get_arg_storage(ssa_func->type);
 
-        ssa::VirtualRegister tmp_reg = block_arg_tmps.at(arg_reg);
-        mcode::Opcode opcode = get_move_opcode(type);
-        unsigned reg_size = get_size(type) == 8 ? 8 : 4;
+        for (unsigned i = 0; i < block.get_param_regs().size(); i++) {
+            ssa::VirtualRegister arg_reg = block.get_param_regs()[i];
+            ssa::Type type = block.get_param_types()[i];
+            unsigned size = get_size(type);
 
-        mcode::Operand dst = mcode::Operand::from_register(mcode::Register::from_virtual(arg_reg), reg_size);
-        mcode::Operand src = mcode::Operand::from_register(mcode::Register::from_virtual(tmp_reg), reg_size);
-        emit({opcode, {dst, src}});
+            mcode::Opcode opcode = get_move_opcode(type);
+            mcode::Operand m_dst = map_vreg_as_operand(arg_reg, size);
+
+            if (arg_storage[i].in_reg) {
+                mcode::Register m_reg = mcode::Register::from_physical(arg_storage[i].reg);
+                mcode::Operand m_src = mcode::Operand::from_register(m_reg, size);
+                emit({opcode, {m_dst, m_src}, mcode::Instruction::FLAG_ARG_STORE});
+            } else {
+                mcode::Parameter &param = get_machine_func()->parameters[i];
+                mcode::StackSlotID slot_index = std::get<mcode::StackSlotID>(param.storage);
+                mcode::Operand m_src = mcode::Operand::from_stack_slot(slot_index, size);
+                emit({opcode, {m_dst, m_src}, mcode::Instruction::FLAG_ARG_STORE});
+            }
+        }
+    } else {
+        for (unsigned i = 0; i < block.get_param_regs().size(); i++) {
+            ssa::VirtualRegister arg_reg = block.get_param_regs()[i];
+            ssa::Type type = block.get_param_types()[i];
+
+            ssa::VirtualRegister tmp_reg = block_arg_tmps.at(arg_reg);
+            mcode::Opcode opcode = get_move_opcode(type);
+            unsigned reg_size = get_size(type) == 8 ? 8 : 4;
+
+            mcode::Operand dst = mcode::Operand::from_register(mcode::Register::from_virtual(arg_reg), reg_size);
+            mcode::Operand src = mcode::Operand::from_register(mcode::Register::from_virtual(tmp_reg), reg_size);
+            emit({opcode, {dst, src}});
+        }
     }
 }
 
@@ -173,33 +198,6 @@ void X8664SSALowerer::lower_store(ssa::Instruction &instr) {
         m_instr.set_flag(mcode::Instruction::FLAG_ARG_STORE);
     }
 
-    emit(m_instr);
-}
-
-void X8664SSALowerer::lower_loadarg(ssa::Instruction &instr) {
-    ssa::Type type = instr.get_operand(0).get_type();
-    unsigned param_index = instr.get_operand(1).get_int_immediate().to_u64();
-    unsigned size = get_size(type);
-
-    mcode::CallingConvention *calling_conv = get_machine_func()->calling_conv;
-    std::vector<mcode::ArgStorage> arg_storage = calling_conv->get_arg_storage(get_func().type);
-    mcode::ArgStorage cur_arg_storage = arg_storage[param_index];
-
-    mcode::Operand m_src;
-
-    if (cur_arg_storage.in_reg) {
-        m_src = mcode::Operand::from_register(mcode::Register::from_physical(cur_arg_storage.reg), size);
-    } else {
-        mcode::Parameter &param = get_machine_func()->parameters[param_index];
-        mcode::StackSlotID slot_index = std::get<mcode::StackSlotID>(param.storage);
-        m_src = mcode::Operand::from_stack_slot(slot_index, size);
-    }
-
-    mcode::Opcode opcode = get_move_opcode(type);
-    mcode::Operand m_dst = map_vreg_dst(instr, size);
-
-    mcode::Instruction m_instr(opcode, {m_dst, m_src});
-    m_instr.set_flag(mcode::Instruction::FLAG_ARG_STORE);
     emit(m_instr);
 }
 

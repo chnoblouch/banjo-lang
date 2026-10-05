@@ -22,7 +22,6 @@ private:
     bool validate_alloca(Instruction &instr);
     bool validate_load(Instruction &instr);
     bool validate_store(Instruction &instr);
-    bool validate_loadarg(Function &func, Instruction &instr);
     bool validate_add(Instruction &instr);
     bool validate_sub(Instruction &instr);
     bool validate_mul(Instruction &instr);

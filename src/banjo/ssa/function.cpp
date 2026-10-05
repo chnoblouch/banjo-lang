@@ -4,9 +4,7 @@
 
 namespace banjo::ssa {
 
-Function::Function(std::string name, FunctionType type) : name{std::move(name)}, type{std::move(type)} {
-    basic_blocks.append(BasicBlock());
-}
+Function::Function(std::string name, FunctionType type) : name{std::move(name)}, type{std::move(type)} {}
 
 BasicBlockIter Function::create_block(std::string label) {
     return basic_blocks.create_iter(std::move(label));

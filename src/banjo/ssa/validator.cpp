@@ -92,7 +92,6 @@ bool Validator::validate(Module &mod, Function &func) {
                 case Opcode::ALLOCA: instr_valid = validate_alloca(instr); break;
                 case Opcode::LOAD: instr_valid = validate_load(instr); break;
                 case Opcode::STORE: instr_valid = validate_store(instr); break;
-                case Opcode::LOADARG: instr_valid = validate_loadarg(func, instr); break;
                 case Opcode::ADD: instr_valid = validate_add(instr); break;
                 case Opcode::SUB: instr_valid = validate_sub(instr); break;
                 case Opcode::MUL: instr_valid = validate_mul(instr); break;
@@ -174,17 +173,6 @@ bool Validator::validate_store(Instruction &instr) {
     CHECK(is_value(instr.get_operand(0)), "first operand of store is not a value");
     CHECK(is_value(instr.get_operand(1)), "second operand of store is not a value");
     CHECK(is_addr(instr.get_operand(1)), "type of store address is not addr");
-    return true;
-}
-
-bool Validator::validate_loadarg(Function &func, Instruction &instr) {
-    CHECK(instr.get_operands().size() == 2, "invalid number of operands for loadarg");
-    CHECK(is_type(instr.get_operand(0)), "first operand of loadarg is not a type");
-    CHECK(is_int_imm(instr.get_operand(1)), "second operand of loadarg is not an integer immediate");
-
-    LargeInt index = instr.get_operand(1).get_int_immediate();
-    CHECK(index >= 0 && index < func.type.params.size(), "loadarg out of bounds");
-
     return true;
 }
 

@@ -13,7 +13,6 @@
 #include "banjo/utils/hash_map.hpp"
 
 #include <optional>
-#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -22,6 +21,11 @@ namespace banjo::ssa {
 class Parser {
 
 private:
+    struct Param {
+        Type type;
+        VirtualRegister reg;
+    };
+
     struct OperandContext {
         unsigned func_index;
         unsigned block_index;
@@ -46,8 +50,8 @@ public:
 
 private:
     ssa::Function *parse_func();
-    std::optional<std::vector<ssa::Type>> parse_params();
-    std::optional<ssa::BasicBlock> parse_block();
+    std::optional<std::vector<Param>> parse_params();
+    std::optional<ssa::BasicBlock> parse_block(bool is_entry);
     std::optional<ssa::Instruction> parse_instr();
     std::optional<ssa::Opcode> parse_opcode();
     std::optional<ssa::Operand> parse_operand();

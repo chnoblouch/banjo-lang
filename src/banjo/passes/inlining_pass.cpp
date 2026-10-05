@@ -133,12 +133,12 @@ void InliningPass::inline_func(ssa::Function &func, ssa::BasicBlockIter &block_i
         for (ssa::InstrIter iter = callee_block.begin(); iter != callee_block.end(); ++iter) {
             ssa::Instruction &callee_instr = *iter;
 
-            if (callee_instr.get_opcode() == ssa::Opcode::LOADARG) {
-                ssa::Value value = call_operands[callee_instr.get_operand(1).get_int_immediate().to_u64() + 1];
-                ctx.reg2val[*callee_instr.get_dest()] = value;
-                ctx.removed_instrs.insert(iter);
-                continue;
-            }
+            // if (callee_instr.get_opcode() == ssa::Opcode::LOADARG) {
+            //     ssa::Value value = call_operands[callee_instr.get_operand(1).get_int_immediate().to_u64() + 1];
+            //     ctx.reg2val[*callee_instr.get_dest()] = value;
+            //     ctx.removed_instrs.insert(iter);
+            //     continue;
+            // }
 
             if (callee_instr.get_opcode() == ssa::Opcode::RET) {
                 if (!callee_instr.get_operands().empty() && dst) {

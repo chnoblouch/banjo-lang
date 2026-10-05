@@ -106,7 +106,7 @@ ssa::Function *SSAGenerator::create_func_def(const sir::FuncDef &sir_func, const
     sir::Attributes *attrs = sir_func.attrs;
     std::string ssa_name = NameMangling::get_link_name(sir_func, generic_args);
 
-    ssa::Function *ssa_func = new ssa::Function(ssa_name, {});
+    ssa::Function *ssa_func = new ssa::Function{ssa_name, {}};
     ssa_func->global = sir_func.is_main() || (attrs && (attrs->exposed || attrs->dllexport));
     ssa_func->never_inline = sir_func.attrs && sir_func.attrs->never_inline;
     ssa_mod.add(ssa_func);
@@ -361,6 +361,8 @@ void SSAGenerator::generate_func_defs(const sir::FuncDef &sir_func) {
 void SSAGenerator::generate_func_def(const sir::FuncDef &sir_func, ssa::Function &ssa_func) {
     target::TargetDataLayout &data_layout = ctx.target->get_data_layout();
 
+    ssa_func.append_block(ssa_func.create_block(""));
+
     ssa::FunctionType ssa_func_type{
         .params = generate_params(sir_func.type),
         .return_type = generate_return_type(sir_func.type.return_type),
@@ -378,22 +380,31 @@ void SSAGenerator::generate_func_def(const sir::FuncDef &sir_func, ssa::Function
         if (ssa_func_type.return_type.is_primitive(ssa::Primitive::VOID)) {
             ssa_func_type.return_type = SSA_MAIN_RETURN_TYPE;
         }
+    }
 
+    ssa::BasicBlock &entry_block = ssa_func.get_entry_block();
+
+    for (ssa::Type param : ssa_func_type.params) {
+        entry_block.param_types.push_back(param);
+        entry_block.param_regs.push_back(ssa_func.next_virtual_reg());
+    }
+
+    ssa_func.type = ssa_func_type;
+
+    if (sir_func.is_main()) {
         // FIXME: This will break if the link name for these globals is changed.
         for (ssa::Global *global : ctx.ssa_mod->get_globals()) {
             if (global->name == "global_argc") {
-                ssa::VirtualRegister argc_reg = ctx.append_loadarg(ssa::Primitive::I32, 0);
+                ssa::VirtualRegister argc_reg = ssa_func.get_entry_block().param_regs[0];
                 ssa::Operand argc_value = ssa::Operand::from_register(argc_reg, ssa::Primitive::I32);
                 ctx.append_store(argc_value, ssa::Operand::from_global(global, ssa::Primitive::ADDR));
             } else if (global->name == "global_argv") {
-                ssa::VirtualRegister argv_reg = ctx.append_loadarg(ssa::Primitive::ADDR, 1);
+                ssa::VirtualRegister argv_reg = ssa_func.get_entry_block().param_regs[1];
                 ssa::Operand argv_value = ssa::Operand::from_register(argv_reg, ssa::Primitive::ADDR);
                 ctx.append_store(argv_value, ssa::Operand::from_global(global, ssa::Primitive::ADDR));
             }
         }
     }
-
-    ssa_func.type = ssa_func_type;
 
     ssa::Type ssa_return_type = TypeSSAGenerator(ctx).generate(sir_func.type.return_type);
     ReturnMethod return_method = ctx.get_return_method(ssa_return_type);
@@ -408,12 +419,10 @@ void SSAGenerator::generate_func_def(const sir::FuncDef &sir_func, ssa::Function
         ssa::Instruction &alloca_instr = ctx.append_alloca(ssa_slot, ssa_arg_type);
         alloca_instr.set_attr(ssa::Instruction::Attribute::ARG_STORE);
 
-        ssa::VirtualRegister ssa_arg_val = ssa_func.next_virtual_reg();
-        ssa::Instruction &loadarg_instr = ctx.append_loadarg(ssa_arg_val, ssa_arg_type, ssa_arg_index);
-        loadarg_instr.set_attr(ssa::Instruction::Attribute::SAVE_ARG);
+        ssa::VirtualRegister ssa_arg = ssa_func.get_entry_block().param_regs[ssa_arg_index];
 
         ssa::Instruction &store_instr = ctx.append_store(
-            ssa::Operand::from_register(ssa_arg_val, ssa_arg_type),
+            ssa::Operand::from_register(ssa_arg, ssa_arg_type),
             ssa::Operand::from_register(ssa_slot, ssa::Primitive::ADDR)
         );
         store_instr.set_attr(ssa::Instruction::Attribute::SAVE_ARG);
@@ -435,12 +444,8 @@ void SSAGenerator::generate_func_def(const sir::FuncDef &sir_func, ssa::Function
         for (unsigned i = 0; i < pass_method.num_args; i++) {
             bool is_last_arg = i == pass_method.num_args - 1;
 
-            ssa::VirtualRegister ssa_arg_reg = ssa_func.next_virtual_reg();
+            ssa::VirtualRegister ssa_arg = ssa_func.get_entry_block().param_regs[ssa_arg_index];
             ssa::Type copy_type = is_last_arg ? pass_method.last_arg_type : data_layout.get_usize_type();
-
-            ssa::Instruction &loadarg_instr = ctx.append_loadarg(ssa_arg_reg, copy_type, ssa_arg_index);
-            loadarg_instr.set_attr(ssa::Instruction::Attribute::SAVE_ARG);
-
             ssa::Operand store_dst = ssa::Operand::from_register(ssa_slot, ssa::Primitive::ADDR);
 
             if (i != 0) {
@@ -449,7 +454,7 @@ void SSAGenerator::generate_func_def(const sir::FuncDef &sir_func, ssa::Function
             }
 
             ssa::Instruction &store_instr =
-                ctx.append_store(ssa::Operand::from_register(ssa_arg_reg, copy_type), store_dst);
+                ctx.append_store(ssa::Operand::from_register(ssa_arg, copy_type), store_dst);
             store_instr.set_attr(ssa::Instruction::Attribute::SAVE_ARG);
 
             ssa_arg_index += 1;

@@ -2,11 +2,9 @@
 
 #include <utility>
 
-namespace banjo {
+namespace banjo::ssa {
 
-namespace ssa {
-
-BasicBlock::BasicBlock(std::string label) : label(std::move(label)) {}
+BasicBlock::BasicBlock(std::string label) : label{std::move(label)} {}
 
 BasicBlock::BasicBlock() {}
 
@@ -38,6 +36,4 @@ bool BasicBlock::is_branching() const {
     return instrs.get_size() != 0 && instrs.get_last().is_branching();
 }
 
-} // namespace ssa
-
-} // namespace banjo
+} // namespace banjo::ssa

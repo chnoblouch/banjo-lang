@@ -165,12 +165,22 @@ void WasmSSALowerer::generate_blocks(ssa::Function &func) {
 }
 
 void WasmSSALowerer::emit_block_prologue(ssa::BasicBlock &block) {
-    for (unsigned i = 0; i < block.get_param_regs().size(); i++) {
-        ssa::VirtualRegister arg_reg = block.get_param_regs()[i];
-        unsigned tmp_local = block_arg_tmp_locals.at(arg_reg);
+    if (&block == &ssa_func->get_entry_block()) {
+        for (unsigned i = 0; i < block.get_param_regs().size(); i++) {
+            ssa::VirtualRegister arg_reg = block.get_param_regs()[i];
+            unsigned local_index = vregs2locals.at(arg_reg);
 
-        emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(tmp_local)}});
-        emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(vregs2locals.at(arg_reg))}});
+            emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(i)}});
+            emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(local_index)}});
+        }
+    } else {
+        for (unsigned i = 0; i < block.get_param_regs().size(); i++) {
+            ssa::VirtualRegister arg_reg = block.get_param_regs()[i];
+            unsigned tmp_local = block_arg_tmp_locals.at(arg_reg);
+
+            emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(tmp_local)}});
+            emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(vregs2locals.at(arg_reg))}});
+        }
     }
 }
 
@@ -280,14 +290,6 @@ void WasmSSALowerer::lower_store(ssa::Instruction &instr) {
     } else {
         ASSERT_UNREACHABLE;
     }
-}
-
-void WasmSSALowerer::lower_loadarg(ssa::Instruction &instr) {
-    unsigned param_index = instr.get_operand(1).get_int_immediate().to_u64();
-    unsigned local_index = vregs2locals.at(*instr.get_dest());
-
-    emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(param_index)}});
-    emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(local_index)}});
 }
 
 void WasmSSALowerer::lower_add(ssa::Instruction &instr) {

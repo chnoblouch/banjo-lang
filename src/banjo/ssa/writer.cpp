@@ -106,6 +106,8 @@ void Writer::write_func_def(Function *func_def) {
         Type param = func_type.params[i];
         stream << type_to_str(param);
 
+        stream << " %" << func_def->get_entry_block().get_param_regs()[i];
+
         if (i != func_type.params.size() - 1) {
             stream << ", ";
         }
@@ -125,10 +127,6 @@ void Writer::write_func_def(Function *func_def) {
 
     for (BasicBlock &basic_block : func_def->basic_blocks) {
         write_basic_block(basic_block);
-
-        if (&basic_block != &func_def->basic_blocks.get_last()) {
-            stream << "\n";
-        }
     }
 
     stream << "}\n\n";
@@ -136,7 +134,7 @@ void Writer::write_func_def(Function *func_def) {
 
 void Writer::write_basic_block(BasicBlock &basic_block) {
     if (basic_block.has_label()) {
-        stream << "@" << basic_block.get_label();
+        stream << "\n" << basic_block.get_label();
 
         if (!basic_block.get_param_regs().empty()) {
             stream << "(";
@@ -168,7 +166,6 @@ void Writer::write_basic_block(BasicBlock &basic_block) {
             case Opcode::ALLOCA: opcode = "alloca"; break;
             case Opcode::LOAD: opcode = "load"; break;
             case Opcode::STORE: opcode = "store"; break;
-            case Opcode::LOADARG: opcode = "loadarg"; break;
             case Opcode::ADD: opcode = "add"; break;
             case Opcode::SUB: opcode = "sub"; break;
             case Opcode::MUL: opcode = "mul"; break;
@@ -297,7 +294,7 @@ std::string Writer::value_to_str(Value value) {
     } else if (value.is_register()) return reg_to_str(value.get_register());
     else if (value.is_symbol()) return "@" + value.get_symbol_name();
     else if (value.is_branch_target()) {
-        std::string str = "@" + value.get_branch_target().block->get_label();
+        std::string str = value.get_branch_target().block->get_label();
 
         if (!value.get_branch_target().args.empty()) {
             str += "(";

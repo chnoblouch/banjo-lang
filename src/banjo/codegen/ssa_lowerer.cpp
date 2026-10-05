@@ -181,7 +181,6 @@ void SSALowerer::lower_instr(ssa::InstrIter instr) {
         case ssa::Opcode::ALLOCA: break;
         case ssa::Opcode::LOAD: lower_load(*instr); break;
         case ssa::Opcode::STORE: lower_store(*instr); break;
-        case ssa::Opcode::LOADARG: lower_loadarg(*instr); break;
         case ssa::Opcode::ADD: lower_add(*instr); break;
         case ssa::Opcode::SUB: lower_sub(*instr); break;
         case ssa::Opcode::MUL: lower_mul(*instr); break;

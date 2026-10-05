@@ -44,7 +44,6 @@ public:
 
     void lower_load(ssa::Instruction &instr) override;
     void lower_store(ssa::Instruction &instr) override;
-    void lower_loadarg(ssa::Instruction &instr) override;
     void lower_add(ssa::Instruction &instr) override;
     void lower_sub(ssa::Instruction &instr) override;
     void lower_mul(ssa::Instruction &instr) override;

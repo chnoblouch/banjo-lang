@@ -144,18 +144,6 @@ ssa::Instruction &SSAGeneratorContext::append_atomic_store(ssa::Operand src, ssa
     return *get_ssa_block()->append({ssa::Opcode::ATOMIC_STORE, {std::move(src), std::move(dst)}});
 }
 
-ssa::Instruction &SSAGeneratorContext::append_loadarg(ssa::VirtualRegister dst, ssa::Type type, unsigned index) {
-    ssa::Operand type_operand = ssa::Operand::from_type(type);
-    ssa::Operand index_operand = ssa::Operand::from_int_immediate(index);
-    return *get_ssa_block()->append(ssa::Instruction(ssa::Opcode::LOADARG, dst, {type_operand, index_operand}));
-}
-
-ssa::VirtualRegister SSAGeneratorContext::append_loadarg(ssa::Type type, unsigned index) {
-    ssa::VirtualRegister reg = next_vreg();
-    append_loadarg(reg, type, index);
-    return reg;
-}
-
 void SSAGeneratorContext::append_jmp(ssa::BasicBlockIter block_iter) {
     if (get_ssa_block()->is_branching()) {
         return;

@@ -27,7 +27,6 @@ static const HashMap<std::string_view, ssa::Opcode> OPCODES{
     {"alloca", Opcode::ALLOCA},
     {"load", Opcode::LOAD},
     {"store", Opcode::STORE},
-    {"loadarg", Opcode::LOADARG},
     {"add", Opcode::ADD},
     {"sub", Opcode::SUB},
     {"mul", Opcode::MUL},
@@ -158,7 +157,7 @@ ssa::Function *Parser::parse_func() {
         return nullptr;
     }
 
-    std::optional<std::vector<ssa::Type>> params = parse_params();
+    std::optional<std::vector<Param>> params = parse_params();
     if (!params) {
         return nullptr;
     }
@@ -177,10 +176,21 @@ ssa::Function *Parser::parse_func() {
         return nullptr;
     }
 
+    std::vector<Type> param_types;
+    std::vector<VirtualRegister> param_regs;
+
+    param_types.reserve(params->size());
+    param_regs.reserve(params->size());
+
+    for (Param &param : *params) {
+        param_types.push_back(param.type);
+        param_regs.push_back(param.reg);
+    }
+
     ssa::Function *func = new ssa::Function{
         *name,
         FunctionType{
-            .params = *params,
+            .params = param_types,
             .return_type = *return_type,
             .calling_conv = calling_conv,
             .variadic = false,
@@ -190,8 +200,9 @@ ssa::Function *Parser::parse_func() {
 
     while (true) {
         operand_context.block_index = func->basic_blocks.get_size();
+        bool is_entry = func->basic_blocks.get_size() == 0;
 
-        if (std::optional<BasicBlock> block = parse_block()) {
+        if (std::optional<BasicBlock> block = parse_block(is_entry)) {
             BasicBlockIter iter = func->basic_blocks.append(*block);
             blocks_by_name.insert(block->get_label(), iter);
         } else {
@@ -207,17 +218,21 @@ ssa::Function *Parser::parse_func() {
         }
     }
 
+    BasicBlock &entry_block = func->get_entry_block();
+    entry_block.param_regs = param_regs;
+    entry_block.param_types = param_types;
+
     return func;
 }
 
-std::optional<std::vector<ssa::Type>> Parser::parse_params() {
+std::optional<std::vector<Parser::Param>> Parser::parse_params() {
     if (tokens.get().type != utils::TokenType::LPAREN) {
         report_unexpected("'('");
         return {};
     }
 
     tokens.advance();
-    std::vector<ssa::Type> params;
+    std::vector<Param> params;
 
     if (tokens.get().type == utils::TokenType::RPAREN) {
         tokens.advance();
@@ -230,7 +245,12 @@ std::optional<std::vector<ssa::Type>> Parser::parse_params() {
             return {};
         }
 
-        params.push_back(*type);
+        std::optional<ssa::VirtualRegister> reg = parse_reg();
+        if (!reg) {
+            return {};
+        }
+
+        params.push_back({*type, *reg});
         utils::Token &token = tokens.get();
 
         if (token.type == utils::TokenType::COMMA) {
@@ -247,11 +267,11 @@ std::optional<std::vector<ssa::Type>> Parser::parse_params() {
     return params;
 }
 
-std::optional<ssa::BasicBlock> Parser::parse_block() {
+std::optional<ssa::BasicBlock> Parser::parse_block(bool is_entry) {
     ssa::BasicBlock block;
     utils::Token &token = tokens.get();
 
-    if (token.type == utils::TokenType::IDENTIFIER && tokens.next().type == utils::TokenType::COLON) {
+    if (!is_entry) {
         tokens.advance();
 
         if (token.value[0] != 'b') {
@@ -260,7 +280,13 @@ std::optional<ssa::BasicBlock> Parser::parse_block() {
         }
 
         block = BasicBlock{std::string{token.value}};
-        tokens.advance();
+
+        if (tokens.next().type == utils::TokenType::COLON) {
+            report_unexpected(":");
+            return {};
+        } else {
+            tokens.advance();
+        }
     }
 
     while (true) {

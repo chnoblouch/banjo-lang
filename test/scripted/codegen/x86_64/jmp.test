@@ -1,10 +1,9 @@
 # test:section ssa
 
-func void @f(addr) {
+func void @f(addr %0) {
     jmp void b1
 
 b0:
-    %0 = loadarg i32, void 0
     store i32 0, addr %0
 
 b1:

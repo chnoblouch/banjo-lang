@@ -7,7 +7,6 @@ enum class Opcode {
     ALLOCA,
     LOAD,
     STORE,
-    LOADARG,
     ADD,
     SUB,
     MUL,

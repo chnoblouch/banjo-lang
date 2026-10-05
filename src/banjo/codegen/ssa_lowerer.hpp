@@ -114,7 +114,6 @@ protected:
 
     virtual void lower_load(ssa::Instruction &instr) = 0;
     virtual void lower_store(ssa::Instruction &instr) = 0;
-    virtual void lower_loadarg(ssa::Instruction &instr) = 0;
     virtual void lower_add(ssa::Instruction &instr) = 0;
     virtual void lower_sub(ssa::Instruction &instr) = 0;
     virtual void lower_mul(ssa::Instruction &instr) = 0;

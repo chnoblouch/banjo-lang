@@ -21,7 +21,6 @@ bool Instruction::might_access_memory() const {
         case Opcode::ATOMIC_XOR: return true;
 
         case Opcode::ALLOCA:
-        case Opcode::LOADARG:
         case Opcode::ADD:
         case Opcode::SUB:
         case Opcode::MUL:
@@ -82,7 +81,6 @@ bool Instruction::has_side_effects() const {
         case Opcode::COPY: return true;
 
         case Opcode::LOAD:
-        case Opcode::LOADARG:
         case Opcode::ADD:
         case Opcode::SUB:
         case Opcode::MUL:
@@ -139,7 +137,6 @@ Type Instruction::get_type() const {
         case Opcode::OFFSETPTR: return ssa::Primitive::ADDR;
         case Opcode::ALLOCA:
         case Opcode::LOAD:
-        case Opcode::LOADARG:
         case Opcode::ADD:
         case Opcode::SUB:
         case Opcode::MUL:
