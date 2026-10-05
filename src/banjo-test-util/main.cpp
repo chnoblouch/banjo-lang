@@ -53,7 +53,8 @@ int main(int argc, const char *argv[]) {
         banjo::test::SSAUtil{}.optimize(argv[2]);
     } else if (strcmp(argv[1], "codegen") == 0) {
         banjo::target::Architecture arch = parse_arch(argv[2]);
-        banjo::test::CodegenUtil{}.lower(arch);
+        std::string input = read_stdin();
+        banjo::test::CodegenUtil{}.run(arch, input);
     }
 
     return 0;

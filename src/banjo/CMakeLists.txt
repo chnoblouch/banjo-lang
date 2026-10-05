@@ -271,6 +271,8 @@ add_library(banjo STATIC
     "ssa/operand.cpp"
     "ssa/operand.hpp"
     "ssa/primitive.hpp"
+    "ssa/ssa_parser.cpp"
+    "ssa/ssa_parser.hpp"
     "ssa/structure.hpp"
     "ssa/type.cpp"
     "ssa/type.hpp"

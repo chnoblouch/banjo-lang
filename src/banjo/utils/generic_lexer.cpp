@@ -34,12 +34,22 @@ TokenStream GenericLexer::tokenize() {
             read_punctuation(TokenType::MINUS);
         } else if (c == '*') {
             read_punctuation(TokenType::STAR);
+        } else if (c == '%') {
+            read_punctuation(TokenType::PERCENT);
+        } else if (c == '=') {
+            read_punctuation(TokenType::EQUALS);
         } else if (c == ',') {
             read_punctuation(TokenType::COMMA);
         } else if (c == ':') {
             read_punctuation(TokenType::COLON);
         } else if (c == '!') {
             read_punctuation(TokenType::EXCLAMATION);
+        } else if (c == '@') {
+            read_punctuation(TokenType::AT);
+        } else if (c == '(') {
+            read_punctuation(TokenType::LPAREN);
+        } else if (c == ')') {
+            read_punctuation(TokenType::RPAREN);
         } else if (c == '[') {
             read_punctuation(TokenType::LBRACKET);
         } else if (c == ']') {

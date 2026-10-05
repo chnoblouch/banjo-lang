@@ -42,7 +42,7 @@ void Printer::print(mcode::Module &mod) {
         emit('\n');
     }
 
-    bool first = true;
+    bool first = mod.external_symbols.empty() && mod.global_symbols.empty() && mod.globals.empty();
 
     for (mcode::Function *func : mod.functions) {
         if (first) {
