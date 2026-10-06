@@ -3,6 +3,7 @@
 #include "banjo/passes/pass_utils.hpp"
 #include "banjo/passes/precomputing.hpp"
 #include "banjo/ssa/basic_block.hpp"
+#include "banjo/ssa/operand.hpp"
 
 #include <string>
 #include <vector>
@@ -94,151 +95,86 @@ void InliningPass::try_inline(ssa::Function *func, ssa::BasicBlockIter &block_it
     DEBUG_LOG << "inlined: " << callee->name << "\n";
 }
 
-InliningPass::CalleeInfo InliningPass::collect_info(ssa::Function *callee) {
-    CalleeInfo info{
-        .multiple_blocks = callee->get_basic_blocks().get_size() > 1,
-        .multiple_returns = false,
-    };
-
-    return info;
-}
-
 void InliningPass::inline_func(ssa::Function &func, ssa::BasicBlockIter &block_iter, ssa::InstrIter &call_iter) {
-    ssa::InstrIter instr_after_call = call_iter.get_next();
-
     ssa::BasicBlock &block = *block_iter;
     ssa::Instruction &call_instr = *call_iter;
 
-    std::optional<ssa::VirtualRegister> dst = call_instr.get_dest();
     std::vector<ssa::Operand> call_operands = call_instr.get_operands();
     ssa::Function &callee = *call_instr.get_operand(0).get_func();
-
-    bool is_single_block = callee.get_basic_blocks().get_size() == 1;
-
-    ssa::BasicBlockIter end_block;
-    if (!is_single_block) {
-        end_block = func.split_block_after(block_iter, call_iter, mod->next_block_label());
-    }
 
     Context ctx{
         .caller = func,
         .call_instr = call_iter,
-        .is_single_block = is_single_block,
-        .end_block = end_block,
+        .end_block = func.split_block_after(block_iter, call_iter, mod->next_block_label()),
     };
 
-    std::optional<ssa::Value> return_val;
+    if (call_instr.get_dest()) {
+        ctx.end_block->param_regs.push_back(*call_instr.get_dest());
+        ctx.end_block->param_types.push_back(call_instr.get_operand(0).get_type());
+    }
 
     for (ssa::BasicBlock &callee_block : callee) {
-        for (ssa::InstrIter iter = callee_block.begin(); iter != callee_block.end(); ++iter) {
-            ssa::Instruction &callee_instr = *iter;
-
-            // if (callee_instr.get_opcode() == ssa::Opcode::LOADARG) {
-            //     ssa::Value value = call_operands[callee_instr.get_operand(1).get_int_immediate().to_u64() + 1];
-            //     ctx.reg2val[*callee_instr.get_dest()] = value;
-            //     ctx.removed_instrs.insert(iter);
-            //     continue;
-            // }
-
-            if (callee_instr.get_opcode() == ssa::Opcode::RET) {
-                if (!callee_instr.get_operands().empty() && dst) {
-                    return_val = callee_instr.get_operand(0);
-                }
-
-                // The return instruction will not be inlined if there is only one block because
-                // there won't be a need for a jump at the end of the inlined function.
-                if (is_single_block) {
-                    ctx.removed_instrs.insert(iter);
-                }
-
-                continue;
-            }
-
-            std::optional<ssa::Value> precomputed_result = Precomputing::precompute_result(callee_instr);
-            if (precomputed_result) {
-                ctx.reg2val[*callee_instr.get_dest()] = *precomputed_result;
-                ctx.removed_instrs.insert(iter);
-                continue;
-            }
-
-            if (callee_instr.get_dest()) {
-                ctx.reg2reg.insert({*callee_instr.get_dest(), func.next_virtual_reg()});
+        for (ssa::InstrIter instr = callee_block.begin(); instr != callee_block.end(); ++instr) {
+            if (instr->get_dest()) {
+                ctx.reg2reg.insert({*instr->get_dest(), func.next_virtual_reg()});
             }
         }
     }
 
-    if (!is_single_block) {
-        for (ssa::BasicBlockIter iter = callee.begin(); iter != callee.end(); ++iter) {
-            ssa::BasicBlockIter inline_block = func.insert_before(ctx.end_block, mod->next_block_label());
-            ctx.block_map.insert({iter, inline_block});
+    for (ssa::BasicBlockIter iter = callee.begin(); iter != callee.end(); ++iter) {
+        ssa::BasicBlockIter inline_block = func.insert_before(ctx.end_block, mod->next_block_label());
+        ctx.block_map.insert({iter, inline_block});
 
-            if (iter != callee.get_entry_block_iter()) {
-                inline_block->get_param_regs().resize(iter->get_param_regs().size());
-                inline_block->get_param_types().resize(iter->get_param_regs().size());
+        inline_block->param_regs.resize(iter->param_regs.size());
+        inline_block->param_types.resize(iter->param_regs.size());
 
-                for (unsigned i = 0; i < iter->get_param_regs().size(); i++) {
-                    ssa::VirtualRegister inline_param_reg = func.next_virtual_reg();
-                    inline_block->get_param_regs()[i] = inline_param_reg;
-                    inline_block->get_param_types()[i] = iter->get_param_types()[i];
-                    ctx.reg2reg.insert({iter->get_param_regs()[i], inline_param_reg});
-                }
-            }
-        }
-    } else {
-        ctx.block_map.insert({callee.begin(), block_iter});
-    }
-
-    for (ssa::BasicBlockIter block_iter = callee.begin(); block_iter != callee.end(); ++block_iter) {
-        ssa::BasicBlockIter inline_block = ctx.block_map[block_iter];
-
-        for (ssa::InstrIter instr_iter = block_iter->begin(); instr_iter != block_iter->end(); ++instr_iter) {
-            inline_instr(instr_iter, *inline_block, ctx);
+        for (unsigned i = 0; i < iter->param_regs.size(); i++) {
+            ssa::VirtualRegister inline_param_reg = func.next_virtual_reg();
+            inline_block->param_regs[i] = inline_param_reg;
+            inline_block->param_types[i] = iter->param_types[i];
+            ctx.reg2reg.insert({iter->param_regs[i], inline_param_reg});
         }
     }
 
-    if (return_val) {
-        return_val = get_inlined_value(*return_val, ctx);
+    for (ssa::BasicBlockIter block = callee.begin(); block != callee.end(); ++block) {
+        ssa::BasicBlockIter inline_block = ctx.block_map[block];
+
+        for (ssa::Instruction &instr : block->instrs) {
+            inline_instr(instr, *inline_block, ctx);
+        }
     }
 
-    if (!is_single_block) {
-        ssa::BranchTarget entry_target{.block = block_iter.get_next(), .args = {}};
-        block.append(ssa::Instruction(ssa::Opcode::JMP, {ssa::Operand::from_branch_target(entry_target)}));
+    ssa::BranchTarget target{.block = block_iter.get_next(), .args{}};
+
+    for (unsigned i = 1; i < call_iter->get_operands().size(); i++) {
+        target.args.push_back(call_iter->get_operand(i));
     }
 
-    if (return_val) {
-        PassUtils::replace_in_func(func, *dst, *return_val);
-    }
+    block.replace(call_iter, {ssa::Opcode::JMP, {ssa::Operand::from_branch_target(target)}});
 
-    block.remove(call_iter);
-
-    if (is_single_block) {
-        call_iter = instr_after_call.get_prev();
-    } else {
-        block_iter = end_block;
-        call_iter = end_block->get_instrs().get_first_iter().get_prev();
-    }
+    block_iter = ctx.end_block;
+    call_iter = ctx.end_block->get_instrs().get_first_iter().get_prev();
 }
 
-void InliningPass::inline_instr(ssa::InstrIter instr_iter, ssa::BasicBlock &block, Context &ctx) {
-    if (ctx.removed_instrs.contains(instr_iter)) {
-        return;
+void InliningPass::inline_instr(ssa::Instruction instr, ssa::BasicBlock &block, Context &ctx) {
+    if (instr.get_opcode() == ssa::Opcode::RET) {
+        ssa::BranchTarget target{.block = ctx.end_block, .args{}};
+
+        if (!ctx.end_block->param_regs.empty()) {
+            target.args.push_back(get_inlined_value(instr.get_operand(0), ctx));
+        }
+
+        instr = {ssa::Opcode::JMP, {ssa::Operand::from_branch_target(target)}};
     }
 
-    ssa::Instruction inline_instr = *instr_iter;
-
-    if (inline_instr.get_opcode() == ssa::Opcode::RET) {
-        ssa::BranchTarget target{.block = ctx.end_block, .args = {}};
-        inline_instr = ssa::Instruction(ssa::Opcode::JMP, {ssa::Operand::from_branch_target(target)});
-    }
-
-    if (inline_instr.get_dest()) {
-        auto dst_reg2reg_iter = ctx.reg2reg.find(*inline_instr.get_dest());
+    if (instr.get_dest()) {
+        auto dst_reg2reg_iter = ctx.reg2reg.find(*instr.get_dest());
         if (dst_reg2reg_iter != ctx.reg2reg.end()) {
-            inline_instr.set_dest(dst_reg2reg_iter->second);
+            instr.set_dest(dst_reg2reg_iter->second);
         }
     }
 
-    for (ssa::Operand &operand : inline_instr.get_operands()) {
+    for (ssa::Operand &operand : instr.get_operands()) {
         if (operand.is_register()) {
             operand = get_inlined_value(operand, ctx);
         } else if (operand.is_branch_target()) {
@@ -254,13 +190,11 @@ void InliningPass::inline_instr(ssa::InstrIter instr_iter, ssa::BasicBlock &bloc
         }
     }
 
-    if (inline_instr.get_opcode() == ssa::Opcode::ALLOCA) {
+    if (instr.get_opcode() == ssa::Opcode::ALLOCA) {
         ssa::BasicBlock &entry_block = ctx.caller.basic_blocks.get_first();
-        entry_block.insert_before(entry_block.get_entry_iter(), inline_instr);
-    } else if (ctx.is_single_block) {
-        block.insert_before(ctx.call_instr, inline_instr);
+        entry_block.insert_before(entry_block.get_entry_iter(), instr);
     } else {
-        block.append(inline_instr);
+        block.append(instr);
     }
 }
 

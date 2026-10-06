@@ -40,6 +40,11 @@ void CanonicalizationPass::run(ssa::Function &func, ssa::BasicBlock &block) {
         }
 
         ssa::InstrIter base_def = PassUtils::find_def(func, base.get_register());
+
+        if (!base_def) {
+            continue;
+        }
+
         ssa::Type base_type = base_def->get_type();
 
         if (!base_type.is_struct() || base_type.get_array_length() != 1) {

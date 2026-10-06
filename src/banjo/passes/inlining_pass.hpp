@@ -17,19 +17,12 @@ class InliningPass : public Pass {
 private:
     ssa::CallGraph call_graph;
 
-    struct CalleeInfo {
-        bool multiple_blocks;
-        bool multiple_returns;
-    };
-
     struct Context {
         ssa::Function &caller;
         ssa::InstrIter call_instr;
-        bool is_single_block;
         std::unordered_map<ssa::VirtualRegister, ssa::VirtualRegister> reg2reg;
         std::unordered_map<ssa::VirtualRegister, ssa::Value> reg2val;
         std::unordered_map<ssa::BasicBlockIter, ssa::BasicBlockIter> block_map;
-        std::unordered_set<ssa::InstrIter> removed_instrs;
         ssa::BasicBlockIter end_block;
     };
 
@@ -45,10 +38,9 @@ public:
 private:
     void run(ssa::Function *func);
     void try_inline(ssa::Function *func, ssa::BasicBlockIter &block_iter, ssa::InstrIter &call_iter);
-    CalleeInfo collect_info(ssa::Function *callee);
 
     void inline_func(ssa::Function &func, ssa::BasicBlockIter &block_iter, ssa::InstrIter &call_iter);
-    void inline_instr(ssa::InstrIter instr_iter, ssa::BasicBlock &block, Context &ctx);
+    void inline_instr(ssa::Instruction instr, ssa::BasicBlock &block, Context &ctx);
     ssa::Value get_inlined_value(ssa::Value &value, Context &ctx);
 
     int estimate_cost(ssa::Function &func);
