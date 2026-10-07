@@ -39,6 +39,7 @@ public:
     static constexpr unsigned FLAG_CALL_ARG = 1 << 2;
     static constexpr unsigned FLAG_CALL = 1 << 3;
     static constexpr unsigned FLAG_FLOAT = 1 << 4;
+    static constexpr unsigned FLAG_DONT_REMOVE = 1 << 5;
 
 private:
     Opcode opcode;

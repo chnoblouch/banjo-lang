@@ -221,19 +221,6 @@ static const HashMap<mcode::PhysicalReg, std::string_view> REGISTERS_1{
 
 void X8664Printer::print_opcode(mcode::Instruction &instr) {
     emit(OPCODES.find(instr.get_opcode()));
-
-    if (instr.get_operands().size() == 2) {
-        mcode::Operand &op0 = instr.get_operand(0);
-        mcode::Operand &op1 = instr.get_operand(1);
-
-        if ((op0.is_x86_64_addr() || op0.is_symbol_deref()) && op1.is_int_immediate()) {
-            emit(' ');
-            print_size(op0.get_size());
-        } else if (op0.is_int_immediate() && (op1.is_x86_64_addr() || op1.is_symbol_deref())) {
-            emit(' ');
-            print_size(op1.get_size());
-        }
-    }
 }
 
 void X8664Printer::print_operand(mcode::Function &func, mcode::Instruction &instr, unsigned index) {
@@ -241,6 +228,23 @@ void X8664Printer::print_operand(mcode::Function &func, mcode::Instruction &inst
 
     if (print_common_operand(func, operand)) {
         return;
+    }
+
+    bool requires_size = false;
+
+    if (instr.get_operands().size() == 1) {
+        requires_size = true;
+    } else if (instr.get_operands().size() == 2) {
+        if (index == 0 && instr.get_operand(1).is_int_immediate()) {
+            requires_size = true;
+        } else if (index == 1 && instr.get_operand(0).is_int_immediate()) {
+            requires_size = true;
+        }
+    }
+
+    if (requires_size) {
+        print_size(operand.get_size());
+        emit(' ');
     }
 
     if (operand.is_x86_64_addr()) {

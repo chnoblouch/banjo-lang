@@ -48,11 +48,15 @@ void X8664SSALowerer::append_mov_and_operation(
     ssa::Value &lhs,
     ssa::Value &rhs
 ) {
-    unsigned size = get_size(lhs.get_type());
+    // We generate 32-bit instructions for 8-bit and 16-bit operations because
+    // they have a smaller encoding. Latency and throughput are equivalent for
+    // modern processors.
+
+    unsigned size = get_size(lhs.get_type()) == 8 ? 8 : 4;
     mcode::Operand m_dst = map_vreg_as_operand(dst, size);
 
     lower_as_move(m_dst, lhs);
-    mcode::Operand m_rhs = lower_as_operand(rhs, {.allow_addrs = m_dst.is_register()});
+    mcode::Operand m_rhs = lower_as_operand(rhs, {.allow_addrs = m_dst.is_register()}).with_size(size);
     emit({m_opcode, {m_dst, m_rhs}});
 }
 
@@ -111,7 +115,9 @@ bool X8664SSALowerer::lower_stored_operation(ssa::Instruction &store) {
             discard_use(lhs->get_register());
 
             AddrComponents addr = collect_addr(store_addr);
-            emit({m_opcode, {lower_addr_mem_access(addr), lower_as_operand(*rhs)}});
+            unsigned size = get_size(lhs_def->get_type());
+            emit({m_opcode, {lower_addr_mem_access(addr).with_size(size), lower_as_operand(*rhs)}});
+
             return true;
         }
     }
@@ -253,7 +259,12 @@ void X8664SSALowerer::lower_mul(ssa::Instruction &instr) {
         }
     }
 
-    append_mov_and_operation(X8664Opcode::IMUL, *instr.get_dest(), instr.get_operand(0), instr.get_operand(1));
+    unsigned size = get_size(lhs.get_type()) == 8 ? 8 : 4;
+    mcode::Operand m_dst = map_vreg_as_operand(*instr.get_dest(), size);
+
+    lower_as_move(m_dst, lhs);
+    mcode::Operand m_rhs = lower_as_operand(rhs).with_size(size);
+    emit({X8664Opcode::IMUL, {m_dst, m_rhs}});
 }
 
 void X8664SSALowerer::lower_sdiv(ssa::Instruction &instr) {
@@ -406,21 +417,19 @@ void X8664SSALowerer::lower_call(ssa::Instruction &instr) {
 
 void X8664SSALowerer::lower_ret(ssa::Instruction &instr) {
     if (!instr.get_operands().empty()) {
-        ssa::Type type = instr.get_operand(0).get_type();
+        ssa::Operand &value = instr.get_operand(0);
+        ssa::Type type = value.get_type();
+        unsigned size = get_size(value.get_type()) == 8 ? 8 : 4;
 
-        mcode::Opcode opcode = get_move_opcode(type);
-        long dest_reg = type.is_floating_point() ? X8664Register::XMM0 : X8664Register::RAX;
+        mcode::PhysicalReg dst_reg = type.is_floating_point() ? X8664Register::XMM0 : X8664Register::RAX;
 
-        emit(
-            mcode::Instruction(
-                opcode,
-                {mcode::Operand::from_register(mcode::Register::from_physical(dest_reg), get_size(type)),
-                 lower_as_operand(instr.get_operands()[0])}
-            )
-        );
+        mcode::Opcode m_opcode = get_move_opcode(type);
+        mcode::Operand m_dst = mcode::Operand::from_register(mcode::Register::from_physical(dst_reg), size);
+        mcode::Operand m_src = lower_as_operand(value);
+        emit({m_opcode, {m_dst, m_src.with_size(size)}});
     }
 
-    emit(mcode::Instruction(X8664Opcode::RET));
+    emit({X8664Opcode::RET});
 }
 
 void X8664SSALowerer::lower_uextend(ssa::Instruction &instr) {
@@ -526,11 +535,8 @@ void X8664SSALowerer::lower_utof(ssa::Instruction &instr) {
             emit({X8664Opcode::MOVZX, {m_ext, m_src}});
             m_src = m_ext;
         } else if (src_size == 4) {
-            // TODO: Add a "do not remove" flag here so the register allocator
-            // doesn't delete this.
-
             mcode::Operand m_ext = mcode::Operand::from_register(create_tmp_reg(), 8);
-            emit({X8664Opcode::MOV, {m_ext, m_src}});
+            emit({X8664Opcode::MOV, {m_ext, m_src}, mcode::Instruction::FLAG_DONT_REMOVE});
             m_src = m_ext;
         } else {
             ASSERT_UNREACHABLE;

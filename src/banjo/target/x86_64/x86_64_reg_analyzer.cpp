@@ -372,13 +372,13 @@ void X8664RegAnalyzer::insert_store(SpilledRegUse use) {
 }
 
 bool X8664RegAnalyzer::is_instr_removable(mcode::Instruction &instr) {
-    if (!is_move_opcode(instr.get_opcode())) {
+    if (!is_move_opcode(instr.get_opcode()) || instr.is_flag(mcode::Instruction::FLAG_DONT_REMOVE)) {
         return false;
     }
 
     mcode::Operand &dst = instr.get_operand(0);
     mcode::Operand &src = instr.get_operand(1);
-    return src == dst && src.get_size() >= dst.get_size();
+    return src == dst;
 }
 
 bool X8664RegAnalyzer::is_move_opcode(mcode::Opcode opcode) {
