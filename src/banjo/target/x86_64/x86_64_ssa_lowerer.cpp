@@ -484,7 +484,7 @@ void X8664SSALowerer::lower_utof(ssa::Instruction &instr) {
     mcode::Opcode cvt_opcode = dst_type == ssa::Primitive::F64 ? X8664Opcode::CVTSI2SD : X8664Opcode::CVTSI2SS;
 
     if (src_size == 8) {
-        // x86_64 does not provide an unsigned integer to float conversion
+        // x86-64 does not provide an unsigned integer to float conversion
         // instruction, so when converting an unsigned 64-bit integer to a
         // float, there are three cases:
         //
@@ -513,8 +513,8 @@ void X8664SSALowerer::lower_utof(ssa::Instruction &instr) {
 
         mcode::Opcode add_opcode = dst_type == ssa::Primitive::F64 ? X8664Opcode::ADDSD : X8664Opcode::ADDSS;
 
-        emit({X8664Opcode::CMP, {m_src, mcode::Operand::from_int_immediate(0)}});
-        emit({X8664Opcode::JL, {mcode::Operand::from_basic_block(*signed_block)}});
+        emit({X8664Opcode::TEST, {m_src, m_src}});
+        emit({X8664Opcode::JS, {mcode::Operand::from_basic_block(*signed_block)}});
         emit({X8664Opcode::XORPS, {m_dst, m_dst}});
         emit({cvt_opcode, {m_dst, m_src}});
         emit({X8664Opcode::JMP, {mcode::Operand::from_basic_block(*end_block)}});

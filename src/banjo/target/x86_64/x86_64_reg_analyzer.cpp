@@ -310,7 +310,11 @@ void X8664RegAnalyzer::collect_successors(mcode::BasicBlockIter block, std::vect
             case X8664Opcode::JG:
             case X8664Opcode::JGE:
             case X8664Opcode::JL:
-            case X8664Opcode::JLE: {
+            case X8664Opcode::JLE:
+            case X8664Opcode::JS:
+            case X8664Opcode::JNS:
+            case X8664Opcode::JO:
+            case X8664Opcode::JNO: {
                 mcode::Operand &operand = instr.get_operand(0);
                 out_succs.push_back(&operand.get_basic_block());
                 break;
