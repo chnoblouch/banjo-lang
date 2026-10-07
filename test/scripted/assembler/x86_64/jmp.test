@@ -1,0 +1,5 @@
+# test:subtest
+# test:encoding "EB00"
+
+jmp b0
+b0:

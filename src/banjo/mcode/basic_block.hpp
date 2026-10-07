@@ -4,8 +4,6 @@
 #include "banjo/mcode/instruction.hpp"
 #include "banjo/utils/linked_list.hpp"
 
-#include <vector>
-
 namespace banjo::mcode {
 
 struct BasicBlock;
@@ -16,7 +14,6 @@ typedef LinkedListIter<BasicBlock> BasicBlockIter;
 struct BasicBlock {
     LinkedList<Instruction> instrs;
     std::string label;
-    std::vector<PhysicalReg> params;
 
     std::string debug_label() { return label.empty() ? "<entry>" : label; }
 

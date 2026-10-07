@@ -239,7 +239,7 @@ std::optional<mcode::Operand> X8664Parser::parse_operand() {
                 return {};
             }
         } else {
-            RETURN_ERROR("invalid register '" + std::string{token.value} + "'");
+            return parse_ident_operand();
         }
     } else if (token.type == utils::TokenType::NUMBER) {
         // TODO: Validation

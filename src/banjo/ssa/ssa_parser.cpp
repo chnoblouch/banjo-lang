@@ -224,8 +224,8 @@ bool Parser::parse_func(Module &mod) {
         bool is_entry = func->basic_blocks.get_size() == 0;
 
         if (std::optional<BasicBlock> block = parse_block(is_entry)) {
-            BasicBlockIter iter = func->basic_blocks.append(*block);
-            blocks_by_name.insert(block->get_label(), iter);
+            BasicBlockIter iter = func->basic_blocks.append(*std::move(block));
+            blocks_by_name.insert(iter->get_label(), iter);
         } else {
             delete func;
             return false;
@@ -644,7 +644,7 @@ bool Parser::resolve_idents(OperandContext context, Instruction &instr) {
             if (BasicBlockIter *block = blocks_by_name.try_find(block_name)) {
                 operand.get_branch_target().block = *block;
             } else {
-                report_error("cannot find block '" + std::string{block_name} + "'");
+                report_error("cannot find block '" + block_name + "'");
                 return false;
             }
         }

@@ -40,6 +40,9 @@ struct TokenStream {
     Token &get() { return tokens[position]; }
     Token &next() { return tokens[position + 1]; }
     void advance() { position += 1; }
+
+    bool is_current(TokenType type) { return get().type == type; }
+    bool is_next(TokenType type) { return next().type == type; }
 };
 
 class GenericLexer {

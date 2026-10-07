@@ -1,0 +1,59 @@
+# test:subtest
+# test:encoding "7400"
+
+je b0
+b0:
+
+# test:subtest
+# test:encoding "7500"
+
+jne b0
+b0:
+
+# test:subtest
+# test:encoding "7700"
+
+ja b0
+b0:
+
+# test:subtest
+# test:encoding "7300"
+
+jae b0
+b0:
+
+# test:subtest
+# test:encoding "7200"
+
+jb b0
+b0:
+
+# test:subtest
+# test:encoding "7600"
+
+jbe b0
+b0:
+
+# test:subtest
+# test:encoding "7F00"
+
+jg b0
+b0:
+
+# test:subtest
+# test:encoding "7D00"
+
+jge b0
+b0:
+
+# test:subtest
+# test:encoding "7C00"
+
+jl b0
+b0:
+
+# test:subtest
+# test:encoding "7E00"
+
+jle b0
+b0:

@@ -50,7 +50,6 @@ private:
 
 public:
     Parser(utils::TokenStream &tokens, CallingConv calling_conv);
-
     Module parse();
 
 private:

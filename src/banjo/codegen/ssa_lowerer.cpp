@@ -147,12 +147,7 @@ mcode::Parameter SSALowerer::lower_param(ssa::Type type, mcode::ArgStorage stora
 
 void SSALowerer::create_block(ssa::BasicBlockIter ssa_block) {
     mcode::BasicBlock m_block{.label = ssa_block->get_label()};
-
-    for (ssa::VirtualRegister reg : ssa_block->get_param_regs()) {
-        m_block.params.push_back(reg);
-    }
-
-    mcode::BasicBlockIter m_block_iter = instr_ctx.func->basic_blocks.append(m_block);
+    mcode::BasicBlockIter m_block_iter = instr_ctx.func->basic_blocks.append(std::move(m_block));
     block_map.insert({ssa_block, m_block_iter});
 }
 

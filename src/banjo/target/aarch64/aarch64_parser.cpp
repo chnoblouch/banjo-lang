@@ -281,7 +281,7 @@ std::optional<mcode::Operand> AArch64Parser::parse_operand() {
                 RETURN_ERROR("invalid shift '" + std::string{shift.value} + "'");
             }
         } else {
-            RETURN_ERROR("invalid register '" + std::string{token.value} + "'");
+            return parse_ident_operand();
         }
     } else if (token.type == utils::TokenType::NUMBER) {
         // TODO: Validation
