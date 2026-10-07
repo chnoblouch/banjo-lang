@@ -49,7 +49,6 @@ public:
 
 private:
     bool is_move_opcode(mcode::Opcode opcode);
-    bool is_float_instr(mcode::Instruction &instr);
 
     void collect_regs(mcode::Operand &operand, mcode::RegUsage usage, std::vector<mcode::RegOp> &dst);
     void collect_addr_regs(mcode::Operand &operand, std::vector<mcode::RegOp> &dst);

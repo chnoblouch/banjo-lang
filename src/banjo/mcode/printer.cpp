@@ -14,6 +14,11 @@ Printer &Printer::set_buffer(std::string &buffer) {
     return *this;
 }
 
+Printer &Printer::set_flags(unsigned flags) {
+    this->flags |= flags;
+    return *this;
+}
+
 void Printer::print(mcode::Module &mod) {
     for (std::string_view external : mod.external_symbols) {
         print_external(external);
@@ -172,6 +177,10 @@ void Printer::print_instr(mcode::Function &func, mcode::Instruction &instr) {
     for (unsigned i = 0; i < instr.get_operands().size(); i++) {
         emit(i == 0 ? " " : ", ");
         print_operand(func, instr, i);
+    }
+
+    if (flags & NO_ATTRIBUTES) {
+        return;
     }
 
     if (instr.get_flags() & mcode::Instruction::FLAG_ARG_STORE) emit(" !arg_store");

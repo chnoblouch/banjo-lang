@@ -16,12 +16,18 @@ namespace banjo::mcode {
 
 class Printer {
 
+public:
+    static constexpr unsigned NO_ATTRIBUTES = 0x00000001;
+
 private:
     std::string *buffer;
+    unsigned flags;
 
 public:
     virtual ~Printer() = default;
+
     Printer &set_buffer(std::string &buffer);
+    Printer &set_flags(unsigned flags);
 
     void print(mcode::Module &mod);
     void print_external(std::string_view name);

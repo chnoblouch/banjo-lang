@@ -3,6 +3,7 @@
 #include "banjo/codegen/ssa_lowerer.hpp"
 #include "banjo/mcode/calling_convention.hpp"
 #include "banjo/mcode/global.hpp"
+#include "banjo/mcode/instruction.hpp"
 #include "banjo/mcode/operand.hpp"
 #include "banjo/mcode/register.hpp"
 #include "banjo/mcode/stack_address.hpp"
@@ -635,7 +636,19 @@ void X8664SSALowerer::lower_ftos(ssa::Instruction &instr) {
 }
 
 void X8664SSALowerer::lower_bitcast(ssa::Instruction &instr) {
-    ASSERT_UNREACHABLE;
+    ssa::Operand &value = instr.get_operand(0);
+    ssa::Type type = instr.get_operand(1).get_type();
+    unsigned size = get_size(type);
+
+    mcode::Opcode m_opcode = size == 8 ? X8664Opcode::MOVQ : X8664Opcode::MOVD;
+    mcode::Operand m_value = lower_as_operand(value);
+    mcode::Operand m_dst = map_vreg_dst(instr, size);
+
+    if (type.is_floating_point()) {
+        emit({m_opcode, {m_dst, m_value}, mcode::Instruction::FLAG_FLOAT});
+    } else {
+        emit({m_opcode, {m_dst, m_value}});
+    }
 }
 
 void X8664SSALowerer::lower_atomic_load(ssa::Instruction &instr) {

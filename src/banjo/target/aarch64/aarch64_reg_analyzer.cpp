@@ -10,6 +10,22 @@
 
 namespace banjo::target {
 
+static bool is_float_instr(mcode::Instruction &instr) {
+    switch (instr.get_opcode()) {
+        case AArch64Opcode::FMOV:
+        case AArch64Opcode::FADD:
+        case AArch64Opcode::FSUB:
+        case AArch64Opcode::FMUL:
+        case AArch64Opcode::FDIV:
+        case AArch64Opcode::FCVT:
+        case AArch64Opcode::SCVTF:
+        case AArch64Opcode::UCVTF:
+        case AArch64Opcode::FCSEL:
+        case AArch64Opcode::FCMP: return true;
+        default: return instr.is_flag(mcode::Instruction::FLAG_FLOAT);
+    }
+}
+
 AArch64RegAnalyzer::AArch64RegAnalyzer(std::optional<mcode::PhysicalReg> fixed_reg) {
     for (mcode::PhysicalReg reg = AArch64Register::R0; reg <= AArch64Register::R28; reg++) {
         if (reg == SCRATCH_REGISTER) {
@@ -338,24 +354,6 @@ bool AArch64RegAnalyzer::is_instr_removable(mcode::Instruction &instr) {
 bool AArch64RegAnalyzer::is_move_opcode(mcode::Opcode opcode) {
     using namespace AArch64Opcode;
     return opcode == MOV || opcode == FMOV;
-}
-
-bool AArch64RegAnalyzer::is_float_instr(mcode::Instruction &instr) {
-    using namespace AArch64Opcode;
-
-    switch (instr.get_opcode()) {
-        case FMOV:
-        case FADD:
-        case FSUB:
-        case FMUL:
-        case FDIV:
-        case FCVT:
-        case SCVTF:
-        case UCVTF:
-        case FCSEL:
-        case FCMP: return true;
-        default: return instr.is_flag(mcode::Instruction::FLAG_FLOAT);
-    }
 }
 
 void AArch64RegAnalyzer::collect_regs(mcode::Operand &operand, mcode::RegUsage usage, std::vector<mcode::RegOp> &dst) {

@@ -3,6 +3,7 @@
 #include "banjo/emit/binary_module.hpp"
 #include "banjo/emit/section_builder.hpp"
 #include "banjo/mcode/instruction.hpp"
+#include "banjo/mcode/register.hpp"
 #include "banjo/mcode/stack_slot.hpp"
 #include "banjo/target/x86_64/x86_64_opcode.hpp"
 #include "banjo/target/x86_64/x86_64_register.hpp"
@@ -15,6 +16,14 @@ namespace banjo::target {
 
 static bool fits_in_i8(std::int64_t value) {
     return value >= std::numeric_limits<std::int8_t>::min() && value <= std::numeric_limits<std::int8_t>::max();
+}
+
+static bool is_gp_reg(mcode::PhysicalReg reg) {
+    return reg >= X8664Register::RAX && reg <= X8664Register::R15;
+}
+
+static bool is_sse_reg(mcode::PhysicalReg reg) {
+    return reg >= X8664Register::XMM0 && reg <= X8664Register::XMM15;
 }
 
 void X8664Encoder::encode_instr(mcode::Instruction &instr, mcode::Function *func, UnwindInfo &frame_info) {
@@ -98,6 +107,7 @@ void X8664Encoder::encode_instr(mcode::Instruction &instr, mcode::Function *func
         case X8664Opcode::MOVSD: encode_movsd(instr); break;
         case X8664Opcode::MOVAPS: encode_movaps(instr); break;
         case X8664Opcode::MOVUPS: encode_movups(instr); break;
+        case X8664Opcode::MOVD: encode_movd(instr); break;
         case X8664Opcode::MOVQ: encode_movq(instr); break;
         case X8664Opcode::ADDSS: encode_addss(instr); break;
         case X8664Opcode::ADDSD: encode_addsd(instr); break;
@@ -646,24 +656,75 @@ void X8664Encoder::encode_movups(mcode::Instruction &instr) {
     }
 }
 
-void X8664Encoder::encode_movq(mcode::Instruction &instr) {
-    mcode::Operand &dst = instr.get_operand(0);
-    mcode::Operand &src = instr.get_operand(1);
+void X8664Encoder::encode_movd(mcode::Instruction &instr) {
+    mcode::Operand &m_dst = instr.get_operand(0);
+    mcode::Operand &m_src = instr.get_operand(1);
 
-    // TODO: Implement all the other variants.
-
-    if (is_reg(dst) && is_reg(src)) {
-        ASSERT(dst.get_physical_reg() >= X8664Register::RAX && dst.get_physical_reg() <= X8664Register::R15);
-        ASSERT(src.get_physical_reg() >= X8664Register::XMM0 && dst.get_physical_reg() <= X8664Register::XMM15);
-
-        RegCode dst_reg = reg(dst);
-        RegCode src_reg = reg(src);
+    if (is_reg(m_dst) && is_sse_reg(m_dst.get_physical_reg())) {
+        RegCode dst = reg(m_dst);
+        RegOrAddr src = roa(m_src);
 
         emit_opcode(0x66);
-        emit_rex_rr(8, src_reg, dst_reg);
+        emit_rex_rroa(4, dst, src);
+        emit_opcode(0x0F);
+        emit_opcode(0x6E);
+        emit_modrm_sib(dst, src);
+    } else {
+        RegOrAddr dst = roa(m_dst);
+        RegCode src = reg(m_src);
+
+        emit_opcode(0x66);
+        emit_rex_rroa(4, src, dst);
         emit_opcode(0x0F);
         emit_opcode(0x7E);
-        emit_modrm_rr(src_reg, dst_reg);
+        emit_modrm_sib(src, dst);
+    }
+}
+
+void X8664Encoder::encode_movq(mcode::Instruction &instr) {
+    mcode::Operand &m_dst = instr.get_operand(0);
+    mcode::Operand &m_src = instr.get_operand(1);
+
+    if (is_reg(m_dst) && is_reg(m_src)) {
+        if (is_sse_reg(m_dst.get_physical_reg())) {
+            RegCode dst = reg(m_dst);
+            RegCode src = reg(m_src);
+
+            emit_opcode(0x66);
+            emit_rex_rr(8, dst, src);
+            emit_opcode(0x0F);
+            emit_opcode(0x6E);
+            emit_modrm_rr(dst, src);
+        } else if (is_sse_reg(m_src.get_physical_reg())) {
+            RegCode dst = reg(m_dst);
+            RegCode src = reg(m_src);
+
+            emit_opcode(0x66);
+            emit_rex_rr(8, src, dst);
+            emit_opcode(0x0F);
+            emit_opcode(0x7E);
+            emit_modrm_rr(src, dst);
+        } else {
+            ASSERT_UNREACHABLE;
+        }
+    } else if (is_reg(m_dst) && is_addr(m_src)) {
+        RegCode dst = reg(m_dst);
+        RegOrAddr src = roa(m_src);
+
+        emit_opcode(0xF3);
+        emit_rex_rroa(0, dst, src);
+        emit_opcode(0x0F);
+        emit_opcode(0x7E);
+        emit_modrm_sib(dst, src);
+    } else if (is_addr(m_dst) && is_reg(m_src)) {
+        Address dst = addr(m_dst);
+        RegCode src = reg(m_src);
+
+        emit_opcode(0x66);
+        emit_rex_rroa(0, src, dst);
+        emit_opcode(0x0F);
+        emit_opcode(0xD6);
+        emit_modrm_sib(src, dst);
     } else {
         ASSERT_UNREACHABLE;
     }

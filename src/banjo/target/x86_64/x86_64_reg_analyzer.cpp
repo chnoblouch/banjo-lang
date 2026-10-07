@@ -9,6 +9,38 @@
 
 namespace banjo::target {
 
+static bool is_float_instr(mcode::Instruction &instr) {
+    switch (instr.get_opcode()) {
+        case X8664Opcode::MOVSS:
+        case X8664Opcode::MOVSD:
+        case X8664Opcode::MOVAPS:
+        case X8664Opcode::MOVUPS:
+        case X8664Opcode::ADDSS:
+        case X8664Opcode::ADDSD:
+        case X8664Opcode::SUBSS:
+        case X8664Opcode::SUBSD:
+        case X8664Opcode::MULSS:
+        case X8664Opcode::MULSD:
+        case X8664Opcode::DIVSS:
+        case X8664Opcode::DIVSD:
+        case X8664Opcode::XORPS:
+        case X8664Opcode::XORPD:
+        case X8664Opcode::MINSS:
+        case X8664Opcode::MINSD:
+        case X8664Opcode::MAXSS:
+        case X8664Opcode::MAXSD:
+        case X8664Opcode::SQRTSS:
+        case X8664Opcode::SQRTSD:
+        case X8664Opcode::UCOMISS:
+        case X8664Opcode::UCOMISD:
+        case X8664Opcode::CVTSS2SD:
+        case X8664Opcode::CVTSD2SS:
+        case X8664Opcode::CVTSI2SS:
+        case X8664Opcode::CVTSI2SD: return true;
+        default: return instr.is_flag(mcode::Instruction::FLAG_FLOAT);
+    }
+}
+
 X8664RegAnalyzer::X8664RegAnalyzer() {
     general_purpose_regs = {
         X8664Register::RAX,
@@ -331,17 +363,13 @@ void X8664RegAnalyzer::collect_successors(mcode::BasicBlockIter block, std::vect
 }
 
 void X8664RegAnalyzer::assign_reg_classes(mcode::Instruction &instr, codegen::RegClassMap &reg_classes) {
-    using namespace X8664Opcode;
-
     if (instr.get_operands().size() == 0 || !instr.get_operand(0).is_virtual_reg()) {
         return;
     }
 
-    mcode::Opcode opcode = instr.get_opcode();
     ssa::VirtualRegister reg = instr.get_operand(0).get_virtual_reg();
 
-    if ((opcode >= MOVSS && opcode <= MOVUPS) || (opcode >= ADDSS && opcode <= UCOMISD) || opcode == CVTSS2SD ||
-        opcode == CVTSD2SS || opcode == CVTSI2SS || opcode == CVTSI2SD) {
+    if (is_float_instr(instr)) {
         reg_classes.insert({reg, X8664RegClass::SSE});
     } else {
         reg_classes.insert({reg, X8664RegClass::GENERAL_PURPOSE});

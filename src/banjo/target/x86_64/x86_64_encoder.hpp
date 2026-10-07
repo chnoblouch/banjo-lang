@@ -181,6 +181,7 @@ private:
     void encode_movsd(mcode::Instruction &instr);
     void encode_movaps(mcode::Instruction &instr);
     void encode_movups(mcode::Instruction &instr);
+    void encode_movd(mcode::Instruction &instr);
     void encode_movq(mcode::Instruction &instr);
     void encode_addss(mcode::Instruction &instr);
     void encode_addsd(mcode::Instruction &instr);

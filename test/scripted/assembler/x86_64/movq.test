@@ -1,0 +1,49 @@
+# test:subtest
+# test:encoding "66480F6EFB"
+
+movq xmm7, rbx
+
+# test:subtest
+# test:encoding "664C0F6EEB"
+
+movq xmm13, rbx
+
+# test:subtest
+# test:encoding "66490F6EFB"
+
+movq xmm7, r11
+
+# test:subtest
+# test:encoding "F30F7E3B"
+
+movq xmm7, [rbx]
+
+# test:subtest
+# test:encoding "F3440F7E2B"
+
+movq xmm13, [rbx]
+
+# test:subtest
+# test:encoding "66480F7EFB"
+
+movq rbx, xmm7
+
+# test:subtest
+# test:encoding "664C0F7EEB"
+
+movq rbx, xmm13
+
+# test:subtest
+# test:encoding "66490F7EFB"
+
+movq r11, xmm7
+
+# test:subtest
+# test:encoding "660FD63B"
+
+movq [rbx], xmm7
+
+# test:subtest
+# test:encoding "66440FD62B"
+
+movq [rbx], xmm13

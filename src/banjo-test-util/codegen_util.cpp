@@ -2,6 +2,7 @@
 
 #include "banjo/codegen/machine_pass_runner.hpp"
 #include "banjo/codegen/ssa_lowerer.hpp"
+#include "banjo/mcode/printer.hpp"
 #include "banjo/ssa/ssa_parser.hpp"
 #include "banjo/target/target.hpp"
 #include "banjo/target/target_description.hpp"
@@ -9,6 +10,7 @@
 #include "banjo/utils/macros.hpp"
 
 #include <iostream>
+#include <memory>
 #include <string_view>
 
 namespace banjo::test {
@@ -25,7 +27,12 @@ void CodegenUtil::run(target::Architecture arch, std::string_view source) {
     codegen::MachinePassRunner{target}.create_and_run(mcode_mod);
 
     std::string buffer;
-    target->create_printer()->set_buffer(buffer).print(mcode_mod);
+
+    std::unique_ptr<mcode::Printer> printer = target->create_printer();
+    printer->set_buffer(buffer);
+    printer->set_flags(mcode::Printer::NO_ATTRIBUTES);
+    printer->print(mcode_mod);
+
     std::cout << buffer;
 
     delete ssa_lowerer;
