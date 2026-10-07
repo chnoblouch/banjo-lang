@@ -1,0 +1,104 @@
+# test:subtest
+# test:encoding "48D3FE"
+
+sar rsi, cl
+
+# test:subtest
+# test:encoding "D3FE"
+
+sar esi, cl
+
+# test:subtest
+# test:encoding "41D3F8"
+
+sar r8d, cl
+
+# test:subtest
+# test:encoding "66D3FE"
+
+sar si, cl
+
+# test:subtest
+# test:encoding "6641D3F8"
+
+sar r8w, cl
+
+# test:subtest
+# test:encoding "40D2FE"
+
+sar sil, cl
+
+# test:subtest
+# test:encoding "41D2F8"
+
+sar r8b, cl
+
+# test:subtest
+# test:encoding "48C1FE05"
+
+sar rsi, 5
+
+# test:subtest
+# test:encoding "C1FE05"
+
+sar esi, 5
+
+# test:subtest
+# test:encoding "41C1F805"
+
+sar r8d, 5
+
+# test:subtest
+# test:encoding "66C1FE05"
+
+sar si, 5
+
+# test:subtest
+# test:encoding "6641C1F805"
+
+sar r8w, 5
+
+# test:subtest
+# test:encoding "40C0FE05"
+
+sar sil, 5
+
+# test:subtest
+# test:encoding "41C0F805"
+
+sar r8b, 5
+
+# test:subtest
+# test:encoding "48D1FE"
+
+sar rsi, 1
+
+# test:subtest
+# test:encoding "D1FE"
+
+sar esi, 1
+
+# test:subtest
+# test:encoding "41D1F8"
+
+sar r8d, 1
+
+# test:subtest
+# test:encoding "66D1FE"
+
+sar si, 1
+
+# test:subtest
+# test:encoding "6641D1F8"
+
+sar r8w, 1
+
+# test:subtest
+# test:encoding "40D0FE"
+
+sar sil, 1
+
+# test:subtest
+# test:encoding "41D0F8"
+
+sar r8b, 1

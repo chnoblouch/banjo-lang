@@ -251,15 +251,15 @@ void X8664Encoder::encode_xor(mcode::Instruction &instr) {
 }
 
 void X8664Encoder::encode_shl(mcode::Instruction &instr) {
-    encode_shift(instr, 4);
+    encode_shl_family(instr, {4});
 }
 
 void X8664Encoder::encode_shr(mcode::Instruction &instr) {
-    encode_shift(instr, 5);
+    encode_shl_family(instr, {5});
 }
 
 void X8664Encoder::encode_sar(mcode::Instruction &instr) {
-    encode_shift(instr, 7);
+    encode_shl_family(instr, {7});
 }
 
 void X8664Encoder::encode_cwd() {
@@ -801,36 +801,6 @@ void X8664Encoder::encode_cvtsd2si(mcode::Instruction &instr) {
     encode_cvtss2si_family(instr, {0xF2});
 }
 
-void X8664Encoder::encode_shift(mcode::Instruction &instr, std::uint8_t digit) {
-    mcode::Operand &dst = instr.get_operand(0);
-    mcode::Operand &src = instr.get_operand(1);
-    std::uint8_t size = dst.get_size();
-
-    RegOrAddr dst_roa = roa(dst);
-
-    emit_16bit_prefix_if_required(size);
-    emit_rex_rroa(size, 0, dst_roa);
-
-    if (is_reg(src)) {
-        RegCode src_reg = reg(src);
-        ASSERT_MESSAGE(src_reg == RegCode::ECX, "shift: src reg must be ecx");
-        emit_opcode(size == 1 ? 0xD2 : 0xD3);
-        emit_modrm_sib(digit, dst_roa);
-    } else if (is_imm(src)) {
-        Immediate src_imm = imm(src);
-        ASSERT_MESSAGE(src_imm.symbol_index == -1, "shift: cannot shift by symbol");
-
-        if (src_imm.value == -1) {
-            emit_opcode(size == 1 ? 0xD0 : 0xD1);
-            emit_modrm_sib(digit, dst_roa);
-        } else {
-            emit_opcode(size == 1 ? 0xC0 : 0xC1);
-            emit_modrm_sib(digit, dst_roa);
-            text.write_u8(src_imm.value);
-        }
-    }
-}
-
 void X8664Encoder::emit_mov_rr(RegCode dst, RegCode src, std::uint8_t size) {
     emit_basic_rr(0x88, 0x89, dst, src, size);
 }
@@ -1082,6 +1052,40 @@ void X8664Encoder::encode_add_family(mcode::Instruction &instr, const BasicInstr
         emit_rex_rroa(size, dst_reg, src_roa);
         emit_opcode(size == 1 ? opcodes.r8_rm8 : opcodes.r16_rm16);
         emit_modrm_sib(dst_reg, src_roa);
+    } else {
+        ASSERT_UNREACHABLE;
+    }
+}
+
+void X8664Encoder::encode_shl_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {
+    mcode::Operand &m_dst = instr.get_operand(0);
+    mcode::Operand &m_src = instr.get_operand(1);
+    unsigned size = m_dst.get_size();
+
+    RegOrAddr dst = roa(m_dst);
+
+    emit_16bit_prefix_if_required(size);
+    emit_rex_rroa(size, 0, dst);
+
+    if (is_reg(m_src)) {
+        ASSERT(m_src.get_physical_reg() == RegCode::ECX);
+
+        emit_opcode(size == 1 ? 0xD2 : 0xD3);
+        emit_modrm_sib(params[0], dst);
+    } else if (is_imm(m_src)) {
+        Immediate src = imm(m_src);
+
+        // TODO: Move this assertion elsewhere.
+        ASSERT(src.symbol_index == -1);
+
+        if (src.value == 1) {
+            emit_opcode(size == 1 ? 0xD0 : 0xD1);
+            emit_modrm_sib(params[0], dst);
+        } else {
+            emit_opcode(size == 1 ? 0xC0 : 0xC1);
+            emit_modrm_sib(params[0], dst);
+            text.write_u8(src.value);
+        }
     } else {
         ASSERT_UNREACHABLE;
     }

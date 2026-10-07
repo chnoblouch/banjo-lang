@@ -1,0 +1,104 @@
+# test:subtest
+# test:encoding "48D3E6"
+
+shl rsi, cl
+
+# test:subtest
+# test:encoding "D3E6"
+
+shl esi, cl
+
+# test:subtest
+# test:encoding "41D3E0"
+
+shl r8d, cl
+
+# test:subtest
+# test:encoding "66D3E6"
+
+shl si, cl
+
+# test:subtest
+# test:encoding "6641D3E0"
+
+shl r8w, cl
+
+# test:subtest
+# test:encoding "40D2E6"
+
+shl sil, cl
+
+# test:subtest
+# test:encoding "41D2E0"
+
+shl r8b, cl
+
+# test:subtest
+# test:encoding "48C1E605"
+
+shl rsi, 5
+
+# test:subtest
+# test:encoding "C1E605"
+
+shl esi, 5
+
+# test:subtest
+# test:encoding "41C1E005"
+
+shl r8d, 5
+
+# test:subtest
+# test:encoding "66C1E605"
+
+shl si, 5
+
+# test:subtest
+# test:encoding "6641C1E005"
+
+shl r8w, 5
+
+# test:subtest
+# test:encoding "40C0E605"
+
+shl sil, 5
+
+# test:subtest
+# test:encoding "41C0E005"
+
+shl r8b, 5
+
+# test:subtest
+# test:encoding "48D1E6"
+
+shl rsi, 1
+
+# test:subtest
+# test:encoding "D1E6"
+
+shl esi, 1
+
+# test:subtest
+# test:encoding "41D1E0"
+
+shl r8d, 1
+
+# test:subtest
+# test:encoding "66D1E6"
+
+shl si, 1
+
+# test:subtest
+# test:encoding "6641D1E0"
+
+shl r8w, 1
+
+# test:subtest
+# test:encoding "40D0E6"
+
+shl sil, 1
+
+# test:subtest
+# test:encoding "41D0E0"
+
+shl r8b, 1

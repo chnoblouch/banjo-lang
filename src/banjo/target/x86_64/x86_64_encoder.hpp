@@ -209,7 +209,6 @@ private:
     void encode_cvtss2si(mcode::Instruction &instr);
     void encode_cvtsd2si(mcode::Instruction &instr);
 
-    void encode_shift(mcode::Instruction &instr, std::uint8_t digit);
     void emit_mov_rr(RegCode dst, RegCode src, std::uint8_t size);
     void emit_mov_ri(RegCode dst, Immediate imm, std::uint8_t size);
     void emit_mov_rm(RegCode dst, Address src, std::uint8_t size);
@@ -240,6 +239,7 @@ private:
     );
 
     void encode_add_family(mcode::Instruction &instr, const BasicInstrOpcodes &opcodes);
+    void encode_shl_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
     void encode_jcc_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
     void encode_setcc_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
     void encode_cmovcc_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
