@@ -227,6 +227,7 @@ std::vector<mcode::RegOp> X8664RegAnalyzer::get_operands(codegen::InstrContext &
             break;
 
         case CMP:
+        case TEST:
         case UCOMISS:
         case UCOMISD:
             collect_regs(instr.get_operand(0), mcode::RegUsage::USE, operands);

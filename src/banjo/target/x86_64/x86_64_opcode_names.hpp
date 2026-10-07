@@ -32,6 +32,7 @@ const BiHashMap<mcode::Opcode, std::string_view> X86_64_OPCODE_NAMES{
     {X8664Opcode::LOCK_CMPXCHG, "lock cmpxch"},
     {X8664Opcode::JMP, "jmp"},
     {X8664Opcode::CMP, "cmp"},
+    {X8664Opcode::TEST, "test"},
     {X8664Opcode::JE, "je"},
     {X8664Opcode::JNE, "jne"},
     {X8664Opcode::JA, "ja"},

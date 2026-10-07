@@ -129,6 +129,7 @@ private:
     void encode_lock_cmpxchg(mcode::Instruction &instr);
     void encode_jmp(mcode::Instruction &instr);
     void encode_cmp(mcode::Instruction &instr);
+    void encode_test(mcode::Instruction &instr);
     void encode_je(mcode::Instruction &instr);
     void encode_jne(mcode::Instruction &instr);
     void encode_ja(mcode::Instruction &instr);

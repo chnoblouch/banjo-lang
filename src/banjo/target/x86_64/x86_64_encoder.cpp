@@ -46,6 +46,7 @@ void X8664Encoder::encode_instr(mcode::Instruction &instr, mcode::Function *func
         case X8664Opcode::LOCK_CMPXCHG: encode_lock_cmpxchg(instr); break;
         case X8664Opcode::JMP: encode_jmp(instr); break;
         case X8664Opcode::CMP: encode_cmp(instr); break;
+        case X8664Opcode::TEST: encode_test(instr); break;
         case X8664Opcode::JE: encode_je(instr); break;
         case X8664Opcode::JNE: encode_jne(instr); break;
         case X8664Opcode::JA: encode_ja(instr); break;
@@ -316,6 +317,24 @@ void X8664Encoder::encode_jmp(mcode::Instruction &instr) {
 
 void X8664Encoder::encode_cmp(mcode::Instruction &instr) {
     encode_add_family(instr, {7, 0x3C, 0x3D, 0x80, 0x81, 0x83, 0x38, 0x39, 0x3A, 0x3B});
+}
+
+void X8664Encoder::encode_test(mcode::Instruction &instr) {
+    mcode::Operand &m_dst = instr.get_operand(0);
+    mcode::Operand &m_src = instr.get_operand(1);
+    unsigned size = m_dst.get_size();
+
+    // TODO: There are more allowed variants, but the SSA lowerer currently
+    // doesn't generate any of them.
+    ASSERT(m_dst.is_register() && m_src.is_register());
+
+    RegCode r_dst = reg(m_dst);
+    RegCode r_src = reg(m_src);
+
+    emit_16bit_prefix_if_required(size);
+    emit_rex_rr(size, r_src, r_dst);
+    emit_opcode(size == 1 ? 0x84 : 0x85);
+    emit_modrm_rr(r_src, r_dst);
 }
 
 void X8664Encoder::encode_je(mcode::Instruction &instr) {

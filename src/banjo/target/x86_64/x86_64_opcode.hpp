@@ -50,6 +50,7 @@ enum {
     LOCK_CMPXCHG,
     JMP,
     CMP,
+    TEST,
     JCC,
     JE = JCC + X8664ConditionCode::E,
     JNE = JCC + X8664ConditionCode::NE,
