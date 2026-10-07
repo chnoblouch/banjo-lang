@@ -1,0 +1,44 @@
+# test:subtest
+# test:encoding "0F28DA"
+
+movaps xmm3, xmm2
+
+# test:subtest
+# test:encoding "440F28C2"
+
+movaps xmm8, xmm2
+
+# test:subtest
+# test:encoding "410F28DF"
+
+movaps xmm3, xmm15
+
+# test:subtest
+# test:encoding "0F2819"
+
+movaps xmm3, [rcx]
+
+# test:subtest
+# test:encoding "440F2801"
+
+movaps xmm8, [rcx]
+
+# test:subtest
+# test:encoding "410F285D00"
+
+movaps xmm3, [r13]
+
+# test:subtest
+# test:encoding "0F2919"
+
+movaps [rcx], xmm3
+
+# test:subtest
+# test:encoding "440F2901"
+
+movaps [rcx], xmm8
+
+# test:subtest
+# test:encoding "410F295D00"
+
+movaps [r13], xmm3
