@@ -1,0 +1,29 @@
+# test:subtest
+# test:encoding "0F57F2"
+
+xorps xmm6, xmm2
+
+# test:subtest
+# test:encoding "440F57CA"
+
+xorps xmm9, xmm2
+
+# test:subtest
+# test:encoding "410F57F2"
+
+xorps xmm6, xmm10
+
+# test:subtest
+# test:encoding "0F5731"
+
+xorps xmm6, [rcx]
+
+# test:subtest
+# test:encoding "440F5709"
+
+xorps xmm9, [rcx]
+
+# test:subtest
+# test:encoding "410F573424"
+
+xorps xmm6, [r12]

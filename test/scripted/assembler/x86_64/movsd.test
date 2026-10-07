@@ -1,0 +1,44 @@
+# test:subtest
+# test:encoding "F20F10F2"
+
+movsd xmm6, xmm2
+
+# test:subtest
+# test:encoding "F2440F10CA"
+
+movsd xmm9, xmm2
+
+# test:subtest
+# test:encoding "F2410F10F2"
+
+movsd xmm6, xmm10
+
+# test:subtest
+# test:encoding "F20F1031"
+
+movsd xmm6, [rcx]
+
+# test:subtest
+# test:encoding "F2440F1009"
+
+movsd xmm9, [rcx]
+
+# test:subtest
+# test:encoding "F2410F103424"
+
+movsd xmm6, [r12]
+
+# test:subtest
+# test:encoding "F20F1131"
+
+movsd [rcx], xmm6
+
+# test:subtest
+# test:encoding "F2440F1109"
+
+movsd [rcx], xmm9
+
+# test:subtest
+# test:encoding "F2410F113424"
+
+movsd [r12], xmm6

@@ -1,0 +1,29 @@
+# test:subtest
+# test:encoding "660F2EF2"
+
+ucomisd xmm6, xmm2
+
+# test:subtest
+# test:encoding "66440F2ECA"
+
+ucomisd xmm9, xmm2
+
+# test:subtest
+# test:encoding "66410F2EF2"
+
+ucomisd xmm6, xmm10
+
+# test:subtest
+# test:encoding "660F2E31"
+
+ucomisd xmm6, [rcx]
+
+# test:subtest
+# test:encoding "66440F2E09"
+
+ucomisd xmm9, [rcx]
+
+# test:subtest
+# test:encoding "66410F2E3424"
+
+ucomisd xmm6, [r12]

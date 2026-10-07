@@ -1,0 +1,29 @@
+# test:subtest
+# test:encoding "660F57F2"
+
+xorpd xmm6, xmm2
+
+# test:subtest
+# test:encoding "66440F57CA"
+
+xorpd xmm9, xmm2
+
+# test:subtest
+# test:encoding "66410F57F2"
+
+xorpd xmm6, xmm10
+
+# test:subtest
+# test:encoding "660F5731"
+
+xorpd xmm6, [rcx]
+
+# test:subtest
+# test:encoding "66440F5709"
+
+xorpd xmm9, [rcx]
+
+# test:subtest
+# test:encoding "66410F573424"
+
+xorpd xmm6, [r12]

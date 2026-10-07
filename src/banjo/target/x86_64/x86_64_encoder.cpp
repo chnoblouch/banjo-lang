@@ -120,8 +120,11 @@ void X8664Encoder::encode_instr(mcode::Instruction &instr, mcode::Function *func
         case X8664Opcode::XORPS: encode_xorps(instr); break;
         case X8664Opcode::XORPD: encode_xorpd(instr); break;
         case X8664Opcode::MINSS: encode_minss(instr); break;
+        case X8664Opcode::MINSD: encode_minsd(instr); break;
         case X8664Opcode::MAXSS: encode_maxss(instr); break;
+        case X8664Opcode::MAXSD: encode_maxsd(instr); break;
         case X8664Opcode::SQRTSS: encode_sqrtss(instr); break;
+        case X8664Opcode::SQRTSD: encode_sqrtsd(instr); break;
         case X8664Opcode::UCOMISS: encode_ucomiss(instr); break;
         case X8664Opcode::UCOMISD: encode_ucomisd(instr); break;
         case X8664Opcode::CVTSS2SD: encode_cvtss2sd(instr); break;
@@ -575,39 +578,11 @@ void X8664Encoder::encode_pop(mcode::Instruction &instr) {
 }
 
 void X8664Encoder::encode_movss(mcode::Instruction &instr) {
-    mcode::Operand &dst = instr.get_operand(0);
-    mcode::Operand &src = instr.get_operand(1);
-
-    if (is_reg(dst)) {
-        emit_sse(0xF3, 0x10, reg(dst), roa(src), 0);
-    } else if (is_addr(dst)) {
-        Address dst_addr = addr(dst);
-        RegCode src_reg = reg(src);
-
-        emit_opcode(0xF3);
-        emit_rex_rm(0, src_reg, dst_addr);
-        emit_opcode(0x0F);
-        emit_opcode(0x11);
-        emit_mem_reg(dst_addr, src_reg);
-    }
+    encode_movss_family(instr, {0xF3});
 }
 
 void X8664Encoder::encode_movsd(mcode::Instruction &instr) {
-    mcode::Operand &dst = instr.get_operand(0);
-    mcode::Operand &src = instr.get_operand(1);
-
-    if (is_reg(dst)) {
-        emit_sse(0xF2, 0x10, reg(dst), roa(src), 0);
-    } else if (is_addr(dst)) {
-        Address dst_addr = addr(dst);
-        RegCode src_reg = reg(src);
-
-        emit_opcode(0xF2);
-        emit_rex_rm(0, src_reg, dst_addr);
-        emit_opcode(0x0F);
-        emit_opcode(0x11);
-        emit_mem_reg(dst_addr, src_reg);
-    }
+    encode_movss_family(instr, {0xF2});
 }
 
 void X8664Encoder::encode_movaps(mcode::Instruction &instr) {
@@ -731,98 +706,75 @@ void X8664Encoder::encode_movq(mcode::Instruction &instr) {
 }
 
 void X8664Encoder::encode_addss(mcode::Instruction &instr) {
-    encode_sse_op(instr, 0xF3, 0x58);
+    encode_addss_family(instr, {0x58});
 }
 
 void X8664Encoder::encode_addsd(mcode::Instruction &instr) {
-    encode_sse_op(instr, 0xF2, 0x58);
+    encode_addsd_family(instr, {0x58});
 }
 
 void X8664Encoder::encode_subss(mcode::Instruction &instr) {
-    encode_sse_op(instr, 0xF3, 0x5C);
+    encode_addss_family(instr, {0x5C});
 }
 
 void X8664Encoder::encode_subsd(mcode::Instruction &instr) {
-    encode_sse_op(instr, 0xF2, 0x5C);
+    encode_addsd_family(instr, {0x5C});
 }
 
 void X8664Encoder::encode_mulss(mcode::Instruction &instr) {
-    encode_sse_op(instr, 0xF3, 0x59);
+    encode_addss_family(instr, {0x59});
 }
 
 void X8664Encoder::encode_mulsd(mcode::Instruction &instr) {
-    encode_sse_op(instr, 0xF2, 0x59);
+    encode_addsd_family(instr, {0x59});
 }
 
 void X8664Encoder::encode_divss(mcode::Instruction &instr) {
-    encode_sse_op(instr, 0xF3, 0x5E);
+    encode_addss_family(instr, {0x5E});
 }
 
 void X8664Encoder::encode_divsd(mcode::Instruction &instr) {
-    encode_sse_op(instr, 0xF2, 0x5E);
+    encode_addsd_family(instr, {0x5E});
 }
 
 void X8664Encoder::encode_xorps(mcode::Instruction &instr) {
-    mcode::Operand &dst = instr.get_operand(0);
-    mcode::Operand &src = instr.get_operand(1);
-
-    ASSERT_MESSAGE(is_reg(dst), "SSE instructions can only operate on registers");
-
-    if (is_reg(src)) {
-        emit_rex_rr(0, reg(dst), reg(src));
-        emit_opcode(0x0F);
-        emit_opcode(0x57);
-        emit_modrm_rr(reg(dst), reg(src));
-    } else if (is_addr(src)) {
-        emit_rex_rm(0, reg(dst), addr(src));
-        emit_opcode(0x0F);
-        emit_opcode(0x57);
-        emit_mem_reg(addr(src), reg(dst));
-    }
+    encode_xorps_family(instr, {0x57});
 }
 
 void X8664Encoder::encode_xorpd(mcode::Instruction &instr) {
-    emit_opcode(0x66);
-    encode_xorps(instr);
+    encode_xorpd_family(instr, {0x57});
 }
 
 void X8664Encoder::encode_minss(mcode::Instruction &instr) {
-    encode_sse_op(instr, 0xF3, 0x5D);
+    encode_addss_family(instr, {0x5D});
+}
+
+void X8664Encoder::encode_minsd(mcode::Instruction &instr) {
+    encode_addsd_family(instr, {0x5D});
 }
 
 void X8664Encoder::encode_maxss(mcode::Instruction &instr) {
-    encode_sse_op(instr, 0xF3, 0x5F);
+    encode_addss_family(instr, {0x5F});
+}
+
+void X8664Encoder::encode_maxsd(mcode::Instruction &instr) {
+    encode_addsd_family(instr, {0x5F});
 }
 
 void X8664Encoder::encode_sqrtss(mcode::Instruction &instr) {
-    encode_sse_op(instr, 0xF3, 0x51);
+    encode_addss_family(instr, {0x51});
+}
+
+void X8664Encoder::encode_sqrtsd(mcode::Instruction &instr) {
+    encode_addsd_family(instr, {0x51});
 }
 
 void X8664Encoder::encode_ucomiss(mcode::Instruction &instr) {
-    mcode::Operand &dst = instr.get_operand(0);
-    mcode::Operand &src = instr.get_operand(1);
-
-    RegCode dst_r = reg(dst);
-    RegOrAddr src_roa = roa(src);
-
-    emit_rex_rroa(4, dst_r, src_roa);
-    emit_opcode(0x0F);
-    emit_opcode(0x2E);
-    emit_modrm_sib(dst_r, src_roa);
+    encode_xorps_family(instr, {0x2E});
 }
 
 void X8664Encoder::encode_ucomisd(mcode::Instruction &instr) {
-    mcode::Operand &dst = instr.get_operand(0);
-    mcode::Operand &src = instr.get_operand(1);
-
-    RegCode dst_r = reg(dst);
-    RegOrAddr src_roa = roa(src);
-
-    emit_rex_rroa(4, dst_r, src_roa);
-    emit_opcode(0x66);
-    emit_opcode(0x0F);
-    emit_opcode(0x2E);
-    emit_modrm_sib(dst_r, src_roa);
+    encode_xorpd_family(instr, {0x2E});
 }
 
 void X8664Encoder::encode_cvtss2sd(mcode::Instruction &instr) {
@@ -877,14 +829,6 @@ void X8664Encoder::encode_shift(mcode::Instruction &instr, std::uint8_t digit) {
             text.write_u8(src_imm.value);
         }
     }
-}
-
-void X8664Encoder::encode_sse_op(mcode::Instruction &instr, std::uint8_t prefix, std::uint8_t opcode) {
-    mcode::Operand &dst = instr.get_operand(0);
-    mcode::Operand &src = instr.get_operand(1);
-
-    ASSERT_MESSAGE(is_reg(dst), "SSE instructions can only operate on registers");
-    emit_sse(prefix, opcode, reg(dst), roa(src), 0);
 }
 
 void X8664Encoder::emit_mov_rr(RegCode dst, RegCode src, std::uint8_t size) {
@@ -1062,14 +1006,6 @@ void X8664Encoder::emit_basic_mi(
     }
 }
 
-void X8664Encoder::emit_sse(std::uint8_t prefix, std::uint8_t opcode, RegCode dst, RegOrAddr src, std::uint8_t size) {
-    emit_opcode(prefix);
-    emit_rex_rroa(size, dst, src);
-    emit_opcode(0x0F);
-    emit_opcode(opcode);
-    emit_modrm_sib(dst, src);
-}
-
 void X8664Encoder::encode_add_family(mcode::Instruction &instr, const BasicInstrOpcodes &opcodes) {
     mcode::Operand &dst = instr.get_operand(0);
     mcode::Operand &src = instr.get_operand(1);
@@ -1187,6 +1123,88 @@ void X8664Encoder::encode_cmovcc_family(mcode::Instruction &instr, std::array<st
     emit_opcode(0x0F);
     emit_opcode(params[0]);
     emit_modrm_sib(dst_reg, src_roa);
+}
+
+void X8664Encoder::encode_movss_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {
+    mcode::Operand &m_dst = instr.get_operand(0);
+    mcode::Operand &m_src = instr.get_operand(1);
+
+    if (is_reg(m_dst)) {
+        RegCode dst = reg(m_dst);
+        RegOrAddr src = roa(m_src);
+
+        emit_opcode(params[0]);
+        emit_rex_rroa(0, dst, src);
+        emit_opcode(0x0F);
+        emit_opcode(0x10);
+        emit_modrm_sib(dst, src);
+    } else if (is_addr(m_dst)) {
+        Address dst = addr(m_dst);
+        RegCode src = reg(m_src);
+
+        emit_opcode(params[0]);
+        emit_rex_rm(0, src, dst);
+        emit_opcode(0x0F);
+        emit_opcode(0x11);
+        emit_mem_reg(dst, src);
+    } else {
+        ASSERT_UNREACHABLE;
+    }
+}
+
+void X8664Encoder::encode_addss_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {
+    mcode::Operand &m_dst = instr.get_operand(0);
+    mcode::Operand &m_src = instr.get_operand(1);
+
+    RegCode dst = reg(m_dst);
+    RegOrAddr src = roa(m_src);
+
+    emit_opcode(0xF3);
+    emit_rex_rroa(0, dst, src);
+    emit_opcode(0x0F);
+    emit_opcode(params[0]);
+    emit_modrm_sib(dst, src);
+}
+
+void X8664Encoder::encode_addsd_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {
+    mcode::Operand &m_dst = instr.get_operand(0);
+    mcode::Operand &m_src = instr.get_operand(1);
+
+    RegCode dst = reg(m_dst);
+    RegOrAddr src = roa(m_src);
+
+    emit_opcode(0xF2);
+    emit_rex_rroa(0, dst, src);
+    emit_opcode(0x0F);
+    emit_opcode(params[0]);
+    emit_modrm_sib(dst, src);
+}
+
+void X8664Encoder::encode_xorps_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {
+    mcode::Operand &m_dst = instr.get_operand(0);
+    mcode::Operand &m_src = instr.get_operand(1);
+
+    RegCode dst = reg(m_dst);
+    RegOrAddr src = roa(m_src);
+
+    emit_rex_rroa(0, dst, src);
+    emit_opcode(0x0F);
+    emit_opcode(params[0]);
+    emit_modrm_sib(dst, src);
+}
+
+void X8664Encoder::encode_xorpd_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {
+    mcode::Operand &m_dst = instr.get_operand(0);
+    mcode::Operand &m_src = instr.get_operand(1);
+
+    RegCode dst = reg(m_dst);
+    RegOrAddr src = roa(m_src);
+
+    emit_opcode(0x66);
+    emit_rex_rroa(0, dst, src);
+    emit_opcode(0x0F);
+    emit_opcode(params[0]);
+    emit_modrm_sib(dst, src);
 }
 
 void X8664Encoder::encode_cvtss2sd_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {

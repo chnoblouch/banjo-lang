@@ -1,0 +1,29 @@
+# test:subtest
+# test:encoding "F30F58F2"
+
+addss xmm6, xmm2
+
+# test:subtest
+# test:encoding "F3440F58CA"
+
+addss xmm9, xmm2
+
+# test:subtest
+# test:encoding "F3410F58F2"
+
+addss xmm6, xmm10
+
+# test:subtest
+# test:encoding "F30F5831"
+
+addss xmm6, [rcx]
+
+# test:subtest
+# test:encoding "F3440F5809"
+
+addss xmm9, [rcx]
+
+# test:subtest
+# test:encoding "F3410F583424"
+
+addss xmm6, [r12]

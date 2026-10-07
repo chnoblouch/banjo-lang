@@ -1,0 +1,29 @@
+# test:subtest
+# test:encoding "F30F5EF2"
+
+divss xmm6, xmm2
+
+# test:subtest
+# test:encoding "F3440F5ECA"
+
+divss xmm9, xmm2
+
+# test:subtest
+# test:encoding "F3410F5EF2"
+
+divss xmm6, xmm10
+
+# test:subtest
+# test:encoding "F30F5E31"
+
+divss xmm6, [rcx]
+
+# test:subtest
+# test:encoding "F3440F5E09"
+
+divss xmm9, [rcx]
+
+# test:subtest
+# test:encoding "F3410F5E3424"
+
+divss xmm6, [r12]

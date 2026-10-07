@@ -1,0 +1,29 @@
+# test:subtest
+# test:encoding "0F2EF2"
+
+ucomiss xmm6, xmm2
+
+# test:subtest
+# test:encoding "440F2ECA"
+
+ucomiss xmm9, xmm2
+
+# test:subtest
+# test:encoding "410F2EF2"
+
+ucomiss xmm6, xmm10
+
+# test:subtest
+# test:encoding "0F2E31"
+
+ucomiss xmm6, [rcx]
+
+# test:subtest
+# test:encoding "440F2E09"
+
+ucomiss xmm9, [rcx]
+
+# test:subtest
+# test:encoding "410F2E3424"
+
+ucomiss xmm6, [r12]

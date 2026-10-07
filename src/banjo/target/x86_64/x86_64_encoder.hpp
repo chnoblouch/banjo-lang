@@ -3,6 +3,7 @@
 
 #include "banjo/emit/binary_builder.hpp"
 #include "banjo/emit/binary_module.hpp"
+#include "banjo/mcode/instruction.hpp"
 
 #include <array>
 #include <cstdint>
@@ -194,8 +195,11 @@ private:
     void encode_xorps(mcode::Instruction &instr);
     void encode_xorpd(mcode::Instruction &instr);
     void encode_minss(mcode::Instruction &instr);
+    void encode_minsd(mcode::Instruction &instr);
     void encode_maxss(mcode::Instruction &instr);
+    void encode_maxsd(mcode::Instruction &instr);
     void encode_sqrtss(mcode::Instruction &instr);
+    void encode_sqrtsd(mcode::Instruction &instr);
     void encode_ucomiss(mcode::Instruction &instr);
     void encode_ucomisd(mcode::Instruction &instr);
     void encode_cvtss2sd(mcode::Instruction &instr);
@@ -206,7 +210,6 @@ private:
     void encode_cvtsd2si(mcode::Instruction &instr);
 
     void encode_shift(mcode::Instruction &instr, std::uint8_t digit);
-    void encode_sse_op(mcode::Instruction &instr, std::uint8_t prefix, std::uint8_t opcode);
     void emit_mov_rr(RegCode dst, RegCode src, std::uint8_t size);
     void emit_mov_ri(RegCode dst, Immediate imm, std::uint8_t size);
     void emit_mov_rm(RegCode dst, Address src, std::uint8_t size);
@@ -235,12 +238,16 @@ private:
         Immediate imm,
         std::uint8_t size
     );
-    void emit_sse(std::uint8_t prefix, std::uint8_t opcode, RegCode dst, RegOrAddr src, std::uint8_t size);
 
     void encode_add_family(mcode::Instruction &instr, const BasicInstrOpcodes &opcodes);
     void encode_jcc_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
     void encode_setcc_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
     void encode_cmovcc_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
+    void encode_movss_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
+    void encode_addss_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
+    void encode_addsd_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
+    void encode_xorps_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
+    void encode_xorpd_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
     void encode_cvtss2sd_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
     void encode_cvtsi2ss_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
     void encode_cvtss2si_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);

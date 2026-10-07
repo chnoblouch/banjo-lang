@@ -1,0 +1,29 @@
+# test:subtest
+# test:encoding "F30F59F2"
+
+mulss xmm6, xmm2
+
+# test:subtest
+# test:encoding "F3440F59CA"
+
+mulss xmm9, xmm2
+
+# test:subtest
+# test:encoding "F3410F59F2"
+
+mulss xmm6, xmm10
+
+# test:subtest
+# test:encoding "F30F5931"
+
+mulss xmm6, [rcx]
+
+# test:subtest
+# test:encoding "F3440F5909"
+
+mulss xmm9, [rcx]
+
+# test:subtest
+# test:encoding "F3410F593424"
+
+mulss xmm6, [r12]
