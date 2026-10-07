@@ -15,8 +15,6 @@ private:
     target::TargetDescription target;
 
 public:
-    static const std::unordered_map<mcode::Opcode, std::string> OPCODE_NAMES;
-
     NASMEmitter(mcode::Module &module, std::ostream &stream, target::TargetDescription target);
     void generate();
     void emit_instr(mcode::Function *func, mcode::BasicBlock &basic_block, mcode::Instruction &instr);

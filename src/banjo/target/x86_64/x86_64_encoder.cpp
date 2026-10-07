@@ -56,6 +56,10 @@ void X8664Encoder::encode_instr(mcode::Instruction &instr, mcode::Function *func
         case X8664Opcode::JGE: encode_jge(instr); break;
         case X8664Opcode::JL: encode_jl(instr); break;
         case X8664Opcode::JLE: encode_jle(instr); break;
+        case X8664Opcode::JS: encode_js(instr); break;
+        case X8664Opcode::JNS: encode_jns(instr); break;
+        case X8664Opcode::JO: encode_jo(instr); break;
+        case X8664Opcode::JNO: encode_jno(instr); break;
         case X8664Opcode::SETE: encode_sete(instr); break;
         case X8664Opcode::SETNE: encode_setne(instr); break;
         case X8664Opcode::SETA: encode_seta(instr); break;
@@ -66,6 +70,10 @@ void X8664Encoder::encode_instr(mcode::Instruction &instr, mcode::Function *func
         case X8664Opcode::SETGE: encode_setge(instr); break;
         case X8664Opcode::SETL: encode_setl(instr); break;
         case X8664Opcode::SETLE: encode_setle(instr); break;
+        case X8664Opcode::SETS: encode_sets(instr); break;
+        case X8664Opcode::SETNS: encode_setns(instr); break;
+        case X8664Opcode::SETO: encode_seto(instr); break;
+        case X8664Opcode::SETNO: encode_setno(instr); break;
         case X8664Opcode::CMOVE: encode_cmove(instr); break;
         case X8664Opcode::CMOVNE: encode_cmovne(instr); break;
         case X8664Opcode::CMOVA: encode_cmova(instr); break;
@@ -76,6 +84,10 @@ void X8664Encoder::encode_instr(mcode::Instruction &instr, mcode::Function *func
         case X8664Opcode::CMOVGE: encode_cmovge(instr); break;
         case X8664Opcode::CMOVL: encode_cmovl(instr); break;
         case X8664Opcode::CMOVLE: encode_cmovle(instr); break;
+        case X8664Opcode::CMOVS: encode_cmovs(instr); break;
+        case X8664Opcode::CMOVNS: encode_cmovns(instr); break;
+        case X8664Opcode::CMOVO: encode_cmovo(instr); break;
+        case X8664Opcode::CMOVNO: encode_cmovno(instr); break;
         case X8664Opcode::LEA: encode_lea(instr); break;
         case X8664Opcode::CALL: encode_call(instr); break;
         case X8664Opcode::RET: encode_ret(); break;
@@ -307,43 +319,59 @@ void X8664Encoder::encode_cmp(mcode::Instruction &instr) {
 }
 
 void X8664Encoder::encode_je(mcode::Instruction &instr) {
-    encode_jcc(instr, 0x74);
+    encode_jcc_family(instr, {0x74});
 }
 
 void X8664Encoder::encode_jne(mcode::Instruction &instr) {
-    encode_jcc(instr, 0x75);
+    encode_jcc_family(instr, {0x75});
 }
 
 void X8664Encoder::encode_ja(mcode::Instruction &instr) {
-    encode_jcc(instr, 0x77);
+    encode_jcc_family(instr, {0x77});
 }
 
 void X8664Encoder::encode_jae(mcode::Instruction &instr) {
-    encode_jcc(instr, 0x73);
+    encode_jcc_family(instr, {0x73});
 }
 
 void X8664Encoder::encode_jb(mcode::Instruction &instr) {
-    encode_jcc(instr, 0x72);
+    encode_jcc_family(instr, {0x72});
 }
 
 void X8664Encoder::encode_jbe(mcode::Instruction &instr) {
-    encode_jcc(instr, 0x76);
+    encode_jcc_family(instr, {0x76});
 }
 
 void X8664Encoder::encode_jg(mcode::Instruction &instr) {
-    encode_jcc(instr, 0x7F);
+    encode_jcc_family(instr, {0x7F});
 }
 
 void X8664Encoder::encode_jge(mcode::Instruction &instr) {
-    encode_jcc(instr, 0x7D);
+    encode_jcc_family(instr, {0x7D});
 }
 
 void X8664Encoder::encode_jl(mcode::Instruction &instr) {
-    encode_jcc(instr, 0x7C);
+    encode_jcc_family(instr, {0x7C});
 }
 
 void X8664Encoder::encode_jle(mcode::Instruction &instr) {
-    encode_jcc(instr, 0x7E);
+    encode_jcc_family(instr, {0x7E});
+}
+
+void X8664Encoder::encode_js(mcode::Instruction &instr) {
+    encode_jcc_family(instr, {0x78});
+}
+
+void X8664Encoder::encode_jns(mcode::Instruction &instr) {
+    encode_jcc_family(instr, {0x79});
+}
+
+void X8664Encoder::encode_jo(mcode::Instruction &instr) {
+    encode_jcc_family(instr, {0x70});
+}
+
+void X8664Encoder::encode_jno(mcode::Instruction &instr) {
+    encode_jcc_family(instr, {0x71});
 }
 
 void X8664Encoder::encode_sete(mcode::Instruction &instr) {
@@ -382,55 +410,94 @@ void X8664Encoder::encode_setl(mcode::Instruction &instr) {
     encode_setcc_family(instr, {0x9C});
 }
 
+void X8664Encoder::encode_sets(mcode::Instruction &instr) {
+    encode_setcc_family(instr, {0x98});
+}
+
+void X8664Encoder::encode_setns(mcode::Instruction &instr) {
+    encode_setcc_family(instr, {0x99});
+}
+
+void X8664Encoder::encode_seto(mcode::Instruction &instr) {
+    encode_setcc_family(instr, {0x90});
+}
+
+void X8664Encoder::encode_setno(mcode::Instruction &instr) {
+    encode_setcc_family(instr, {0x91});
+}
+
 void X8664Encoder::encode_setle(mcode::Instruction &instr) {
     encode_setcc_family(instr, {0x9E});
 }
 
 void X8664Encoder::encode_cmove(mcode::Instruction &instr) {
-    encode_cmovcc(instr, 0x44);
+    encode_cmovcc_family(instr, {0x44});
 }
 
 void X8664Encoder::encode_cmovne(mcode::Instruction &instr) {
-    encode_cmovcc(instr, 0x45);
+    encode_cmovcc_family(instr, {0x45});
 }
 
 void X8664Encoder::encode_cmova(mcode::Instruction &instr) {
-    encode_cmovcc(instr, 0x47);
+    encode_cmovcc_family(instr, {0x47});
 }
 
 void X8664Encoder::encode_cmovae(mcode::Instruction &instr) {
-    encode_cmovcc(instr, 0x43);
+    encode_cmovcc_family(instr, {0x43});
 }
 
 void X8664Encoder::encode_cmovb(mcode::Instruction &instr) {
-    encode_cmovcc(instr, 0x42);
+    encode_cmovcc_family(instr, {0x42});
 }
 
 void X8664Encoder::encode_cmovbe(mcode::Instruction &instr) {
-    encode_cmovcc(instr, 0x46);
+    encode_cmovcc_family(instr, {0x46});
 }
 
 void X8664Encoder::encode_cmovg(mcode::Instruction &instr) {
-    encode_cmovcc(instr, 0x4F);
+    encode_cmovcc_family(instr, {0x4F});
 }
 
 void X8664Encoder::encode_cmovge(mcode::Instruction &instr) {
-    encode_cmovcc(instr, 0x4D);
+    encode_cmovcc_family(instr, {0x4D});
 }
 
 void X8664Encoder::encode_cmovl(mcode::Instruction &instr) {
-    encode_cmovcc(instr, 0x4C);
+    encode_cmovcc_family(instr, {0x4C});
 }
 
 void X8664Encoder::encode_cmovle(mcode::Instruction &instr) {
-    encode_cmovcc(instr, 0x4E);
+    encode_cmovcc_family(instr, {0x4E});
+}
+
+void X8664Encoder::encode_cmovs(mcode::Instruction &instr) {
+    encode_cmovcc_family(instr, {0x48});
+}
+
+void X8664Encoder::encode_cmovns(mcode::Instruction &instr) {
+    encode_cmovcc_family(instr, {0x49});
+}
+
+void X8664Encoder::encode_cmovo(mcode::Instruction &instr) {
+    encode_cmovcc_family(instr, {0x40});
+}
+
+void X8664Encoder::encode_cmovno(mcode::Instruction &instr) {
+    encode_cmovcc_family(instr, {0x41});
 }
 
 void X8664Encoder::encode_lea(mcode::Instruction &instr) {
     mcode::Operand &dst = instr.get_operand(0);
     mcode::Operand &src = instr.get_operand(1);
+    unsigned size = dst.get_size();
 
-    emit_lea_rm(reg(dst), addr(src), dst.get_size());
+    RegCode dst_reg = reg(dst);
+    Address src_addr = addr(src);
+
+    emit_16bit_prefix_if_required(size);
+    emit_rex_rm(size, dst_reg, src_addr);
+    text.write_u8(0x8D);
+    emit_mem_reg(src_addr, dst_reg);
 }
 
 void X8664Encoder::encode_call(mcode::Instruction &instr) {
@@ -455,7 +522,7 @@ void X8664Encoder::encode_call(mcode::Instruction &instr) {
 }
 
 void X8664Encoder::encode_ret() {
-    emit_ret();
+    text.write_u8(0xC3);
 }
 
 void X8664Encoder::encode_push(mcode::Instruction &instr) {
@@ -732,26 +799,6 @@ void X8664Encoder::encode_shift(mcode::Instruction &instr, std::uint8_t digit) {
     }
 }
 
-void X8664Encoder::encode_jcc(mcode::Instruction &instr, std::uint8_t opcode) {
-    mcode::Operand &target = instr.get_operand(0);
-
-    if (target.is_basic_block()) {
-        text.create_relaxable_slice();
-        emit_opcode(opcode);
-        text.add_symbol_use(target.get_basic_block().label, BinSymbolUseKind::REL32, 0);
-        text.write_u8(0);
-        text.end_relaxable_slice();
-    }
-}
-
-void X8664Encoder::encode_cmovcc(mcode::Instruction &instr, std::uint8_t opcode) {
-    mcode::Operand &dst = instr.get_operand(0);
-    mcode::Operand &src = instr.get_operand(1);
-
-    ASSERT_MESSAGE(dst.get_size() != 1, "size of cmovcc must be 2, 4 or 8");
-    emit_cmovcc(opcode, reg(dst), roa(src), dst.get_size());
-}
-
 void X8664Encoder::encode_sse_op(mcode::Instruction &instr, std::uint8_t prefix, std::uint8_t opcode) {
     mcode::Operand &dst = instr.get_operand(0);
     mcode::Operand &src = instr.get_operand(1);
@@ -786,7 +833,10 @@ void X8664Encoder::emit_mov_ri(RegCode dst, Immediate imm, std::uint8_t size) {
 }
 
 void X8664Encoder::emit_mov_rm(RegCode dst, Address src, std::uint8_t size) {
-    emit_basic_rm(0x8A, 0x8B, dst, src, size);
+    emit_16bit_prefix_if_required(size);
+    emit_rex_rm(size, dst, src);
+    emit_opcode(size == 1 ? 0x8A : 0x8B);
+    emit_mem_reg(src, dst);
 }
 
 void X8664Encoder::emit_mov_mr(Address dst, RegCode src, std::uint8_t size) {
@@ -804,7 +854,7 @@ void X8664Encoder::emit_mov_mi(Address dst, Immediate imm, std::uint8_t size) {
         size = 4;
     }
 
-    emit_mem_digit(dst, 0, size);
+    emit_mem_digit(dst, 0, 4);
 
     if (size == 1) text.write_u8(imm.value);
     else if (size == 2) text.write_u16(imm.value);
@@ -838,17 +888,6 @@ void X8664Encoder::emit_imul_rri(RegCode dst, Immediate imm, std::uint8_t size) 
     emit_opcode(0x69);
     emit_modrm_rr(dst, dst);
     text.write_u32(imm.value);
-}
-
-void X8664Encoder::emit_lea_rm(RegCode dst, Address src, std::uint8_t size) {
-    emit_16bit_prefix_if_required(size);
-    emit_rex_rm(size, dst, src);
-    text.write_u8(0x8D);
-    emit_mem_reg(src, dst);
-}
-
-void X8664Encoder::emit_ret() {
-    text.write_u8(0xC3);
 }
 
 void X8664Encoder::emit_basic_rr(
@@ -897,19 +936,6 @@ void X8664Encoder::emit_basic_ri(
     }
 }
 
-void X8664Encoder::emit_basic_rm(
-    std::uint8_t opcode8,
-    std::uint8_t opcode32,
-    RegCode dst,
-    Address src,
-    std::uint8_t size
-) {
-    emit_16bit_prefix_if_required(size);
-    emit_rex_rm(size, dst, src);
-    emit_opcode(size == 1 ? opcode8 : opcode32);
-    emit_mem_reg(src, dst);
-}
-
 void X8664Encoder::emit_basic_mr(
     std::uint8_t opcode8,
     std::uint8_t opcode32,
@@ -954,14 +980,6 @@ void X8664Encoder::emit_basic_mi(
         emit_mem_digit(dst, modrm_reg_digit, 4);
         text.write_u32(imm.value);
     }
-}
-
-void X8664Encoder::emit_cmovcc(std::uint8_t opcode, RegCode dst, RegOrAddr src, std::uint8_t size) {
-    emit_16bit_prefix_if_required(size);
-    emit_rex_rroa(size, dst, src);
-    emit_opcode(0x0F);
-    emit_opcode(opcode);
-    emit_modrm_sib(dst, src);
 }
 
 void X8664Encoder::emit_sse(std::uint8_t prefix, std::uint8_t opcode, RegCode dst, RegOrAddr src, std::uint8_t size) {
@@ -1053,6 +1071,17 @@ void X8664Encoder::encode_add_family(mcode::Instruction &instr, const BasicInstr
     }
 }
 
+void X8664Encoder::encode_jcc_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {
+    mcode::Operand &m_target = instr.get_operand(0);
+    ASSERT(m_target.is_basic_block());
+
+    text.create_relaxable_slice();
+    emit_opcode(params[0]);
+    text.add_symbol_use(m_target.get_basic_block().label, BinSymbolUseKind::REL32, 0);
+    text.write_u8(0);
+    text.end_relaxable_slice();
+}
+
 void X8664Encoder::encode_setcc_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {
     mcode::Operand &dst = instr.get_operand(0);
     RegOrAddr dst_roa = roa(dst);
@@ -1061,6 +1090,23 @@ void X8664Encoder::encode_setcc_family(mcode::Instruction &instr, std::array<std
     emit_opcode(0x0F);
     emit_opcode(params[0]);
     emit_modrm_sib(0, dst_roa);
+}
+
+void X8664Encoder::encode_cmovcc_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {
+    mcode::Operand &dst = instr.get_operand(0);
+    mcode::Operand &src = instr.get_operand(1);
+    unsigned size = dst.get_size();
+
+    ASSERT(size == 2 || size == 4 || size == 8);
+
+    RegCode dst_reg = reg(dst);
+    RegOrAddr src_roa = roa(src);
+
+    emit_16bit_prefix_if_required(size);
+    emit_rex_rroa(size, dst_reg, src_roa);
+    emit_opcode(0x0F);
+    emit_opcode(params[0]);
+    emit_modrm_sib(dst_reg, src_roa);
 }
 
 void X8664Encoder::encode_cvtss2sd_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {
@@ -1235,8 +1281,8 @@ void X8664Encoder::emit_rex_rm(std::uint8_t size, std::uint8_t reg, Address addr
 
     bool w = size == 8;
     bool r = reg > AddrRegCode::ADDR_EDI;
-    bool x = index > AddrRegCode::ADDR_EDI;
-    bool b = base > AddrRegCode::ADDR_EDI;
+    bool x = index > AddrRegCode::ADDR_EDI && index != AddrRegCode::ADDR_NO_INDEX;
+    bool b = base > AddrRegCode::ADDR_EDI && base != AddrRegCode::ADDR_NO_BASE;
 
     // The REX prefix is sometimes required to differentiate e.g. between DH and SI.
     bool required = size == 1 && (reg & 0b111) > AddrRegCode::ADDR_EBX;

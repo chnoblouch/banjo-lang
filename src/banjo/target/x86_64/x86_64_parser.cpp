@@ -3,7 +3,7 @@
 #include "banjo/mcode/instruction.hpp"
 #include "banjo/mcode/register.hpp"
 #include "banjo/target/x86_64/x86_64_address.hpp"
-#include "banjo/target/x86_64/x86_64_opcode.hpp"
+#include "banjo/target/x86_64/x86_64_opcode_names.hpp"
 #include "banjo/target/x86_64/x86_64_register.hpp"
 #include "banjo/utils/hash_map.hpp"
 
@@ -18,97 +18,6 @@
     }
 
 namespace banjo::target {
-
-// clang-format off
-static const HashMap<std::string_view, mcode::Opcode> OPCODES{
-    {"mov", target::X8664Opcode::MOV},
-    {"push", target::X8664Opcode::PUSH},
-    {"pop", target::X8664Opcode::POP},
-    {"add", target::X8664Opcode::ADD},
-    {"sub", target::X8664Opcode::SUB},
-    {"imul", target::X8664Opcode::IMUL},
-    {"div", target::X8664Opcode::DIV},
-    {"idiv", target::X8664Opcode::IDIV},
-    {"and", target::X8664Opcode::AND},
-    {"or", target::X8664Opcode::OR},
-    {"xor", target::X8664Opcode::XOR},
-    {"shl", target::X8664Opcode::SHL},
-    {"shr", target::X8664Opcode::SHR},
-    {"sar", target::X8664Opcode::SAR},
-    {"cwd", target::X8664Opcode::CWD},
-    {"cdq", target::X8664Opcode::CDQ},
-    {"cqo", target::X8664Opcode::CQO},
-    {"xchg", target::X8664Opcode::XCHG},
-    {"lock_cmpxchg", target::X8664Opcode::LOCK_CMPXCHG},
-    {"jmp", target::X8664Opcode::JMP},
-    {"cmp", target::X8664Opcode::CMP},
-    {"je", target::X8664Opcode::JE},
-    {"jne", target::X8664Opcode::JNE},
-    {"ja", target::X8664Opcode::JA},
-    {"jae", target::X8664Opcode::JAE},
-    {"jb", target::X8664Opcode::JB},
-    {"jbe", target::X8664Opcode::JBE},
-    {"jg", target::X8664Opcode::JG},
-    {"jge", target::X8664Opcode::JGE},
-    {"jl", target::X8664Opcode::JL},
-    {"jle", target::X8664Opcode::JLE},
-    {"sete", target::X8664Opcode::SETE},
-    {"setne", target::X8664Opcode::SETNE},
-    {"seta", target::X8664Opcode::SETA},
-    {"setae", target::X8664Opcode::SETAE},
-    {"setb", target::X8664Opcode::SETB},
-    {"setbe", target::X8664Opcode::SETBE},
-    {"setg", target::X8664Opcode::SETG},
-    {"setge", target::X8664Opcode::SETGE},
-    {"setl", target::X8664Opcode::SETL},
-    {"setle", target::X8664Opcode::SETLE},
-    {"cmove", target::X8664Opcode::CMOVE},
-    {"cmovne", target::X8664Opcode::CMOVNE},
-    {"cmova", target::X8664Opcode::CMOVA},
-    {"cmovae", target::X8664Opcode::CMOVAE},
-    {"cmovb", target::X8664Opcode::CMOVB},
-    {"cmovbe", target::X8664Opcode::CMOVBE},
-    {"cmovg", target::X8664Opcode::CMOVG},
-    {"cmovge", target::X8664Opcode::CMOVGE},
-    {"cmovl", target::X8664Opcode::CMOVL},
-    {"cmovle", target::X8664Opcode::CMOVLE},
-    {"call", target::X8664Opcode::CALL},
-    {"ret", target::X8664Opcode::RET},
-    {"lea", target::X8664Opcode::LEA},
-    {"movsx", target::X8664Opcode::MOVSX},
-    {"movzx", target::X8664Opcode::MOVZX},
-    {"movss", target::X8664Opcode::MOVSS},
-    {"movsd", target::X8664Opcode::MOVSD},
-    {"movaps", target::X8664Opcode::MOVAPS},
-    {"movups", target::X8664Opcode::MOVUPS},
-    {"movd", target::X8664Opcode::MOVD},
-    {"movq", target::X8664Opcode::MOVQ},
-    {"addss", target::X8664Opcode::ADDSS},
-    {"addsd", target::X8664Opcode::ADDSD},
-    {"subss", target::X8664Opcode::SUBSS},
-    {"subsd", target::X8664Opcode::SUBSD},
-    {"mulss", target::X8664Opcode::MULSS},
-    {"mulsd", target::X8664Opcode::MULSD},
-    {"divss", target::X8664Opcode::DIVSS},
-    {"divsd", target::X8664Opcode::DIVSD},
-    {"xorps", target::X8664Opcode::XORPS},
-    {"xorpd", target::X8664Opcode::XORPD},
-    {"minss", target::X8664Opcode::MINSS},
-    {"minsd", target::X8664Opcode::MINSD},
-    {"maxss", target::X8664Opcode::MAXSS},
-    {"maxsd", target::X8664Opcode::MAXSD},
-    {"sqrtss", target::X8664Opcode::SQRTSS},
-    {"sqrtsd", target::X8664Opcode::SQRTSD},
-    {"ucomiss", target::X8664Opcode::UCOMISS},
-    {"ucomisd", target::X8664Opcode::UCOMISD},
-    {"cvtss2sd", target::X8664Opcode::CVTSS2SD},
-    {"cvtsd2ss", target::X8664Opcode::CVTSD2SS},
-    {"cvtsi2ss", target::X8664Opcode::CVTSI2SS},
-    {"cvtsi2sd", target::X8664Opcode::CVTSI2SD},
-    {"cvtss2si", target::X8664Opcode::CVTSS2SI},
-    {"cvtsd2si", target::X8664Opcode::CVTSD2SI},
-};
-// clang-format on
 
 // clang-format off
 static const HashMap<std::string_view, std::pair<mcode::PhysicalReg, unsigned>> REGISTERS{
@@ -209,7 +118,7 @@ std::optional<mcode::Opcode> X8664Parser::parse_opcode() {
         RETURN_ERROR("expected opcode, got '" + std::string{token.value} + "'");
     }
 
-    if (const mcode::Opcode *opcode = OPCODES.try_find(token.value)) {
+    if (const mcode::Opcode *opcode = X86_64_OPCODE_NAMES.try_find_by_right(token.value)) {
         tokens.advance();
         return *opcode;
     } else {

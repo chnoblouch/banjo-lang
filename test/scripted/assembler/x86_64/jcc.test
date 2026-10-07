@@ -57,3 +57,27 @@ b0:
 
 jle b0
 b0:
+
+# test:subtest
+# test:encoding "7800"
+
+js b0
+b0:
+
+# test:subtest
+# test:encoding "7900"
+
+jns b0
+b0:
+
+# test:subtest
+# test:encoding "7000"
+
+jo b0
+b0:
+
+# test:subtest
+# test:encoding "7100"
+
+jno b0
+b0:

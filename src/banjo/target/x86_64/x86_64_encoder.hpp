@@ -139,6 +139,10 @@ private:
     void encode_jge(mcode::Instruction &instr);
     void encode_jl(mcode::Instruction &instr);
     void encode_jle(mcode::Instruction &instr);
+    void encode_js(mcode::Instruction &instr);
+    void encode_jns(mcode::Instruction &instr);
+    void encode_jo(mcode::Instruction &instr);
+    void encode_jno(mcode::Instruction &instr);
     void encode_sete(mcode::Instruction &instr);
     void encode_setne(mcode::Instruction &instr);
     void encode_seta(mcode::Instruction &instr);
@@ -149,6 +153,10 @@ private:
     void encode_setge(mcode::Instruction &instr);
     void encode_setl(mcode::Instruction &instr);
     void encode_setle(mcode::Instruction &instr);
+    void encode_sets(mcode::Instruction &instr);
+    void encode_setns(mcode::Instruction &instr);
+    void encode_seto(mcode::Instruction &instr);
+    void encode_setno(mcode::Instruction &instr);
     void encode_cmove(mcode::Instruction &instr);
     void encode_cmovne(mcode::Instruction &instr);
     void encode_cmova(mcode::Instruction &instr);
@@ -159,6 +167,10 @@ private:
     void encode_cmovge(mcode::Instruction &instr);
     void encode_cmovl(mcode::Instruction &instr);
     void encode_cmovle(mcode::Instruction &instr);
+    void encode_cmovs(mcode::Instruction &instr);
+    void encode_cmovns(mcode::Instruction &instr);
+    void encode_cmovo(mcode::Instruction &instr);
+    void encode_cmovno(mcode::Instruction &instr);
     void encode_lea(mcode::Instruction &instr);
     void encode_call(mcode::Instruction &instr);
     void encode_ret();
@@ -192,8 +204,6 @@ private:
     void encode_cvtsd2si(mcode::Instruction &instr);
 
     void encode_shift(mcode::Instruction &instr, std::uint8_t digit);
-    void encode_jcc(mcode::Instruction &instr, std::uint8_t opcode);
-    void encode_cmovcc(mcode::Instruction &instr, std::uint8_t opcode);
     void encode_sse_op(mcode::Instruction &instr, std::uint8_t prefix, std::uint8_t opcode);
     void emit_mov_rr(RegCode dst, RegCode src, std::uint8_t size);
     void emit_mov_ri(RegCode dst, Immediate imm, std::uint8_t size);
@@ -203,8 +213,6 @@ private:
     void emit_imul_rr(RegCode dst, RegCode src, std::uint8_t size);
     void emit_imul_rm(RegCode dst, Address src, std::uint8_t size);
     void emit_imul_rri(RegCode dst, Immediate imm, std::uint8_t size);
-    void emit_lea_rm(RegCode dst, Address src, std::uint8_t size);
-    void emit_ret();
     void emit_basic_rr(std::uint8_t opcode8, std::uint8_t opcode32, RegCode dst, RegCode src, std::uint8_t size);
     void emit_basic_ri(
         std::uint8_t opcode8,
@@ -215,7 +223,6 @@ private:
         Immediate imm,
         std::uint8_t size
     );
-    void emit_basic_rm(std::uint8_t opcode8, std::uint8_t opcode32, RegCode dst, Address src, std::uint8_t size);
     void emit_basic_mr(std::uint8_t opcode8, std::uint8_t opcode32, Address dst, RegCode src, std::uint8_t size);
     void emit_basic_mi(
         std::uint8_t opcode8,
@@ -226,11 +233,12 @@ private:
         Immediate imm,
         std::uint8_t size
     );
-    void emit_cmovcc(std::uint8_t opcode, RegCode dst, RegOrAddr src, std::uint8_t size);
     void emit_sse(std::uint8_t prefix, std::uint8_t opcode, RegCode dst, RegOrAddr src, std::uint8_t size);
 
     void encode_add_family(mcode::Instruction &instr, const BasicInstrOpcodes &opcodes);
+    void encode_jcc_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
     void encode_setcc_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
+    void encode_cmovcc_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
     void encode_cvtss2sd_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
     void encode_cvtsi2ss_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
     void encode_cvtss2si_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);

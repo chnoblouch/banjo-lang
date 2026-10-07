@@ -1,0 +1,94 @@
+# test:subtest
+# test:encoding "480F44D0"
+
+cmove rdx, rax
+
+# test:subtest
+# test:encoding "0F44D0"
+
+cmove edx, eax
+
+# test:subtest
+# test:encoding "660F44D0"
+
+cmove dx, ax
+
+# test:subtest
+# test:encoding "440F44C0"
+
+cmove r8d, eax
+
+# test:subtest
+# test:encoding "410F44D4"
+
+cmove edx, r12d
+
+# test:subtest
+# test:encoding "0F4410"
+
+cmove edx, [rax]
+
+# test:subtest
+# test:encoding "0F45D0"
+
+cmovne edx, eax
+
+# test:subtest
+# test:encoding "0F47D0"
+
+cmova edx, eax
+
+# test:subtest
+# test:encoding "0F43D0"
+
+cmovae edx, eax
+
+# test:subtest
+# test:encoding "0F42D0"
+
+cmovb edx, eax
+
+# test:subtest
+# test:encoding "0F46D0"
+
+cmovbe edx, eax
+
+# test:subtest
+# test:encoding "0F4FD0"
+
+cmovg edx, eax
+
+# test:subtest
+# test:encoding "0F4DD0"
+
+cmovge edx, eax
+
+# test:subtest
+# test:encoding "0F4CD0"
+
+cmovl edx, eax
+
+# test:subtest
+# test:encoding "0F4ED0"
+
+cmovle edx, eax
+
+# test:subtest
+# test:encoding "0F48D0"
+
+cmovs edx, eax
+
+# test:subtest
+# test:encoding "0F49D0"
+
+cmovns edx, eax
+
+# test:subtest
+# test:encoding "0F40D0"
+
+cmovo edx, eax
+
+# test:subtest
+# test:encoding "0F41D0"
+
+cmovno edx, eax

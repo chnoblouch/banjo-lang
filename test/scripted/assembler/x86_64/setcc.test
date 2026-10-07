@@ -57,3 +57,23 @@ setl bl
 # test:encoding "0F9EC3"
 
 setle bl
+
+# test:subtest
+# test:encoding "0F98C3"
+
+sets bl
+
+# test:subtest
+# test:encoding "0F99C3"
+
+setns bl
+
+# test:subtest
+# test:encoding "0F90C3"
+
+seto bl
+
+# test:subtest
+# test:encoding "0F91C3"
+
+setno bl

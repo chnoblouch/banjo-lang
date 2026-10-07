@@ -186,6 +186,10 @@ std::vector<mcode::RegOp> X8664RegAnalyzer::get_operands(codegen::InstrContext &
         case CMOVGE:
         case CMOVL:
         case CMOVLE:
+        case CMOVS:
+        case CMOVNS:
+        case CMOVO:
+        case CMOVNO:
         case ADDSS:
         case ADDSD:
         case SUBSS:
@@ -256,7 +260,11 @@ std::vector<mcode::RegOp> X8664RegAnalyzer::get_operands(codegen::InstrContext &
         case SETG:
         case SETGE:
         case SETL:
-        case SETLE: collect_regs(instr.get_operand(0), mcode::RegUsage::DEF, operands); break;
+        case SETLE:
+        case SETS:
+        case SETNS:
+        case SETO:
+        case SETNO: collect_regs(instr.get_operand(0), mcode::RegUsage::DEF, operands); break;
 
         case JMP:
         case JE:
@@ -269,6 +277,10 @@ std::vector<mcode::RegOp> X8664RegAnalyzer::get_operands(codegen::InstrContext &
         case JGE:
         case JL:
         case JLE:
+        case JS:
+        case JNS:
+        case JO:
+        case JNO:
         case RET:
         case mcode::PseudoOpcode::EH_PUSHREG:
         case mcode::PseudoOpcode::EH_ALLOCSTACK:

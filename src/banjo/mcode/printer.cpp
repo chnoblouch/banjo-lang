@@ -161,7 +161,13 @@ void Printer::print_stack_slot(mcode::StackSlotID id, mcode::StackSlot &slot) {
 
 void Printer::print_instr(mcode::Function &func, mcode::Instruction &instr) {
     emit("    ");
-    print_opcode(instr);
+
+    switch (instr.get_opcode()) {
+        case PseudoOpcode::EH_PUSHREG: emit(".eh_pushreg"); break;
+        case PseudoOpcode::EH_ALLOCSTACK: emit(".eh_allocstack"); break;
+        case PseudoOpcode::EH_ENDPROLOG: emit(".eh_endprolog"); break;
+        default: print_opcode(instr); break;
+    }
 
     for (unsigned i = 0; i < instr.get_operands().size(); i++) {
         emit(i == 0 ? " " : ", ");

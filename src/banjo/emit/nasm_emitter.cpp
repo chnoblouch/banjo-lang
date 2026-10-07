@@ -1,6 +1,6 @@
 #include "nasm_emitter.hpp"
 
-#include "banjo/target/x86_64/x86_64_opcode.hpp"
+#include "banjo/target/x86_64/x86_64_opcode_names.hpp"
 #include "banjo/target/x86_64/x86_64_register.hpp"
 #include "banjo/utils/macros.hpp"
 #include "banjo/utils/timing.hpp"
@@ -9,98 +9,6 @@
 #include <variant>
 
 namespace banjo::codegen {
-
-const std::unordered_map<mcode::Opcode, std::string> NASMEmitter::OPCODE_NAMES = {
-    {target::X8664Opcode::MOV, "mov"},
-    {target::X8664Opcode::PUSH, "push"},
-    {target::X8664Opcode::POP, "pop"},
-    {target::X8664Opcode::ADD, "add"},
-    {target::X8664Opcode::SUB, "sub"},
-    {target::X8664Opcode::IMUL, "imul"},
-    {target::X8664Opcode::DIV, "div"},
-    {target::X8664Opcode::IDIV, "idiv"},
-    {target::X8664Opcode::AND, "and"},
-    {target::X8664Opcode::OR, "or"},
-    {target::X8664Opcode::XOR, "xor"},
-    {target::X8664Opcode::SHL, "shl"},
-    {target::X8664Opcode::SHR, "shr"},
-    {target::X8664Opcode::SAR, "sar"},
-    {target::X8664Opcode::CWD, "cwd"},
-    {target::X8664Opcode::CDQ, "cdq"},
-    {target::X8664Opcode::CQO, "cqo"},
-    {target::X8664Opcode::XCHG, "xchg"},
-    {target::X8664Opcode::LOCK_CMPXCHG, "lock cmpxchg"},
-    {target::X8664Opcode::JMP, "jmp"},
-    {target::X8664Opcode::CMP, "cmp"},
-    {target::X8664Opcode::JE, "je"},
-    {target::X8664Opcode::JNE, "jne"},
-    {target::X8664Opcode::JA, "ja"},
-    {target::X8664Opcode::JAE, "jae"},
-    {target::X8664Opcode::JB, "jb"},
-    {target::X8664Opcode::JBE, "jbe"},
-    {target::X8664Opcode::JG, "jg"},
-    {target::X8664Opcode::JGE, "jge"},
-    {target::X8664Opcode::JL, "jl"},
-    {target::X8664Opcode::JLE, "jle"},
-    {target::X8664Opcode::SETE, "sete"},
-    {target::X8664Opcode::SETNE, "setne"},
-    {target::X8664Opcode::SETA, "seta"},
-    {target::X8664Opcode::SETAE, "setae"},
-    {target::X8664Opcode::SETB, "setb"},
-    {target::X8664Opcode::SETBE, "setbe"},
-    {target::X8664Opcode::SETG, "setg"},
-    {target::X8664Opcode::SETGE, "setge"},
-    {target::X8664Opcode::SETL, "setl"},
-    {target::X8664Opcode::SETLE, "setle"},
-    {target::X8664Opcode::CMOVE, "cmove"},
-    {target::X8664Opcode::CMOVNE, "cmovne"},
-    {target::X8664Opcode::CMOVA, "cmova"},
-    {target::X8664Opcode::CMOVAE, "cmovae"},
-    {target::X8664Opcode::CMOVB, "cmovb"},
-    {target::X8664Opcode::CMOVBE, "cmovbe"},
-    {target::X8664Opcode::CMOVG, "cmovg"},
-    {target::X8664Opcode::CMOVGE, "cmovge"},
-    {target::X8664Opcode::CMOVL, "cmovl"},
-    {target::X8664Opcode::CMOVLE, "cmovle"},
-    {target::X8664Opcode::CALL, "call"},
-    {target::X8664Opcode::RET, "ret"},
-    {target::X8664Opcode::LEA, "lea"},
-    {target::X8664Opcode::MOVSX, "movsx"},
-    {target::X8664Opcode::MOVZX, "movzx"},
-    {target::X8664Opcode::MOVSS, "movss"},
-    {target::X8664Opcode::MOVSD, "movsd"},
-    {target::X8664Opcode::MOVAPS, "movaps"},
-    {target::X8664Opcode::MOVUPS, "movups"},
-    {target::X8664Opcode::MOVD, "movd"},
-    {target::X8664Opcode::MOVQ, "movq"},
-    {target::X8664Opcode::ADDSS, "addss"},
-    {target::X8664Opcode::ADDSD, "addsd"},
-    {target::X8664Opcode::SUBSS, "subss"},
-    {target::X8664Opcode::SUBSD, "subsd"},
-    {target::X8664Opcode::MULSS, "mulss"},
-    {target::X8664Opcode::MULSD, "mulsd"},
-    {target::X8664Opcode::DIVSS, "divss"},
-    {target::X8664Opcode::DIVSD, "divsd"},
-    {target::X8664Opcode::XORPS, "xorps"},
-    {target::X8664Opcode::XORPD, "xorpd"},
-    {target::X8664Opcode::MINSS, "minss"},
-    {target::X8664Opcode::MINSD, "minsd"},
-    {target::X8664Opcode::MAXSS, "maxss"},
-    {target::X8664Opcode::MAXSD, "maxsd"},
-    {target::X8664Opcode::SQRTSS, "sqrtss"},
-    {target::X8664Opcode::SQRTSD, "sqrtsd"},
-    {target::X8664Opcode::UCOMISS, "ucomiss"},
-    {target::X8664Opcode::UCOMISD, "ucomisd"},
-    {target::X8664Opcode::CVTSS2SD, "cvtss2sd"},
-    {target::X8664Opcode::CVTSD2SS, "cvtsd2ss"},
-    {target::X8664Opcode::CVTSI2SS, "cvtsi2ss"},
-    {target::X8664Opcode::CVTSS2SI, "cvtss2si"},
-    {target::X8664Opcode::CVTSI2SD, "cvtsi2sd"},
-    {target::X8664Opcode::CVTSD2SI, "cvtsd2si"},
-
-    {mcode::PseudoOpcode::EH_PUSHREG, ".eh_pushreg"},
-    {mcode::PseudoOpcode::EH_ALLOCSTACK, ".eh_allocstack"},
-};
 
 NASMEmitter::NASMEmitter(mcode::Module &module, std::ostream &stream, target::TargetDescription target)
   : Emitter(module, stream),
@@ -249,7 +157,13 @@ void NASMEmitter::gen_basic_block(mcode::Function *func, mcode::BasicBlock &basi
 }
 
 void NASMEmitter::emit_instr(mcode::Function *func, mcode::BasicBlock &basic_block, mcode::Instruction &instr) {
-    std::string line = OPCODE_NAMES.find(instr.get_opcode())->second;
+    std::string line;
+
+    if (const auto *opcode_name = target::X86_64_OPCODE_NAMES.try_find_by_left(instr.get_opcode())) {
+        line = std::string{*opcode_name};
+    } else {
+        return;
+    }
 
     bool has_reg_operand = false;
     for (int i = 0; i < instr.get_operands().size(); i++) {
