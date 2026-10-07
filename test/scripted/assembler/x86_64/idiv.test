@@ -1,0 +1,54 @@
+# test:subtest
+# test:encoding "48F7FF"
+
+idiv rdi
+
+# test:subtest
+# test:encoding "F7FF"
+
+idiv edi
+
+# test:subtest
+# test:encoding "41F7F9"
+
+idiv r9d
+
+# test:subtest
+# test:encoding "66F7FA"
+
+idiv dx
+
+# test:subtest
+# test:encoding "6641F7F9"
+
+idiv r9w
+
+# test:subtest
+# test:encoding "40F6FF"
+
+idiv dil
+
+# test:subtest
+# test:encoding "41F6F9"
+
+idiv r9b
+
+# test:subtest
+# test:encoding "48F73F"
+
+idiv qword [rdi]
+
+# test:subtest
+# test:encoding "F73F"
+
+idiv dword [rdi]
+
+# test:subtest
+# test:encoding "66F73F"
+
+idiv word [rdi]
+
+# test:subtest
+# test:encoding "F63F"
+
+idiv byte [rdi]

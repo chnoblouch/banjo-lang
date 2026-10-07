@@ -67,7 +67,7 @@ private:
         ADDR_R13 = 13,
         ADDR_R14 = 14,
         ADDR_R15 = 15,
-        ADDR_NO_INDEX = 0b100
+        ADDR_NO_INDEX = 0b100,
     };
 
     struct Immediate {
@@ -214,31 +214,9 @@ private:
     void emit_mov_rm(RegCode dst, Address src, std::uint8_t size);
     void emit_mov_mr(Address dst, RegCode src, std::uint8_t size);
     void emit_mov_mi(Address dst, Immediate imm, std::uint8_t size);
-    void emit_imul_rr(RegCode dst, RegCode src, std::uint8_t size);
-    void emit_imul_rm(RegCode dst, Address src, std::uint8_t size);
-    void emit_imul_rri(RegCode dst, Immediate imm, std::uint8_t size);
-    void emit_basic_rr(std::uint8_t opcode8, std::uint8_t opcode32, RegCode dst, RegCode src, std::uint8_t size);
-    void emit_basic_ri(
-        std::uint8_t opcode8,
-        std::uint8_t opcode32,
-        std::uint8_t opcode_imm8,
-        std::uint8_t modrm_reg_digit,
-        RegCode dst,
-        Immediate imm,
-        std::uint8_t size
-    );
-    void emit_basic_mr(std::uint8_t opcode8, std::uint8_t opcode32, Address dst, RegCode src, std::uint8_t size);
-    void emit_basic_mi(
-        std::uint8_t opcode8,
-        std::uint8_t opcode32,
-        std::uint8_t opcode_imm8,
-        std::uint8_t modrm_reg_digit,
-        Address dst,
-        Immediate imm,
-        std::uint8_t size
-    );
 
     void encode_add_family(mcode::Instruction &instr, const BasicInstrOpcodes &opcodes);
+    void encode_div_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
     void encode_shl_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
     void encode_jcc_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
     void encode_setcc_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
