@@ -7,6 +7,7 @@
 #include "banjo/ssa/module.hpp"
 #include "banjo/ssa/opcode.hpp"
 #include "banjo/ssa/primitive.hpp"
+#include "banjo/ssa/structure.hpp"
 #include "banjo/ssa/type.hpp"
 #include "banjo/ssa/virtual_register.hpp"
 #include "banjo/utils/generic_lexer.hpp"
@@ -23,7 +24,7 @@
 
 namespace banjo::ssa {
 
-static const HashMap<std::string_view, ssa::Opcode> OPCODES{
+static const HashMap<std::string_view, Opcode> OPCODES{
     {"alloca", Opcode::ALLOCA},
     {"load", Opcode::LOAD},
     {"store", Opcode::STORE},
@@ -76,19 +77,19 @@ static const HashMap<std::string_view, ssa::Opcode> OPCODES{
     {"frame_address", Opcode::FRAME_ADDRESS},
 };
 
-static const HashMap<std::string_view, ssa::Primitive> PRIMITIVES{
-    {"void", ssa::Primitive::VOID},
-    {"u8", ssa::Primitive::U8},
-    {"u16", ssa::Primitive::U16},
-    {"u32", ssa::Primitive::U32},
-    {"u64", ssa::Primitive::U64},
-    {"i8", ssa::Primitive::I8},
-    {"i16", ssa::Primitive::I16},
-    {"i32", ssa::Primitive::I32},
-    {"i64", ssa::Primitive::I64},
-    {"f32", ssa::Primitive::F32},
-    {"f64", ssa::Primitive::F64},
-    {"addr", ssa::Primitive::ADDR},
+static const HashMap<std::string_view, Primitive> PRIMITIVES{
+    {"void", Primitive::VOID},
+    {"u8", Primitive::U8},
+    {"u16", Primitive::U16},
+    {"u32", Primitive::U32},
+    {"u64", Primitive::U64},
+    {"i8", Primitive::I8},
+    {"i16", Primitive::I16},
+    {"i32", Primitive::I32},
+    {"i64", Primitive::I64},
+    {"f32", Primitive::F32},
+    {"f64", Primitive::F64},
+    {"addr", Primitive::ADDR},
 };
 
 static std::string token_to_string(utils::Token &token) {
@@ -101,12 +102,11 @@ static std::string token_to_string(utils::Token &token) {
     }
 }
 
-Parser::Parser(utils::TokenStream &tokens, ssa::CallingConv calling_conv)
-  : tokens{tokens},
-    calling_conv{calling_conv} {}
+Parser::Parser(utils::TokenStream &tokens, CallingConv calling_conv) : tokens{tokens}, calling_conv{calling_conv} {}
 
-ssa::Module Parser::parse() {
-    ssa::Module mod;
+Module Parser::parse() {
+    Module mod;
+    mod.block_id = 1000; // FIXME
 
     while (true) {
         utils::Token &token = tokens.get();
@@ -115,22 +115,25 @@ ssa::Module Parser::parse() {
             if (token.value == "func") {
                 operand_context.func_index = mod.get_functions().size();
 
-                if (ssa::Function *func = parse_func()) {
-                    mod.add(func);
-                    continue;
-                } else {
+                if (!parse_func(mod)) {
                     break;
                 }
+            } else if (token.value == "struct") {
+                if (!parse_struct(mod)) {
+                    break;
+                }
+            } else {
+                report_unexpected();
+                break;
             }
         } else if (token.type == utils::TokenType::END_OF_LINE) {
             tokens.advance();
-            continue;
         } else if (token.type == utils::TokenType::END_OF_FILE) {
             break;
+        } else {
+            report_unexpected();
+            break;
         }
-
-        report_unexpected();
-        break;
     }
 
     for (unsigned i = 0; i < mod.get_functions().size(); i++) {
@@ -144,36 +147,22 @@ ssa::Module Parser::parse() {
     return mod;
 }
 
-ssa::Function *Parser::parse_func() {
+bool Parser::parse_func(Module &mod) {
     tokens.advance();
 
-    std::optional<ssa::Type> return_type = parse_type();
+    std::optional<Type> return_type = parse_type();
     if (!return_type) {
-        return nullptr;
+        return false;
     }
 
     std::optional<std::string> name = parse_ident();
     if (!name) {
-        return nullptr;
+        return false;
     }
 
     std::optional<std::vector<Param>> params = parse_params();
     if (!params) {
-        return nullptr;
-    }
-
-    if (tokens.get().type == utils::TokenType::LBRACE) {
-        tokens.advance();
-    } else {
-        report_unexpected("'{'");
-        return nullptr;
-    }
-
-    if (tokens.get().type == utils::TokenType::END_OF_LINE) {
-        tokens.advance();
-    } else {
-        report_unexpected("end of line");
-        return nullptr;
+        return false;
     }
 
     std::vector<Type> param_types;
@@ -187,16 +176,48 @@ ssa::Function *Parser::parse_func() {
         param_regs.push_back(param.reg);
     }
 
-    ssa::Function *func = new ssa::Function{
-        *name,
-        FunctionType{
-            .params = param_types,
-            .return_type = *return_type,
-            .calling_conv = calling_conv,
-            .variadic = false,
-            .first_variadic_index = 0,
-        },
+    FunctionType func_type{
+        .params = param_types,
+        .return_type = *return_type,
+        .calling_conv = calling_conv,
+        .variadic = false,
+        .first_variadic_index = 0,
     };
+
+    bool global = false;
+
+    if (tokens.get().type == utils::TokenType::IDENTIFIER) {
+        if (tokens.get().value == "global") {
+            tokens.advance();
+            global = true;
+        } else {
+            report_unexpected();
+            return false;
+        }
+    }
+
+    if (tokens.get().type == utils::TokenType::LBRACE) {
+        tokens.advance();
+    } else if (try_end_line()) {
+        FunctionDecl *extern_func = new FunctionDecl{.name = *name, .type = func_type, .global = global};
+        mod.add(extern_func);
+        extern_funcs_by_name.insert(*name, extern_func);
+        return true;
+    } else {
+        report_unexpected();
+        return false;
+    }
+
+    if (tokens.get().type == utils::TokenType::END_OF_LINE) {
+        tokens.advance();
+    } else {
+        report_unexpected("end of line");
+        return false;
+    }
+
+    Function *func = new Function{*name, func_type};
+    func->last_virtual_reg = 1000; // FIXME
+    func->global = global;
 
     while (true) {
         operand_context.block_index = func->basic_blocks.get_size();
@@ -207,7 +228,7 @@ ssa::Function *Parser::parse_func() {
             blocks_by_name.insert(block->get_label(), iter);
         } else {
             delete func;
-            return nullptr;
+            return false;
         }
 
         utils::Token &token = tokens.get();
@@ -222,7 +243,10 @@ ssa::Function *Parser::parse_func() {
     entry_block.param_regs = param_regs;
     entry_block.param_types = param_types;
 
-    return func;
+    mod.add(func);
+    funcs_by_name.insert(func->name, func);
+
+    return true;
 }
 
 std::optional<std::vector<Parser::Param>> Parser::parse_params() {
@@ -240,17 +264,23 @@ std::optional<std::vector<Parser::Param>> Parser::parse_params() {
     }
 
     while (true) {
-        std::optional<ssa::Type> type = parse_type();
+        std::optional<Type> type = parse_type();
         if (!type) {
             return {};
         }
 
-        std::optional<ssa::VirtualRegister> reg = parse_reg();
-        if (!reg) {
-            return {};
+        if (tokens.get().type == utils::TokenType::COMMA || tokens.get().type == utils::TokenType::RPAREN) {
+            // TODO: Error handling for non-external functions
+            params.push_back({*type, -1});
+        } else {
+            std::optional<VirtualRegister> reg = parse_reg();
+            if (!reg) {
+                return {};
+            }
+
+            params.push_back({*type, *reg});
         }
 
-        params.push_back({*type, *reg});
         utils::Token &token = tokens.get();
 
         if (token.type == utils::TokenType::COMMA) {
@@ -267,8 +297,8 @@ std::optional<std::vector<Parser::Param>> Parser::parse_params() {
     return params;
 }
 
-std::optional<ssa::BasicBlock> Parser::parse_block(bool is_entry) {
-    ssa::BasicBlock block;
+std::optional<BasicBlock> Parser::parse_block(bool is_entry) {
+    BasicBlock block;
     utils::Token &token = tokens.get();
 
     if (!is_entry) {
@@ -303,7 +333,7 @@ std::optional<ssa::BasicBlock> Parser::parse_block(bool is_entry) {
 
         operand_context.instr_index = block.get_instrs().get_size();
 
-        std::optional<ssa::Instruction> instr = parse_instr();
+        std::optional<Instruction> instr = parse_instr();
         if (!instr) {
             return {};
         }
@@ -321,11 +351,11 @@ std::optional<ssa::BasicBlock> Parser::parse_block(bool is_entry) {
     return block;
 }
 
-std::optional<ssa::Instruction> Parser::parse_instr() {
-    std::optional<ssa::VirtualRegister> dst;
+std::optional<Instruction> Parser::parse_instr() {
+    std::optional<VirtualRegister> dst;
 
     if (tokens.get().type == utils::TokenType::PERCENT) {
-        if (std::optional<ssa::VirtualRegister> reg = parse_reg()) {
+        if (std::optional<VirtualRegister> reg = parse_reg()) {
             dst = reg;
         } else {
             return {};
@@ -339,12 +369,12 @@ std::optional<ssa::Instruction> Parser::parse_instr() {
         }
     }
 
-    std::optional<ssa::Opcode> opcode = parse_opcode();
+    std::optional<Opcode> opcode = parse_opcode();
     if (!opcode) {
         return {};
     }
 
-    std::vector<ssa::Operand> operands;
+    std::vector<Operand> operands;
     utils::Token &token = tokens.get();
 
     if (token.type != utils::TokenType::END_OF_LINE && token.type != utils::TokenType::END_OF_FILE) {
@@ -365,10 +395,10 @@ std::optional<ssa::Instruction> Parser::parse_instr() {
         }
     }
 
-    return ssa::Instruction{*opcode, dst, operands};
+    return Instruction{*opcode, dst, operands};
 }
 
-std::optional<ssa::Opcode> Parser::parse_opcode() {
+std::optional<Opcode> Parser::parse_opcode() {
     utils::Token &token = tokens.get();
 
     if (token.type == utils::TokenType::IDENTIFIER) {
@@ -382,8 +412,8 @@ std::optional<ssa::Opcode> Parser::parse_opcode() {
     return {};
 }
 
-std::optional<ssa::Operand> Parser::parse_operand() {
-    std::optional<ssa::Type> type = parse_type();
+std::optional<Operand> Parser::parse_operand() {
+    std::optional<Type> type = parse_type();
     if (!type) {
         return {};
     }
@@ -393,13 +423,19 @@ std::optional<ssa::Operand> Parser::parse_operand() {
     switch (token.type) {
         case utils::TokenType::NUMBER: {
             tokens.advance();
-            LargeInt value{token.value}; // TODO: Validation
-            return ssa::Operand::from_int_immediate(value, *type);
+
+            if (token.value.find('.') == std::string::npos) {
+                LargeInt value{token.value}; // TODO: Validation
+                return Operand::from_int_immediate(value, *type);
+            } else {
+                double value = std::stod(std::string{token.value});
+                return Operand::from_fp_immediate(value, *type);
+            }
         }
 
         case utils::TokenType::PERCENT: {
-            if (std::optional<ssa::VirtualRegister> reg = parse_reg()) {
-                return ssa::Operand::from_register(*reg, *type);
+            if (std::optional<VirtualRegister> reg = parse_reg()) {
+                return Operand::from_register(*reg, *type);
             } else {
                 return {};
             }
@@ -409,16 +445,34 @@ std::optional<ssa::Operand> Parser::parse_operand() {
             if (token.value[0] == 'b') {
                 tokens.advance();
                 unresolved_blocks.push_back({operand_context, std::string{token.value}});
-                return ssa::Operand::from_branch_target({.block = nullptr});
+                return Operand::from_branch_target({.block = nullptr});
             } else {
                 break;
             }
         }
 
+        case utils::TokenType::AT: {
+            std::optional<std::string> ident = parse_ident();
+            if (!ident) {
+                return {};
+            }
+
+            if (Function **func = funcs_by_name.try_find(*ident)) {
+                return Operand::from_func(*func, *type);
+            }
+
+            if (FunctionDecl **extern_func = extern_funcs_by_name.try_find(*ident)) {
+                return Operand::from_extern_func(*extern_func, *type);
+            }
+
+            report_error("cannot find symbol '" + *ident + "'");
+            return {};
+        }
+
         case utils::TokenType::COMMA:
         case utils::TokenType::END_OF_LINE:
         case utils::TokenType::END_OF_FILE: {
-            return ssa::Operand::from_type(*type);
+            return Operand::from_type(*type);
         }
 
         default: break;
@@ -428,7 +482,7 @@ std::optional<ssa::Operand> Parser::parse_operand() {
     return {};
 }
 
-std::optional<ssa::VirtualRegister> Parser::parse_reg() {
+std::optional<VirtualRegister> Parser::parse_reg() {
     if (tokens.get().type == utils::TokenType::PERCENT) {
         tokens.advance();
         utils::Token &token = tokens.get();
@@ -436,7 +490,7 @@ std::optional<ssa::VirtualRegister> Parser::parse_reg() {
         if (token.type == utils::TokenType::NUMBER) {
             if (std::optional<std::uint64_t> value = utils::parse_u64(token.value)) {
                 tokens.advance();
-                return static_cast<ssa::VirtualRegister>(*value);
+                return static_cast<VirtualRegister>(*value);
             }
         }
     }
@@ -445,13 +499,83 @@ std::optional<ssa::VirtualRegister> Parser::parse_reg() {
     return {};
 }
 
-std::optional<ssa::Type> Parser::parse_type() {
+bool Parser::parse_struct(Module &mod) {
+    tokens.advance();
+
+    std::optional<std::string> name = parse_ident();
+    if (!name) {
+        return false;
+    }
+
+    if (tokens.get().type == utils::TokenType::LBRACE) {
+        tokens.advance();
+    } else {
+        report_unexpected("'{'");
+        return false;
+    }
+
+    if (tokens.get().type == utils::TokenType::END_OF_LINE) {
+        tokens.advance();
+    } else {
+        report_unexpected("end of line");
+        return false;
+    }
+
+    std::vector<StructureMember> members;
+
+    while (true) {
+        if (tokens.get().type == utils::TokenType::END_OF_LINE) {
+            continue;
+        } else if (tokens.get().type == utils::TokenType::RBRACE) {
+            tokens.advance();
+            break;
+        }
+
+        std::optional<Type> type = parse_type();
+        if (!type) {
+            return false;
+        }
+
+        std::optional<std::string> name = parse_ident();
+        if (!name) {
+            return false;
+        }
+
+        if (tokens.get().type == utils::TokenType::END_OF_LINE) {
+            tokens.advance();
+        } else {
+            report_unexpected("end of line");
+            return false;
+        }
+
+        members.push_back(StructureMember{*name, *type});
+    }
+
+    Structure *struct_ = new Structure{*name};
+    struct_->members = members;
+
+    mod.add(struct_);
+    structs_by_name.insert(struct_->name, struct_);
+
+    return true;
+}
+
+std::optional<Type> Parser::parse_type() {
     utils::Token &token = tokens.get();
 
     if (token.type == utils::TokenType::IDENTIFIER) {
-        if (const ssa::Primitive *primitive = PRIMITIVES.try_find(token.value)) {
+        if (const Primitive *primitive = PRIMITIVES.try_find(token.value)) {
             tokens.advance();
             return *primitive;
+        }
+    } else if (token.type == utils::TokenType::AT) {
+        if (std::optional<std::string> ident = parse_ident()) {
+            if (Structure **struct_ = structs_by_name.try_find(*ident)) {
+                return *struct_;
+            } else {
+                report_error("cannot find struct '" + *ident + "'");
+                return {};
+            }
         }
     }
 
@@ -472,6 +596,19 @@ std::optional<std::string> Parser::parse_ident() {
 
     report_unexpected("identifier");
     return {};
+}
+
+bool Parser::try_end_line() {
+    utils::TokenType type = tokens.get().type;
+
+    if (type == utils::TokenType::END_OF_LINE) {
+        tokens.advance();
+        return true;
+    } else if (type == utils::TokenType::END_OF_FILE) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 bool Parser::resolve_idents(OperandContext context, Function &func) {

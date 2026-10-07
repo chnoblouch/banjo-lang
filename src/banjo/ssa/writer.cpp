@@ -13,11 +13,11 @@ void Writer::write(Module &mod) {
                 stream << "union ";
             }
 
-            stream << "struct @" << struct_->name << ":\n";
+            stream << "struct @" << struct_->name << " {\n";
             for (const StructureMember &member : struct_->members) {
-                stream << "    field " << type_to_str(member.type) << " @" << member.name << "\n";
+                stream << "    " << type_to_str(member.type) << " @" << member.name << "\n";
             }
-            stream << "\n";
+            stream << "}\n\n";
         }
     }
 
@@ -64,11 +64,6 @@ void Writer::write_func_decl(FunctionDecl &func_decl) {
     const FunctionType &func_type = func_decl.type;
 
     stream << "func ";
-
-    if (func_type.calling_conv != CallingConv::NONE) {
-        stream << calling_conv_to_str(func_type.calling_conv) + " ";
-    }
-
     stream << type_to_str(func_type.return_type) + " ";
     stream << "@" + func_decl.name;
     stream << "(";
@@ -93,11 +88,6 @@ void Writer::write_func_def(Function *func_def) {
     const FunctionType &func_type = func_def->type;
 
     stream << "func ";
-
-    if (func_type.calling_conv != CallingConv::NONE) {
-        stream << calling_conv_to_str(func_type.calling_conv) + " ";
-    }
-
     stream << type_to_str(func_type.return_type) + " ";
     stream << "@" + func_def->name;
     stream << "(";

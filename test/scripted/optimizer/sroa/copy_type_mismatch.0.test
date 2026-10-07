@@ -1,24 +1,28 @@
 # test:pass "sroa"
 # test:section input
 
-struct @S:
-    field i32 @a
-    field i64 @b
+struct @S {
+    i32 @a
+    i64 @b
+}
 
-func void @wrap():
+func void @wrap() {
     %0 = alloca @S
     %1 = alloca i64
     copy addr %1, addr %0, i64
     ret
+}
 
 # test:section output
 
-struct @S:
-    field i32 @a
-    field i64 @b
+struct @S {
+    i32 @a
+    i64 @b
+}
 
-func void @wrap():
+func void @wrap() {
     %0 = alloca @S
     %1 = alloca i64
     copy addr %1, addr %0, i64
     ret
+}

@@ -7,6 +7,7 @@
 #include "banjo/ssa/module.hpp"
 #include "banjo/ssa/opcode.hpp"
 #include "banjo/ssa/operand.hpp"
+#include "banjo/ssa/structure.hpp"
 #include "banjo/ssa/type.hpp"
 #include "banjo/ssa/virtual_register.hpp"
 #include "banjo/utils/generic_lexer.hpp"
@@ -41,24 +42,31 @@ private:
 
     OperandContext operand_context;
     std::vector<std::pair<OperandContext, std::string>> unresolved_blocks;
+
+    HashMap<std::string, Structure *> structs_by_name;
     HashMap<std::string, BasicBlockIter> blocks_by_name;
+    HashMap<std::string, Function *> funcs_by_name;
+    HashMap<std::string, FunctionDecl *> extern_funcs_by_name;
 
 public:
-    Parser(utils::TokenStream &tokens, ssa::CallingConv calling_conv);
+    Parser(utils::TokenStream &tokens, CallingConv calling_conv);
 
     Module parse();
 
 private:
-    ssa::Function *parse_func();
+    bool parse_func(Module &mod);
     std::optional<std::vector<Param>> parse_params();
-    std::optional<ssa::BasicBlock> parse_block(bool is_entry);
-    std::optional<ssa::Instruction> parse_instr();
-    std::optional<ssa::Opcode> parse_opcode();
-    std::optional<ssa::Operand> parse_operand();
-    std::optional<ssa::VirtualRegister> parse_reg();
+    std::optional<BasicBlock> parse_block(bool is_entry);
+    std::optional<Instruction> parse_instr();
+    std::optional<Opcode> parse_opcode();
+    std::optional<Operand> parse_operand();
+    std::optional<VirtualRegister> parse_reg();
 
-    std::optional<ssa::Type> parse_type();
+    bool parse_struct(Module &mod);
+
+    std::optional<Type> parse_type();
     std::optional<std::string> parse_ident();
+    bool try_end_line();
 
     bool resolve_idents(OperandContext context, Function &func);
     bool resolve_idents(OperandContext context, Instruction &instr);

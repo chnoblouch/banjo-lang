@@ -1,26 +1,29 @@
 # test:pass "sroa"
 # test:section input
 
-struct @Vec3:
-    field f32 @x
-    field f32 @y
-    field f32 @z
+struct @Vec3 {
+    f32 @x
+    f32 @y
+    f32 @z
+}
 
-func void @test():
+func void @test() {
     %0 = alloca @Vec3
     %1 = alloca @Vec3
     %2 = memberptr @Vec3, addr %0, void 1
     store f32 5.0, addr %2
     copy addr %1, addr %0, @Vec3
+}
 
 # test:section output
 
-struct @Vec3:
-    field f32 @x
-    field f32 @y
-    field f32 @z
+struct @Vec3 {
+    f32 @x
+    f32 @y
+    f32 @z
+}
 
-func void @test():
+func void @test() {
     %0 = alloca f32
     %1 = alloca f32
     %2 = alloca f32
@@ -34,3 +37,4 @@ func void @test():
     store f32 %7, addr %4
     %8 = load f32, addr %2
     store f32 %8, addr %5
+}

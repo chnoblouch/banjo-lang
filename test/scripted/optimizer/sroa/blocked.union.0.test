@@ -1,24 +1,28 @@
 # test:pass "sroa"
 # test:section input
 
-struct @S:
-    field i64 @a
-    field f32 @b
+struct @S {
+    i64 @a
+    f32 @b
+}
 
-func f32 @test():
+func f32 @test() {
     %0 = alloca @S
     store i64 100, addr %0
     %1 = load f32, addr %0
     ret f32 %1
+}
 
 # test:section output
 
-struct @S:
-    field i64 @a
-    field f32 @b
+struct @S {
+    i64 @a
+    f32 @b
+}
 
-func f32 @test():
+func f32 @test() {
     %0 = alloca @S
     store i64 100, addr %0
     %1 = load f32, addr %0
     ret f32 %1
+}

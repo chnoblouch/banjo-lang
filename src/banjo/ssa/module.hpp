@@ -11,9 +11,7 @@
 
 namespace banjo::ssa {
 
-class Module {
-
-private:
+struct Module {
     std::vector<Function *> functions;
     std::vector<Global *> globals;
     std::vector<ssa::Structure *> structures;

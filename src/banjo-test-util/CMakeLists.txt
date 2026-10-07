@@ -8,8 +8,6 @@ add_executable(banjo-test-util
     "main.cpp"
     "line_based_reader.cpp"
     "line_based_reader.hpp"
-    "ssa_parser.cpp"
-    "ssa_parser.hpp"
     "ssa_util.cpp"
     "ssa_util.hpp"
 )

@@ -1,7 +1,7 @@
 # test:pass "stack_to_reg"
 # test:section input
 
-func i32 @test():
+func i32 @test() {
     %0 = alloca i32
     %1 = alloca i32
     store i32 100, addr %0
@@ -10,8 +10,10 @@ func i32 @test():
     %3 = load i32, addr %1
     %4 = add i32 %2, i32 %3
     ret i32 %4
+}
 
 # test:section output
 
-func i32 @test():
+func i32 @test() {
     ret i32 150
+}

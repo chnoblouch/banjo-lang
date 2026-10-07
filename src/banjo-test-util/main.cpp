@@ -50,7 +50,8 @@ int main(int argc, const char *argv[]) {
 
         std::cout.flush();
     } else if (strcmp(argv[1], "ssa") == 0) {
-        banjo::test::SSAUtil{}.optimize(argv[2]);
+        std::string input = read_stdin();
+        banjo::test::SSAUtil{}.optimize(argv[2], input);
     } else if (strcmp(argv[1], "codegen") == 0) {
         banjo::target::Architecture arch = parse_arch(argv[2]);
         std::string input = read_stdin();
