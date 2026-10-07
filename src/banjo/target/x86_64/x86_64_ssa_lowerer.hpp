@@ -36,7 +36,14 @@ public:
     mcode::CallingConvention *get_calling_convention(ssa::CallingConv calling_conv) override;
 
 public:
-    void append_mov_and_operation(mcode::Opcode m_opcode, ssa::VirtualRegister dst, ssa::Value &lhs, ssa::Value &rhs);
+    void append_mov_and_operation(
+        mcode::Opcode m_opcode,
+        ssa::VirtualRegister dst,
+        ssa::Value &lhs,
+        ssa::Value &rhs,
+        bool prefer_32_bit
+    );
+
     bool lower_stored_operation(ssa::Instruction &store);
 
     void init_func(ssa::Function &func) override;

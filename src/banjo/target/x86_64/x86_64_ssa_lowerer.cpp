@@ -46,15 +46,19 @@ void X8664SSALowerer::append_mov_and_operation(
     mcode::Opcode m_opcode,
     ssa::VirtualRegister dst,
     ssa::Value &lhs,
-    ssa::Value &rhs
+    ssa::Value &rhs,
+    bool prefer_32_bit
 ) {
+    unsigned size = get_size(lhs.get_type());
+
     // We generate 32-bit instructions for 8-bit and 16-bit operations because
-    // they have a smaller encoding. Latency and throughput are equivalent for
+    // they have a smaller encoding. Latency and throughput are equivalent on
     // modern processors.
+    if (prefer_32_bit) {
+        size = size == 8 ? 8 : 4;
+    }
 
-    unsigned size = get_size(lhs.get_type()) == 8 ? 8 : 4;
     mcode::Operand m_dst = map_vreg_as_operand(dst, size);
-
     lower_as_move(m_dst, lhs);
     mcode::Operand m_rhs = lower_as_operand(rhs, {.allow_addrs = m_dst.is_register()}).with_size(size);
     emit({m_opcode, {m_dst, m_rhs}});
@@ -228,11 +232,11 @@ void X8664SSALowerer::lower_add(ssa::Instruction &instr) {
     }
     */
 
-    append_mov_and_operation(X8664Opcode::ADD, *instr.get_dest(), instr.get_operand(0), instr.get_operand(1));
+    append_mov_and_operation(X8664Opcode::ADD, *instr.get_dest(), instr.get_operand(0), instr.get_operand(1), true);
 }
 
 void X8664SSALowerer::lower_sub(ssa::Instruction &instr) {
-    append_mov_and_operation(X8664Opcode::SUB, *instr.get_dest(), instr.get_operand(0), instr.get_operand(1));
+    append_mov_and_operation(X8664Opcode::SUB, *instr.get_dest(), instr.get_operand(0), instr.get_operand(1), true);
 }
 
 void X8664SSALowerer::lower_mul(ssa::Instruction &instr) {
@@ -286,7 +290,7 @@ void X8664SSALowerer::lower_urem(ssa::Instruction &instr) {
 void X8664SSALowerer::lower_fadd(ssa::Instruction &instr) {
     ssa::Primitive type = instr.get_operand(0).get_type().get_primitive();
     mcode::Opcode opcode = type == ssa::Primitive::F64 ? X8664Opcode::ADDSD : X8664Opcode::ADDSS;
-    append_mov_and_operation(opcode, *instr.get_dest(), instr.get_operand(0), instr.get_operand(1));
+    append_mov_and_operation(opcode, *instr.get_dest(), instr.get_operand(0), instr.get_operand(1), false);
 }
 
 void X8664SSALowerer::lower_fsub(ssa::Instruction &instr) {
@@ -308,31 +312,31 @@ void X8664SSALowerer::lower_fsub(ssa::Instruction &instr) {
     }
 
     mcode::Opcode opcode = type == ssa::Primitive::F64 ? X8664Opcode::SUBSD : X8664Opcode::SUBSS;
-    append_mov_and_operation(opcode, *instr.get_dest(), instr.get_operand(0), instr.get_operand(1));
+    append_mov_and_operation(opcode, *instr.get_dest(), instr.get_operand(0), instr.get_operand(1), false);
 }
 
 void X8664SSALowerer::lower_fmul(ssa::Instruction &instr) {
     ssa::Primitive type = instr.get_operand(0).get_type().get_primitive();
     mcode::Opcode opcode = type == ssa::Primitive::F64 ? X8664Opcode::MULSD : X8664Opcode::MULSS;
-    append_mov_and_operation(opcode, *instr.get_dest(), instr.get_operand(0), instr.get_operand(1));
+    append_mov_and_operation(opcode, *instr.get_dest(), instr.get_operand(0), instr.get_operand(1), false);
 }
 
 void X8664SSALowerer::lower_fdiv(ssa::Instruction &instr) {
     ssa::Primitive type = instr.get_operand(0).get_type().get_primitive();
     mcode::Opcode opcode = type == ssa::Primitive::F64 ? X8664Opcode::DIVSD : X8664Opcode::DIVSS;
-    append_mov_and_operation(opcode, *instr.get_dest(), instr.get_operand(0), instr.get_operand(1));
+    append_mov_and_operation(opcode, *instr.get_dest(), instr.get_operand(0), instr.get_operand(1), false);
 }
 
 void X8664SSALowerer::lower_and(ssa::Instruction &instr) {
-    append_mov_and_operation(X8664Opcode::AND, *instr.get_dest(), instr.get_operand(0), instr.get_operand(1));
+    append_mov_and_operation(X8664Opcode::AND, *instr.get_dest(), instr.get_operand(0), instr.get_operand(1), true);
 }
 
 void X8664SSALowerer::lower_or(ssa::Instruction &instr) {
-    append_mov_and_operation(X8664Opcode::OR, *instr.get_dest(), instr.get_operand(0), instr.get_operand(1));
+    append_mov_and_operation(X8664Opcode::OR, *instr.get_dest(), instr.get_operand(0), instr.get_operand(1), true);
 }
 
 void X8664SSALowerer::lower_xor(ssa::Instruction &instr) {
-    append_mov_and_operation(X8664Opcode::XOR, *instr.get_dest(), instr.get_operand(0), instr.get_operand(1));
+    append_mov_and_operation(X8664Opcode::XOR, *instr.get_dest(), instr.get_operand(0), instr.get_operand(1), true);
 }
 
 void X8664SSALowerer::lower_lshl(ssa::Instruction &instr) {
@@ -976,7 +980,7 @@ void X8664SSALowerer::lower_cond_branch(mcode::Opcode cmp_opcode, ssa::Instructi
         mcode::Opcode branch_opcode = X8664Opcode::JCC + static_cast<unsigned>(condition);
 
         move_branch_args(target_false);
-        append_mov_and_operation(cmp_opcode, get_func().next_virtual_reg(), lhs, rhs);
+        append_mov_and_operation(cmp_opcode, get_func().next_virtual_reg(), lhs, rhs, false);
         emit({branch_opcode, {m_target_false}});
         move_branch_args(target_true);
     } else {
@@ -984,7 +988,7 @@ void X8664SSALowerer::lower_cond_branch(mcode::Opcode cmp_opcode, ssa::Instructi
         mcode::Opcode branch_opcode = X8664Opcode::JCC + static_cast<unsigned>(condition);
 
         move_branch_args(target_true);
-        append_mov_and_operation(cmp_opcode, get_func().next_virtual_reg(), lhs, rhs);
+        append_mov_and_operation(cmp_opcode, get_func().next_virtual_reg(), lhs, rhs, false);
         emit({branch_opcode, {m_target_true}});
         move_branch_args(target_false);
 
