@@ -12,3 +12,18 @@ cvtsd2ss xmm10, xmm7
 # test:encoding "F2410F5ACD"
 
 cvtsd2ss xmm1, xmm13
+
+# test:subtest
+# test:encoding "F20F5A0B"
+
+cvtsd2ss xmm1, [rbx]
+
+# test:subtest
+# test:encoding "F2440F5A13"
+
+cvtsd2ss xmm10, [rbx]
+
+# test:subtest
+# test:encoding "F2410F5A0F"
+
+cvtsd2ss xmm1, [r15]

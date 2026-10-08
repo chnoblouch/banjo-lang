@@ -29,6 +29,16 @@ cmove edx, r12d
 cmove edx, [rax]
 
 # test:subtest
+# test:encoding "440F4400"
+
+cmove r8d, [rax]
+
+# test:subtest
+# test:encoding "410F441424"
+
+cmove edx, [r12]
+
+# test:subtest
 # test:encoding "0F45D0"
 
 cmovne edx, eax

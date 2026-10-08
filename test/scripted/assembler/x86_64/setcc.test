@@ -9,9 +9,14 @@ sete bl
 sete r10b
 
 # test:subtest
-# test:encoding "410F944500"
+# test:encoding "0F9403"
 
-sete [r13]
+sete [rbx]
+
+# test:subtest
+# test:encoding "410F9402"
+
+sete [r10]
 
 # test:subtest
 # test:encoding "0F95C3"

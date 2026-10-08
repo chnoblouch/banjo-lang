@@ -9,6 +9,16 @@ cvtsi2sd xmm6, rdx
 cvtsi2sd xmm6, edx
 
 # test:subtest
+# test:encoding "F24C0F2AEA"
+
+cvtsi2sd xmm13, rdx
+
+# test:subtest
+# test:encoding "F2440F2AEA"
+
+cvtsi2sd xmm13, edx
+
+# test:subtest
 # test:encoding "F2490F2AF6"
 
 cvtsi2sd xmm6, r14
@@ -19,11 +29,31 @@ cvtsi2sd xmm6, r14
 cvtsi2sd xmm6, r14d
 
 # test:subtest
-# test:encoding "F24C0F2AEA"
+# test:encoding "F2480F2A33"
 
-cvtsi2sd xmm13, rdx
+cvtsi2sd xmm6, qword [rbx]
 
 # test:subtest
-# test:encoding "F2440F2AEA"
+# test:encoding "F20F2A33"
 
-cvtsi2sd xmm13, edx
+cvtsi2sd xmm6, dword [rbx]
+
+# test:subtest
+# test:encoding "F24C0F2A2B"
+
+cvtsi2sd xmm13, qword [rbx]
+
+# test:subtest
+# test:encoding "F2440F2A2B"
+
+cvtsi2sd xmm13, dword [rbx]
+
+# test:subtest
+# test:encoding "F2490F2A37"
+
+cvtsi2sd xmm6, qword [r15]
+
+# test:subtest
+# test:encoding "F2410F2A37"
+
+cvtsi2sd xmm6, dword [r15]

@@ -27,3 +27,33 @@ cvtss2si rdx, xmm13
 # test:encoding "F3410F2DD5"
 
 cvtss2si edx, xmm13
+
+# test:subtest
+# test:encoding "F3480F2D13"
+
+cvtss2si rdx, [rbx]
+
+# test:subtest
+# test:encoding "F30F2D13"
+
+cvtss2si edx, [rbx]
+
+# test:subtest
+# test:encoding "F34C0F2D33"
+
+cvtss2si r14, [rbx]
+
+# test:subtest
+# test:encoding "F3440F2D33"
+
+cvtss2si r14d, [rbx]
+
+# test:subtest
+# test:encoding "F3490F2D17"
+
+cvtss2si rdx, [r15]
+
+# test:subtest
+# test:encoding "F3410F2D17"
+
+cvtss2si edx, [r15]
