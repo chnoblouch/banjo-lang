@@ -1,0 +1,39 @@
+# test:subtest
+# test:encoding "5A"
+
+pop rdx
+
+# test:subtest
+# test:encoding "4158"
+
+pop r8
+
+# test:subtest
+# test:encoding "8F02"
+
+pop qword [rdx]
+
+# test:subtest
+# test:encoding "418F00"
+
+pop qword [r8]
+
+# test:subtest
+# test:encoding "665A"
+
+pop dx
+
+# test:subtest
+# test:encoding "664158"
+
+pop r8w
+
+# test:subtest
+# test:encoding "668F02"
+
+pop word [rdx]
+
+# test:subtest
+# test:encoding "66418F00"
+
+pop word [r8]

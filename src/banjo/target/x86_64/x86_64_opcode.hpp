@@ -29,9 +29,9 @@ enum {
 namespace X8664Opcode {
 
 enum {
-    MOV,  // TODO: Test
-    PUSH, // TODO: Test
-    POP,  // TODO: Test
+    MOV, // TODO: Test
+    PUSH,
+    POP,
     ADD,  // TODO: Test
     SUB,  // TODO: Test
     IMUL, // TODO: Test

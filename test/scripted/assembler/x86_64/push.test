@@ -1,0 +1,39 @@
+# test:subtest
+# test:encoding "52"
+
+push rdx
+
+# test:subtest
+# test:encoding "4150"
+
+push r8
+
+# test:subtest
+# test:encoding "FF32"
+
+push qword [rdx]
+
+# test:subtest
+# test:encoding "41FF30"
+
+push qword [r8]
+
+# test:subtest
+# test:encoding "6652"
+
+push dx
+
+# test:subtest
+# test:encoding "664150"
+
+push r8w
+
+# test:subtest
+# test:encoding "66FF32"
+
+push word [rdx]
+
+# test:subtest
+# test:encoding "6641FF30"
+
+push word [r8]

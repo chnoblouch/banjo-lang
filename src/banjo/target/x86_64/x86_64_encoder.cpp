@@ -596,23 +596,45 @@ void X8664Encoder::encode_ret() {
 }
 
 void X8664Encoder::encode_push(mcode::Instruction &instr) {
-    mcode::Operand &src = instr.get_operand(0);
-    ASSERT_MESSAGE(is_reg(src), "push source must be a register");
+    mcode::Operand &m_src = instr.get_operand(0);
+    unsigned size = m_src.get_size();
 
-    if (reg(src) >= R8) {
-        emit_rex(0, 0, 0, 1);
+    emit_16bit_prefix_if_required(size);
+
+    if (is_reg(m_src)) {
+        RegCode src = reg(m_src);
+        emit_rex_r(0, src);
+        emit_combined_opcode(0x50, src);
+    } else if (is_addr(m_src)) {
+        Address src = addr(m_src);
+        emit_rex_rm(0, 0, src);
+        emit_opcode(0xFF);
+        emit_mem_digit(src, 6);
+    } else {
+        // Immediates are currently unsupported.
+        ASSERT_UNREACHABLE;
     }
-    emit_combined_opcode(0x50, reg(src));
 }
 
 void X8664Encoder::encode_pop(mcode::Instruction &instr) {
-    mcode::Operand &dst = instr.get_operand(0);
-    ASSERT_MESSAGE(is_reg(dst), "pop destination must be a register");
+    mcode::Operand &m_src = instr.get_operand(0);
+    unsigned size = m_src.get_size();
 
-    if (reg(dst) >= R8) {
-        emit_rex(0, 0, 0, 1);
+    emit_16bit_prefix_if_required(size);
+
+    if (is_reg(m_src)) {
+        RegCode src = reg(m_src);
+        emit_rex_r(0, src);
+        emit_combined_opcode(0x58, src);
+    } else if (is_addr(m_src)) {
+        Address src = addr(m_src);
+        emit_rex_rm(0, 0, src);
+        emit_opcode(0x8F);
+        emit_mem_digit(src, 0);
+    } else {
+        // Immediates are currently unsupported.
+        ASSERT_UNREACHABLE;
     }
-    emit_combined_opcode(0x58, reg(dst));
 }
 
 void X8664Encoder::encode_movss(mcode::Instruction &instr) {

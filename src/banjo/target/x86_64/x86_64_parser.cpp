@@ -140,7 +140,7 @@ std::optional<mcode::Operand> X8664Parser::parse_operand() {
             tokens.advance();
 
             if (tokens.get().type != utils::TokenType::LBRACKET) {
-                RETURN_ERROR("expected '[', got" + std::string{token.value} + "'");
+                RETURN_ERROR("expected '[', got " + std::string{token.value} + "'");
             }
 
             if (std::optional<std::pair<X8664Address, unsigned>> address = parse_address()) {
