@@ -1,0 +1,233 @@
+# === test <reg>, <reg>
+
+# test:subtest
+# test:encoding "4885F1"
+
+test rcx, rsi
+
+# test:subtest
+# test:encoding "4985F3"
+
+test r11, rsi
+
+# test:subtest
+# test:encoding "4C85F1"
+
+test rcx, r14
+
+# test:subtest
+# test:encoding "85F1"
+
+test ecx, esi
+
+# test:subtest
+# test:encoding "4185F3"
+
+test r11d, esi
+
+# test:subtest
+# test:encoding "4485F1"
+
+test ecx, r14d
+
+# test:subtest
+# test:encoding "6685F1"
+
+test cx, si
+
+# test:subtest
+# test:encoding "664185F3"
+
+test r11w, si
+
+# test:subtest
+# test:encoding "664485F1"
+
+test cx, r14w
+
+# test:subtest
+# test:encoding "4084F1"
+
+test cl, sil
+
+# test:subtest
+# test:encoding "4184F3"
+
+test r11b, sil
+
+# test:subtest
+# test:encoding "4484F1"
+
+test cl, r14b
+
+
+# === test <mem>, <reg>
+
+# test:subtest
+# test:encoding "488531"
+
+test [rcx], rsi
+
+# test:subtest
+# test:encoding "498533"
+
+test [r11], rsi
+
+# test:subtest
+# test:encoding "4C8531"
+
+test [rcx], r14
+
+# test:subtest
+# test:encoding "8531"
+
+test [rcx], esi
+
+# test:subtest
+# test:encoding "418533"
+
+test [r11], esi
+
+# test:subtest
+# test:encoding "448531"
+
+test [rcx], r14d
+
+# test:subtest
+# test:encoding "668531"
+
+test [rcx], si
+
+# test:subtest
+# test:encoding "66418533"
+
+test [r11], si
+
+# test:subtest
+# test:encoding "66448531"
+
+test [rcx], r14w
+
+# test:subtest
+# test:encoding "408431"
+
+test [rcx], sil
+
+# test:subtest
+# test:encoding "418433"
+
+test [r11], sil
+
+# test:subtest
+# test:encoding "448431"
+
+test [rcx], r14b
+
+
+# === test <reg>, <imm>
+
+# test:subtest
+# test:encoding "48F7C12A000000"
+
+test rcx, 42
+
+# test:subtest
+# test:encoding "49F7C32A000000"
+
+test r11, 42
+
+# test:subtest
+# test:encoding "F7C12A000000"
+
+test ecx, 42
+
+# test:subtest
+# test:encoding "41F7C32A000000"
+
+test r11d, 42
+
+# test:subtest
+# test:encoding "66F7C12A00"
+
+test cx, 42
+
+# test:subtest
+# test:encoding "6641F7C32A00"
+
+test r11w, 42
+
+# test:subtest
+# test:encoding "F6C12A"
+
+test cl, 42
+
+# test:subtest
+# test:encoding "41F6C32A"
+
+test r11b, 42
+
+
+# === test <mem>, <imm>
+
+# test:subtest
+# test:encoding "48F7012A000000"
+
+test qword [rcx], 42
+
+# test:subtest
+# test:encoding "49F7032A000000"
+
+test qword [r11], 42
+
+# test:subtest
+# test:encoding "F7012A000000"
+
+test dword [rcx], 42
+
+# test:subtest
+# test:encoding "41F7032A000000"
+
+test dword [r11], 42
+
+# test:subtest
+# test:encoding "66F7012A00"
+
+test word [rcx], 42
+
+# test:subtest
+# test:encoding "6641F7032A00"
+
+test word [r11], 42
+
+# test:subtest
+# test:encoding "F6012A"
+
+test byte [rcx], 42
+
+# test:subtest
+# test:encoding "41F6032A"
+
+test byte [r11], 42
+
+
+# === test <rax>, <imm>
+
+# test:subtest
+# test:encoding "48A92A000000"
+
+test rax, 42
+
+# test:subtest
+# test:encoding "A92A000000"
+
+test eax, 42
+
+# test:subtest
+# test:encoding "66A92A00"
+
+test ax, 42
+
+# test:subtest
+# test:encoding "A82A"
+
+test al, 42

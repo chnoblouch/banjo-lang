@@ -252,6 +252,7 @@ private:
     void emit_lock_prefix();
     void emit_rex(bool w, bool r, bool x, bool b);
 
+    unsigned infer_size(mcode::Operand &m_dst, mcode::Operand &m_src);
     RegCode reg(mcode::Operand &operand);
     Immediate imm(mcode::Operand &operand);
     Address addr(mcode::Operand &operand);

@@ -49,8 +49,8 @@ enum {
     XCHG,         // TODO: Test
     LOCK_CMPXCHG, // TODO: Test
     JMP,
-    CMP,  // TODO: Test
-    TEST, // TODO: Test
+    CMP, // TODO: Test
+    TEST,
     JCC,
     JE = JCC + X8664ConditionCode::E,
     JNE = JCC + X8664ConditionCode::NE,

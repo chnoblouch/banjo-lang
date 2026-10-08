@@ -308,26 +308,26 @@ void X8664Encoder::encode_cqo() {
 }
 
 void X8664Encoder::encode_xchg(mcode::Instruction &instr) {
-    mcode::Operand &dst = instr.get_operand(0);
-    mcode::Operand &src = instr.get_operand(1);
-    unsigned size = dst.get_size();
+    mcode::Operand &m_dst = instr.get_operand(0);
+    mcode::Operand &m_src = instr.get_operand(1);
+    unsigned size = infer_size(m_dst, m_src);
 
     emit_16bit_prefix_if_required(size);
 
-    if (is_roa(dst) && is_reg(src)) {
-        RegOrAddr dst_roa = roa(dst);
-        RegCode src_reg = reg(src);
+    if (is_roa(m_dst) && is_reg(m_src)) {
+        RegOrAddr dst = roa(m_dst);
+        RegCode src = reg(m_src);
 
-        emit_rex_rroa(size, src_reg, dst_roa);
+        emit_rex_rroa(size, src, dst);
         emit_opcode(size == 1 ? 0x86 : 0x87);
-        emit_modrm_sib(src_reg, dst_roa);
-    } else if (is_reg(dst) && is_roa(src)) {
-        RegCode dst_reg = reg(dst);
-        RegOrAddr src_roa = roa(src);
+        emit_modrm_sib(src, dst);
+    } else if (is_reg(m_dst) && is_roa(m_src)) {
+        RegCode dst = reg(m_dst);
+        RegOrAddr src = roa(m_src);
 
-        emit_rex_rroa(size, dst_reg, src_roa);
+        emit_rex_rroa(size, dst, src);
         emit_opcode(size == 1 ? 0x86 : 0x87);
-        emit_modrm_sib(dst_reg, src_roa);
+        emit_modrm_sib(dst, src);
     } else {
         ASSERT_UNREACHABLE;
     }
@@ -368,19 +368,41 @@ void X8664Encoder::encode_cmp(mcode::Instruction &instr) {
 void X8664Encoder::encode_test(mcode::Instruction &instr) {
     mcode::Operand &m_dst = instr.get_operand(0);
     mcode::Operand &m_src = instr.get_operand(1);
-    unsigned size = m_dst.get_size();
+    unsigned size = infer_size(m_dst, m_src);
 
-    // TODO: There are more allowed variants, but the SSA lowerer currently
-    // doesn't generate any of them.
-    ASSERT(m_dst.is_register() && m_src.is_register());
+    if (is_roa(m_dst) && is_reg(m_src)) {
+        RegOrAddr dst = roa(m_dst);
+        RegCode src = reg(m_src);
 
-    RegCode r_dst = reg(m_dst);
-    RegCode r_src = reg(m_src);
+        emit_16bit_prefix_if_required(size);
+        emit_rex_rroa(size, src, dst);
+        emit_opcode(size == 1 ? 0x84 : 0x85);
+        emit_modrm_sib(src, dst);
+    } else if (is_roa(m_dst) && is_imm(m_src)) {
+        RegOrAddr dst = roa(m_dst);
+        Immediate src = imm(m_src);
+        ASSERT(src.symbol_index == -1);
 
-    emit_16bit_prefix_if_required(size);
-    emit_rex_rr(size, r_src, r_dst);
-    emit_opcode(size == 1 ? 0x84 : 0x85);
-    emit_modrm_rr(r_src, r_dst);
+        emit_16bit_prefix_if_required(size);
+        emit_rex_rroa(size, 0, dst);
+
+        if (m_dst.is_register() && m_dst.get_physical_reg() == X8664Register::RAX) {
+            emit_opcode(size == 1 ? 0xA8 : 0xA9);
+        } else {
+            emit_opcode(size == 1 ? 0xF6 : 0xF7);
+            emit_modrm_sib(0, dst);
+        }
+
+        switch (size) {
+            case 1: text.write_u8(src.value); break;
+            case 2: text.write_u16(src.value); break;
+            case 4: text.write_u32(src.value); break;
+            case 8: text.write_u32(src.value); break;
+            default: ASSERT_UNREACHABLE;
+        }
+    } else {
+        ASSERT_UNREACHABLE;
+    }
 }
 
 void X8664Encoder::encode_je(mcode::Instruction &instr) {
@@ -926,32 +948,19 @@ void X8664Encoder::emit_mov_mi(Address dst, Immediate imm, std::uint8_t size) {
 }
 
 void X8664Encoder::encode_add_family(mcode::Instruction &instr, const BasicInstrOpcodes &opcodes) {
-    mcode::Operand &dst = instr.get_operand(0);
-    mcode::Operand &src = instr.get_operand(1);
-
-    unsigned size;
-
-    if (is_reg(src)) {
-        size = src.get_size();
-    } else if (is_reg(dst)) {
-        size = dst.get_size();
-    } else if (is_addr(src)) {
-        size = src.get_size();
-    } else if (is_addr(dst)) {
-        size = dst.get_size();
-    } else {
-        ASSERT_UNREACHABLE;
-    }
+    mcode::Operand &m_dst = instr.get_operand(0);
+    mcode::Operand &m_src = instr.get_operand(1);
+    unsigned size = infer_size(m_dst, m_src);
 
     emit_16bit_prefix_if_required(size);
 
-    if (is_roa(dst) && is_imm(src)) {
-        RegOrAddr dst_roa = roa(dst);
-        Immediate src_imm = imm(src);
+    if (is_roa(m_dst) && is_imm(m_src)) {
+        RegOrAddr dst = roa(m_dst);
+        Immediate src = imm(m_src);
 
         // Note: Immediates are sign-extended, so the range is -128..128 instead of 0..256
-        bool is_imm8 = src.get_int_immediate() >= -128 && src.get_int_immediate() < 128;
-        bool is_rax = dst.is_physical_reg() && dst.get_physical_reg() == X8664Register::RAX;
+        bool is_imm8 = m_src.get_int_immediate() >= -128 && m_src.get_int_immediate() < 128;
+        bool is_rax = m_dst.is_physical_reg() && m_dst.get_physical_reg() == X8664Register::RAX;
 
         // Use the specialized encoding if the destination is RAX and the
         // encoding is actually smaller. The encoding is never smaller if the
@@ -962,45 +971,45 @@ void X8664Encoder::encode_add_family(mcode::Instruction &instr, const BasicInstr
             emit_opcode(size == 1 ? opcodes.rax_imm8 : opcodes.rax_imm16);
 
             switch (size) {
-                case 1: text.write_u8(src_imm.value); return;
-                case 2: text.write_u16(src_imm.value); return;
+                case 1: text.write_u8(src.value); return;
+                case 2: text.write_u16(src.value); return;
                 case 4:
-                case 8: text.write_u32(src_imm.value); return;
+                case 8: text.write_u32(src.value); return;
                 default: ASSERT_UNREACHABLE;
             }
         }
 
-        emit_rex_rroa(size, RegCode::EAX, dst_roa);
+        emit_rex_rroa(size, RegCode::EAX, dst);
 
         if (size == 1 || is_imm8) {
             emit_opcode(size == 1 ? opcodes.rm8_imm8 : opcodes.rm16_imm8);
-            emit_modrm_sib(opcodes.digit, dst_roa);
-            text.write_u8(src_imm.value);
+            emit_modrm_sib(opcodes.digit, dst);
+            text.write_u8(src.value);
         } else {
             emit_opcode(opcodes.rm16_imm16);
-            emit_modrm_sib(opcodes.digit, dst_roa);
+            emit_modrm_sib(opcodes.digit, dst);
 
             if (size == 2) {
-                text.write_u16(src_imm.value);
+                text.write_u16(src.value);
             } else {
                 ASSERT(size == 4 || size == 8);
-                text.write_u32(src_imm.value);
+                text.write_u32(src.value);
             }
         }
-    } else if (is_roa(dst) && is_reg(src)) {
-        RegOrAddr dst_roa = roa(dst);
-        RegCode src_reg = reg(src);
+    } else if (is_roa(m_dst) && is_reg(m_src)) {
+        RegOrAddr dst = roa(m_dst);
+        RegCode src = reg(m_src);
 
-        emit_rex_rroa(size, src_reg, dst_roa);
+        emit_rex_rroa(size, src, dst);
         emit_opcode(size == 1 ? opcodes.rm8_r8 : opcodes.rm16_r16);
-        emit_modrm_sib(src_reg, dst_roa);
-    } else if (is_reg(dst) && is_roa(src)) {
-        RegCode dst_reg = reg(dst);
-        RegOrAddr src_roa = roa(src);
+        emit_modrm_sib(src, dst);
+    } else if (is_reg(m_dst) && is_roa(m_src)) {
+        RegCode dst = reg(m_dst);
+        RegOrAddr src = roa(m_src);
 
-        emit_rex_rroa(size, dst_reg, src_roa);
+        emit_rex_rroa(size, dst, src);
         emit_opcode(size == 1 ? opcodes.r8_rm8 : opcodes.r16_rm16);
-        emit_modrm_sib(dst_reg, src_roa);
+        emit_modrm_sib(dst, src);
     } else {
         ASSERT_UNREACHABLE;
     }
@@ -1405,6 +1414,20 @@ void X8664Encoder::emit_rex(bool w, bool r, bool x, bool b) {
     std::uint8_t x_bit = x ? 1 : 0;
     std::uint8_t b_bit = b ? 1 : 0;
     text.write_u8(0b01000000 | (w_bit << 3) | (r_bit << 2) | (x_bit << 1) | b_bit);
+}
+
+unsigned X8664Encoder::infer_size(mcode::Operand &m_dst, mcode::Operand &m_src) {
+    if (is_reg(m_src)) {
+        return m_src.get_size();
+    } else if (is_reg(m_dst)) {
+        return m_dst.get_size();
+    } else if (is_addr(m_src)) {
+        return m_src.get_size();
+    } else if (is_addr(m_dst)) {
+        return m_dst.get_size();
+    } else {
+        ASSERT_UNREACHABLE;
+    }
 }
 
 X8664Encoder::RegCode X8664Encoder::reg(mcode::Operand &operand) {
