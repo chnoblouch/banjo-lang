@@ -210,12 +210,6 @@ private:
     void encode_cvtss2si(mcode::Instruction &instr);
     void encode_cvtsd2si(mcode::Instruction &instr);
 
-    void emit_mov_rr(RegCode dst, RegCode src, std::uint8_t size);
-    void emit_mov_ri(RegCode dst, Immediate imm, std::uint8_t size);
-    void emit_mov_rm(RegCode dst, Address src, std::uint8_t size);
-    void emit_mov_mr(Address dst, RegCode src, std::uint8_t size);
-    void emit_mov_mi(Address dst, Immediate imm, std::uint8_t size);
-
     void encode_add_family(mcode::Instruction &instr, const BasicInstrOpcodes &opcodes);
     void encode_div_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
     void encode_shl_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);

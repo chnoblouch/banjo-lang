@@ -9,13 +9,21 @@
 #include "banjo/target/x86_64/x86_64_register.hpp"
 #include "banjo/utils/macros.hpp"
 
-#include <limits>
+#include <cstdint>
 #include <variant>
 
 namespace banjo::target {
 
-static bool fits_in_i8(std::int64_t value) {
-    return value >= std::numeric_limits<std::int8_t>::min() && value <= std::numeric_limits<std::int8_t>::max();
+static bool fits_in_i8(LargeInt value) {
+    return value >= -LargeInt{0x80} && value < LargeInt{0x80};
+}
+
+static bool fits_in_i8(std::int32_t value) {
+    return value >= -0x80 && value < 0x80;
+}
+
+static bool fits_in_i32(LargeInt value) {
+    return value.to_s64() >= -LargeInt{0x80000000} && value.to_s64() < LargeInt{0x80000000};
 }
 
 // static bool is_gp_reg(mcode::PhysicalReg reg) {
@@ -144,16 +152,75 @@ void X8664Encoder::encode_instr(mcode::Instruction &instr, mcode::Function *func
 }
 
 void X8664Encoder::encode_mov(mcode::Instruction &instr) {
-    mcode::Operand &dst = instr.get_operand(0);
-    mcode::Operand &src = instr.get_operand(1);
+    mcode::Operand &m_dst = instr.get_operand(0);
+    mcode::Operand &m_src = instr.get_operand(1);
+    unsigned size = infer_size(m_dst, m_src);
 
-    if (is_reg(dst)) {
-        if (is_reg(src)) emit_mov_rr(reg(dst), reg(src), dst.get_size());
-        else if (is_imm(src)) emit_mov_ri(reg(dst), imm(src), dst.get_size());
-        else if (is_addr(src)) emit_mov_rm(reg(dst), addr(src), dst.get_size());
-    } else if (is_addr(dst)) {
-        if (is_reg(src)) emit_mov_mr(addr(dst), reg(src), dst.get_size());
-        else if (is_imm(src)) emit_mov_mi(addr(dst), imm(src), dst.get_size());
+    if (is_roa(m_dst) && is_reg(m_src)) {
+        RegOrAddr dst = roa(m_dst);
+        RegCode src = reg(m_src);
+
+        emit_16bit_prefix_if_required(size);
+        emit_rex_rroa(size, src, dst);
+        emit_opcode(size == 1 ? 0x88 : 0x89);
+        emit_modrm_sib(src, dst);
+    } else if (is_reg(m_dst) && is_roa(m_src)) {
+        RegCode dst = reg(m_dst);
+        RegOrAddr src = roa(m_src);
+
+        emit_16bit_prefix_if_required(size);
+        emit_rex_rroa(size, dst, src);
+        emit_opcode(size == 1 ? 0x8A : 0x8B);
+        emit_modrm_sib(dst, src);
+    } else if (is_reg(m_dst) && is_imm(m_src)) {
+        RegCode dst = reg(m_dst);
+        Immediate src = imm(m_src);
+
+        // Use the `mov r/m64, imm32` encoding if the value fits into a signed
+        // 32-bit integer because it's more efficient.
+        if (size == 8 && src.symbol_index == -1 && fits_in_i32(m_src.get_int_immediate())) {
+            emit_rex_rr(size, 0, dst);
+            emit_opcode(0xC7);
+            emit_modrm_sib(0, dst);
+            text.write_u32(src.value);
+            return;
+        }
+
+        emit_16bit_prefix_if_required(size);
+        emit_rex_o(size, dst);
+        emit_combined_opcode(size == 1 ? 0xB0 : 0xB8, dst);
+
+        if (src.symbol_index == -1) {
+            switch (size) {
+                case 1: text.write_u8(src.value); break;
+                case 2: text.write_u16(src.value); break;
+                case 4: text.write_u32(src.value); break;
+                case 8: text.write_u64(src.value); break;
+                default: ASSERT_UNREACHABLE;
+            }
+        } else {
+            text.add_symbol_use(src.symbol_index, BinSymbolUseKind::ABS64, 0);
+            text.write_u64(0);
+        }
+    } else if (is_addr(m_dst) && is_imm(m_src)) {
+        Address dst = addr(m_dst);
+        Immediate src = imm(m_src);
+
+        ASSERT(src.symbol_index == -1);
+
+        emit_16bit_prefix_if_required(size);
+        emit_rex_rm(size, 0, dst);
+        emit_opcode(size == 1 ? 0xC6 : 0xC7);
+        emit_mem_digit(dst, 0, 4);
+
+        switch (size) {
+            case 1: text.write_u8(src.value); break;
+            case 2: text.write_u16(src.value); break;
+            case 4: text.write_u32(src.value); break;
+            case 8: text.write_u32(src.value); break;
+        }
+    } else {
+        ASSERT_UNREACHABLE;
     }
 }
 
@@ -887,66 +954,6 @@ void X8664Encoder::encode_cvtsd2si(mcode::Instruction &instr) {
     encode_cvtss2si_family(instr, {0xF2});
 }
 
-void X8664Encoder::emit_mov_rr(RegCode dst, RegCode src, std::uint8_t size) {
-    emit_16bit_prefix_if_required(size);
-    emit_rex_rr(size, src, dst);
-    emit_opcode(size == 1 ? 0x88 : 0x89);
-    emit_modrm_rr(src, dst);
-}
-
-void X8664Encoder::emit_mov_ri(RegCode dst, Immediate imm, std::uint8_t size) {
-    if (size == 8 && imm.symbol_index == -1 && imm.value <= 0xFFFFFFFF) {
-        size = 4;
-    }
-
-    emit_16bit_prefix_if_required(size);
-    emit_rex_o(size, dst);
-    emit_combined_opcode(size == 1 ? 0xB0 : 0xB8, dst);
-
-    if (imm.symbol_index == -1) {
-        if (size == 1) text.write_u8(imm.value);
-        else if (size == 2) text.write_u16(imm.value);
-        else if (size == 4) text.write_u32(imm.value);
-        else if (size == 8) text.write_u64(imm.value);
-        else ASSERT_UNREACHABLE;
-    } else {
-        text.add_symbol_use(imm.symbol_index, BinSymbolUseKind::ABS64, 0);
-        text.write_u64(0);
-    }
-}
-
-void X8664Encoder::emit_mov_rm(RegCode dst, Address src, std::uint8_t size) {
-    emit_16bit_prefix_if_required(size);
-    emit_rex_rm(size, dst, src);
-    emit_opcode(size == 1 ? 0x8A : 0x8B);
-    emit_mem_reg(src, dst);
-}
-
-void X8664Encoder::emit_mov_mr(Address dst, RegCode src, std::uint8_t size) {
-    emit_16bit_prefix_if_required(size);
-    emit_rex_rm(size, src, dst);
-    emit_opcode(size == 1 ? 0x88 : 0x89);
-    emit_mem_reg(dst, src);
-}
-
-void X8664Encoder::emit_mov_mi(Address dst, Immediate imm, std::uint8_t size) {
-    ASSERT_MESSAGE(imm.symbol_index == -1, "64-bit symbol cannot be encoded here");
-
-    emit_16bit_prefix_if_required(size);
-    emit_rex_rm(size, 0, dst);
-    emit_opcode(size == 1 ? 0xC6 : 0xC7);
-
-    if (size == 8) {
-        size = 4;
-    }
-
-    emit_mem_digit(dst, 0, 4);
-
-    if (size == 1) text.write_u8(imm.value);
-    else if (size == 2) text.write_u16(imm.value);
-    else if (size == 4) text.write_u32(imm.value);
-}
-
 void X8664Encoder::encode_add_family(mcode::Instruction &instr, const BasicInstrOpcodes &opcodes) {
     mcode::Operand &m_dst = instr.get_operand(0);
     mcode::Operand &m_src = instr.get_operand(1);
@@ -958,8 +965,7 @@ void X8664Encoder::encode_add_family(mcode::Instruction &instr, const BasicInstr
         RegOrAddr dst = roa(m_dst);
         Immediate src = imm(m_src);
 
-        // Note: Immediates are sign-extended, so the range is -128..128 instead of 0..256
-        bool is_imm8 = m_src.get_int_immediate() >= -128 && m_src.get_int_immediate() < 128;
+        bool is_imm8 = fits_in_i8(m_src.get_int_immediate());
         bool is_rax = m_dst.is_physical_reg() && m_dst.get_physical_reg() == X8664Register::RAX;
 
         // Use the specialized encoding if the destination is RAX and the
@@ -973,7 +979,7 @@ void X8664Encoder::encode_add_family(mcode::Instruction &instr, const BasicInstr
             switch (size) {
                 case 1: text.write_u8(src.value); return;
                 case 2: text.write_u16(src.value); return;
-                case 4:
+                case 4: text.write_u32(src.value); return;
                 case 8: text.write_u32(src.value); return;
                 default: ASSERT_UNREACHABLE;
             }

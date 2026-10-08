@@ -29,7 +29,7 @@ enum {
 namespace X8664Opcode {
 
 enum {
-    MOV, // TODO: Test
+    MOV,
     PUSH,
     POP,
     ADD,  // TODO: Test
