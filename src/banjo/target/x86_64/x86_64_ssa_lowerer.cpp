@@ -438,29 +438,42 @@ void X8664SSALowerer::lower_ret(ssa::Instruction &instr) {
 }
 
 void X8664SSALowerer::lower_uextend(ssa::Instruction &instr) {
+    ssa::Operand &value = instr.get_operand(0);
+    unsigned value_size = get_size(value.get_type());
+
     mcode::Operand m_dst = map_vreg_dst(instr, 4);
-    mcode::Operand m_src = lower_as_operand(instr.get_operand(0));
-    mcode::Opcode opcode = m_src.get_size() < 4 ? X8664Opcode::MOVZX : X8664Opcode::MOV;
-    emit(mcode::Instruction(opcode, {m_dst, m_src}));
+    mcode::Operand m_src = lower_as_operand(value);
+
+    if (value_size == 4) {
+        emit({X8664Opcode::MOV, {m_dst, m_src}, mcode::Instruction::FLAG_DONT_REMOVE});
+    } else {
+        emit({X8664Opcode::MOVZX, {m_dst, m_src}});
+    }
 }
 
 void X8664SSALowerer::lower_sextend(ssa::Instruction &instr) {
-    mcode::Operand m_dst = map_vreg_dst(instr, 8);
-    mcode::Operand m_src = lower_as_operand(instr.get_operand(0));
-    emit(mcode::Instruction(X8664Opcode::MOVSX, {m_dst, m_src}));
+    ssa::Operand &value = instr.get_operand(0);
+    ssa::Type type = instr.get_operand(1).get_type();
+
+    unsigned value_size = get_size(value.get_type());
+    unsigned type_size = get_size(type);
+
+    mcode::Opcode m_opcode = value_size == 4 ? X8664Opcode::MOVSXD : X8664Opcode::MOVSX;
+    mcode::Operand m_dst = map_vreg_dst(instr, type_size == 8 ? 8 : 4);
+    mcode::Operand m_src = lower_as_operand(value);
+    emit({m_opcode, {m_dst, m_src}});
 }
 
 void X8664SSALowerer::lower_truncate(ssa::Instruction &instr) {
-    ASSERT(get_size(instr.get_operand(1).get_type()) != 8);
+    ssa::Operand &value = instr.get_operand(0);
 
     mcode::Operand m_dst = map_vreg_dst(instr, 4);
-    mcode::Operand m_src = lower_as_operand(instr.get_operand(0));
+    mcode::Operand m_src = lower_as_operand(value).with_size(4);
 
-    if (m_src.get_size() == 8) {
-        m_src.set_size(4);
-    }
-
-    emit(mcode::Instruction(X8664Opcode::MOV, {m_dst, m_src}));
+    // This `mov` instruction is removable because if the source and destination
+    // are equal, the truncated value is already stored in the lower bits of the
+    // register.
+    emit({X8664Opcode::MOV, {m_dst, m_src}});
 }
 
 void X8664SSALowerer::lower_fpromote(ssa::Instruction &instr) {
@@ -864,12 +877,16 @@ void X8664SSALowerer::copy_block_using_movs(ssa::Instruction &instr, unsigned si
 }
 
 void X8664SSALowerer::emit_mov_zero_ext(mcode::Operand dst, mcode::Operand src) {
+    // FIXME
+
     bool extend = !src.is_int_immediate() && dst.get_size() > src.get_size();
     mcode::Opcode opcode = extend ? X8664Opcode::MOVZX : X8664Opcode::MOV;
     emit({opcode, {std::move(dst), std::move(src)}});
 }
 
 void X8664SSALowerer::emit_mov_sign_ext(mcode::Operand dst, mcode::Operand src) {
+    // FIXME
+
     bool extend = !src.is_int_immediate() && dst.get_size() > src.get_size();
     mcode::Opcode opcode = extend ? X8664Opcode::MOVSX : X8664Opcode::MOV;
     emit({opcode, {std::move(dst), std::move(src)}});

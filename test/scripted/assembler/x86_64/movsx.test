@@ -1,0 +1,149 @@
+# test:subtest
+# test:encoding "480FBFF0"
+
+movsx rsi, ax
+
+# test:subtest
+# test:encoding "4C0FBFD8"
+
+movsx r11, ax
+
+# test:subtest
+# test:encoding "490FBFF6"
+
+movsx rsi, r14w
+
+# test:subtest
+# test:encoding "480FBF30"
+
+movsx rsi, word [rax]
+
+# test:subtest
+# test:encoding "4C0FBF18"
+
+movsx r11, word [rax]
+
+# test:subtest
+# test:encoding "490FBF36"
+
+movsx rsi, word [r14]
+
+# test:subtest
+# test:encoding "0FBFF0"
+
+movsx esi, ax
+
+# test:subtest
+# test:encoding "440FBFD8"
+
+movsx r11d, ax
+
+# test:subtest
+# test:encoding "410FBFF6"
+
+movsx esi, r14w
+
+# test:subtest
+# test:encoding "0FBF30"
+
+movsx esi, word [rax]
+
+# test:subtest
+# test:encoding "440FBF18"
+
+movsx r11d, word [rax]
+
+# test:subtest
+# test:encoding "410FBF36"
+
+movsx esi, word [r14]
+
+# test:subtest
+# test:encoding "480FBEF0"
+
+movsx rsi, al
+
+# test:subtest
+# test:encoding "4C0FBED8"
+
+movsx r11, al
+
+# test:subtest
+# test:encoding "490FBEF6"
+
+movsx rsi, r14b
+
+# test:subtest
+# test:encoding "480FBE30"
+
+movsx rsi, byte [rax]
+
+# test:subtest
+# test:encoding "4C0FBE18"
+
+movsx r11, byte [rax]
+
+# test:subtest
+# test:encoding "490FBE36"
+
+movsx rsi, byte [r14]
+
+# test:subtest
+# test:encoding "0FBEF0"
+
+movsx esi, al
+
+# test:subtest
+# test:encoding "440FBED8"
+
+movsx r11d, al
+
+# test:subtest
+# test:encoding "410FBEF6"
+
+movsx esi, r14b
+
+# test:subtest
+# test:encoding "0FBE30"
+
+movsx esi, byte [rax]
+
+# test:subtest
+# test:encoding "440FBE18"
+
+movsx r11d, byte [rax]
+
+# test:subtest
+# test:encoding "410FBE36"
+
+movsx esi, byte [r14]
+
+# test:subtest
+# test:encoding "660FBEF0"
+
+movsx si, al
+
+# test:subtest
+# test:encoding "66440FBED8"
+
+movsx r11w, al
+
+# test:subtest
+# test:encoding "66410FBEF6"
+
+movsx si, r14b
+
+# test:subtest
+# test:encoding "660FBE30"
+
+movsx si, byte [rax]
+
+# test:subtest
+# test:encoding "66440FBE18"
+
+movsx r11w, byte [rax]
+
+# test:subtest
+# test:encoding "66410FBE36"
+
+movsx si, byte [r14]

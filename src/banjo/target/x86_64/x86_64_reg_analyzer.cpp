@@ -175,8 +175,9 @@ std::vector<mcode::RegOp> X8664RegAnalyzer::get_operands(codegen::InstrContext &
             break;
         }
 
-        case MOVSX:
         case MOVZX:
+        case MOVSX:
+        case MOVSXD:
         case LEA:
         case CVTSS2SD:
         case CVTSD2SS:

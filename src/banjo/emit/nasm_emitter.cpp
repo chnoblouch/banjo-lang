@@ -178,9 +178,10 @@ void NASMEmitter::emit_instr(mcode::Function *func, mcode::BasicBlock &basic_blo
     }
 
     bool requires_size =
-        instr.get_opcode() == target::X8664Opcode::MOVSX || instr.get_opcode() == target::X8664Opcode::MOVZX ||
-        instr.get_opcode() == target::X8664Opcode::SHL || instr.get_opcode() == target::X8664Opcode::SHR ||
-        instr.get_opcode() == target::X8664Opcode::CVTSI2SS || instr.get_opcode() == target::X8664Opcode::CVTSI2SD;
+        instr.get_opcode() == target::X8664Opcode::MOVZX || instr.get_opcode() == target::X8664Opcode::MOVSX ||
+        instr.get_opcode() == target::X8664Opcode::MOVSXD || instr.get_opcode() == target::X8664Opcode::SHL ||
+        instr.get_opcode() == target::X8664Opcode::SHR || instr.get_opcode() == target::X8664Opcode::CVTSI2SS ||
+        instr.get_opcode() == target::X8664Opcode::CVTSI2SD;
 
     for (int j = 0; j < instr.get_operands().size(); j++) {
         line += (j == 0 ? " " : ", ");

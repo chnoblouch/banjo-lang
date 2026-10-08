@@ -18,9 +18,9 @@ static bool fits_in_i8(std::int64_t value) {
     return value >= std::numeric_limits<std::int8_t>::min() && value <= std::numeric_limits<std::int8_t>::max();
 }
 
-static bool is_gp_reg(mcode::PhysicalReg reg) {
-    return reg >= X8664Register::RAX && reg <= X8664Register::R15;
-}
+// static bool is_gp_reg(mcode::PhysicalReg reg) {
+//     return reg >= X8664Register::RAX && reg <= X8664Register::R15;
+// }
 
 static bool is_sse_reg(mcode::PhysicalReg reg) {
     return reg >= X8664Register::XMM0 && reg <= X8664Register::XMM15;
@@ -35,8 +35,9 @@ void X8664Encoder::encode_instr(mcode::Instruction &instr, mcode::Function *func
 
     switch (instr.get_opcode()) {
         case X8664Opcode::MOV: encode_mov(instr); break;
-        case X8664Opcode::MOVSX: encode_movsx(instr); break;
         case X8664Opcode::MOVZX: encode_movzx(instr); break;
+        case X8664Opcode::MOVSX: encode_movsx(instr); break;
+        case X8664Opcode::MOVSXD: encode_movsxd(instr); break;
         case X8664Opcode::ADD: encode_add(instr); break;
         case X8664Opcode::SUB: encode_sub(instr); break;
         case X8664Opcode::IMUL: encode_imul(instr); break;
@@ -157,16 +158,16 @@ void X8664Encoder::encode_mov(mcode::Instruction &instr) {
 }
 
 void X8664Encoder::encode_movsx(mcode::Instruction &instr) {
-    mcode::Operand &dst = instr.get_operand(0);
-    mcode::Operand &src = instr.get_operand(1);
+    mcode::Operand &m_dst = instr.get_operand(0);
+    mcode::Operand &m_src = instr.get_operand(1);
+    unsigned dst_size = m_dst.get_size();
+    unsigned src_size = m_src.get_size();
 
-    RegCode dst_reg = reg(dst);
-    RegOrAddr src_roa = roa(src);
-    unsigned dst_size = dst.get_size();
-    unsigned src_size = src.get_size();
+    RegCode dst = reg(m_dst);
+    RegOrAddr src = roa(m_src);
 
     emit_16bit_prefix_if_required(dst_size);
-    emit_rex_rroa(dst_size, dst_reg, src_roa);
+    emit_rex_rroa(dst_size, dst, src);
 
     if (src_size == 1) {
         emit_opcode(0x0F);
@@ -176,25 +177,47 @@ void X8664Encoder::encode_movsx(mcode::Instruction &instr) {
         emit_opcode(0xBF);
     } else if (src_size == 4) {
         emit_opcode(0x63);
+    } else {
+        ASSERT_UNREACHABLE;
     }
 
-    emit_modrm_sib(dst_reg, src_roa);
+    emit_modrm_sib(dst, src);
 }
 
 void X8664Encoder::encode_movzx(mcode::Instruction &instr) {
-    mcode::Operand &dst = instr.get_operand(0);
-    mcode::Operand &src = instr.get_operand(1);
+    mcode::Operand &m_dst = instr.get_operand(0);
+    mcode::Operand &m_src = instr.get_operand(1);
+    unsigned src_size = m_src.get_size();
+    unsigned dst_size = m_dst.get_size();
 
-    RegCode dst_reg = reg(dst);
-    RegOrAddr src_roa = roa(src);
-    unsigned dst_size = dst.get_size();
-    unsigned src_size = src.get_size();
+    RegCode dst = reg(m_dst);
+    RegOrAddr src = roa(m_src);
 
     emit_16bit_prefix_if_required(dst_size);
-    emit_rex_rroa(dst_size, dst_reg, src_roa);
+    emit_rex_rroa(dst_size, dst, src);
     emit_opcode(0x0F);
     emit_opcode(src_size == 1 ? 0xB6 : 0xB7);
-    emit_modrm_sib(dst_reg, src_roa);
+    emit_modrm_sib(dst, src);
+}
+
+void X8664Encoder::encode_movsxd(mcode::Instruction &instr) {
+    mcode::Operand &m_dst = instr.get_operand(0);
+    mcode::Operand &m_src = instr.get_operand(1);
+    unsigned dst_size = m_dst.get_size();
+    [[maybe_unused]] unsigned src_size = m_src.get_size();
+
+    // Technically, `movsd <dword>, <dword` and `movsd <word>, <word>` are valid
+    // instructions, but there is no point to them because they are equivalent
+    // to a `mov` instruction. LLVM's assembler returns an error when trying to
+    // assemble these instructions, so we don't bother supporting them.
+    ASSERT(dst_size == 8 && src_size == 4);
+
+    RegCode dst = reg(m_dst);
+    RegOrAddr src = roa(m_src);
+
+    emit_rex_rroa(dst_size, dst, src);
+    emit_opcode(0x63);
+    emit_modrm_sib(dst, src);
 }
 
 void X8664Encoder::encode_add(mcode::Instruction &instr) {

@@ -29,28 +29,28 @@ enum {
 namespace X8664Opcode {
 
 enum {
-    MOV,
-    PUSH,
-    POP,
-    ADD,
-    SUB,
-    IMUL,
+    MOV,  // TODO: Test
+    PUSH, // TODO: Test
+    POP,  // TODO: Test
+    ADD,  // TODO: Test
+    SUB,  // TODO: Test
+    IMUL, // TODO: Test
     DIV,
     IDIV,
-    AND,
-    OR,
-    XOR,
+    AND, // TODO: Test
+    OR,  // TODO: Test
+    XOR, // TODO: Test
     SHL,
     SHR,
     SAR,
-    CWD, // TODO: Currently unused
+    CWD,
     CDQ,
     CQO,
-    XCHG,
-    LOCK_CMPXCHG,
+    XCHG,         // TODO: Test
+    LOCK_CMPXCHG, // TODO: Test
     JMP,
-    CMP,
-    TEST,
+    CMP,  // TODO: Test
+    TEST, // TODO: Test
     JCC,
     JE = JCC + X8664ConditionCode::E,
     JNE = JCC + X8664ConditionCode::NE,
@@ -82,25 +82,26 @@ enum {
     SETO = SETCC + X8664ConditionCode::O,
     SETNO = SETCC + X8664ConditionCode::NO,
     CMOVCC,
-    CMOVE = CMOVCC + X8664ConditionCode::E,
-    CMOVNE = CMOVCC + X8664ConditionCode::NE,
-    CMOVA = CMOVCC + X8664ConditionCode::A,
-    CMOVAE = CMOVCC + X8664ConditionCode::AE,
-    CMOVB = CMOVCC + X8664ConditionCode::B,
-    CMOVBE = CMOVCC + X8664ConditionCode::BE,
-    CMOVG = CMOVCC + X8664ConditionCode::G,
-    CMOVGE = CMOVCC + X8664ConditionCode::GE,
-    CMOVL = CMOVCC + X8664ConditionCode::L,
-    CMOVLE = CMOVCC + X8664ConditionCode::LE,
-    CMOVS = CMOVCC + X8664ConditionCode::S,
-    CMOVNS = CMOVCC + X8664ConditionCode::NS,
-    CMOVO = CMOVCC + X8664ConditionCode::O,
-    CMOVNO = CMOVCC + X8664ConditionCode::NO,
-    CALL,
+    CMOVE = CMOVCC + X8664ConditionCode::E,   // TODO: Test
+    CMOVNE = CMOVCC + X8664ConditionCode::NE, // TODO: Test
+    CMOVA = CMOVCC + X8664ConditionCode::A,   // TODO: Test
+    CMOVAE = CMOVCC + X8664ConditionCode::AE, // TODO: Test
+    CMOVB = CMOVCC + X8664ConditionCode::B,   // TODO: Test
+    CMOVBE = CMOVCC + X8664ConditionCode::BE, // TODO: Test
+    CMOVG = CMOVCC + X8664ConditionCode::G,   // TODO: Test
+    CMOVGE = CMOVCC + X8664ConditionCode::GE, // TODO: Test
+    CMOVL = CMOVCC + X8664ConditionCode::L,   // TODO: Test
+    CMOVLE = CMOVCC + X8664ConditionCode::LE, // TODO: Test
+    CMOVS = CMOVCC + X8664ConditionCode::S,   // TODO: Test
+    CMOVNS = CMOVCC + X8664ConditionCode::NS, // TODO: Test
+    CMOVO = CMOVCC + X8664ConditionCode::O,   // TODO: Test
+    CMOVNO = CMOVCC + X8664ConditionCode::NO, // TODO: Test
+    CALL,                                     // TODO: Test
     RET,
-    LEA,
-    MOVSX,
+    LEA, // TODO: Test
     MOVZX,
+    MOVSX,
+    MOVSXD,
     MOVSS,
     MOVSD,
     MOVAPS,
@@ -125,12 +126,12 @@ enum {
     SQRTSD,
     UCOMISS,
     UCOMISD,
-    CVTSS2SD,
-    CVTSD2SS,
-    CVTSI2SS,
-    CVTSI2SD,
-    CVTSS2SI,
-    CVTSD2SI
+    CVTSS2SD, // TODO: Test
+    CVTSD2SS, // TODO: Test
+    CVTSI2SS, // TODO: Test
+    CVTSI2SD, // TODO: Test
+    CVTSS2SI, // TODO: Test
+    CVTSD2SI, // TODO: Test
 };
 
 } // namespace X8664Opcode

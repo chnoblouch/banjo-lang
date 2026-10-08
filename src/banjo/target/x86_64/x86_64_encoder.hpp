@@ -110,8 +110,9 @@ private:
     void encode_instr(mcode::Instruction &instr, mcode::Function *func, UnwindInfo &frame_info) override;
 
     void encode_mov(mcode::Instruction &instr);
-    void encode_movsx(mcode::Instruction &instr);
     void encode_movzx(mcode::Instruction &instr);
+    void encode_movsx(mcode::Instruction &instr);
+    void encode_movsxd(mcode::Instruction &instr);
     void encode_add(mcode::Instruction &instr);
     void encode_sub(mcode::Instruction &instr);
     void encode_imul(mcode::Instruction &instr);

@@ -1,0 +1,29 @@
+# test:subtest
+# test:encoding "4863F0"
+
+movsxd rsi, eax
+
+# test:subtest
+# test:encoding "4C63D8"
+
+movsxd r11, eax
+
+# test:subtest
+# test:encoding "4963F6"
+
+movsxd rsi, r14d
+
+# test:subtest
+# test:encoding "486330"
+
+movsxd rsi, dword [rax]
+
+# test:subtest
+# test:encoding "4C6318"
+
+movsxd r11, dword [rax]
+
+# test:subtest
+# test:encoding "496336"
+
+movsxd rsi, dword [r14]
