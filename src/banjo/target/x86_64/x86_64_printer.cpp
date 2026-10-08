@@ -183,6 +183,9 @@ void X8664Printer::print_register(mcode::Register reg, unsigned size) {
 }
 
 void X8664Printer::print_address(mcode::Function &func, const X8664Address &addr) {
+    // TODO: For `lea` instructions, print the size of the registers in the
+    // address correctly.
+
     emit('[');
 
     if (addr.is_base_reg()) {

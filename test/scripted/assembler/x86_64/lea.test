@@ -1,0 +1,89 @@
+# test:subtest
+# test:encoding "488D08"
+
+lea rcx, [rax]
+
+# test:subtest
+# test:encoding "4C8D20"
+
+lea r12, [rax]
+
+# test:subtest
+# test:encoding "498D09"
+
+lea rcx, [r9]
+
+# test:subtest
+# test:encoding "67488D08"
+
+lea rcx, [eax]
+
+# test:subtest
+# test:encoding "674C8D20"
+
+lea r12, [eax]
+
+# test:subtest
+# test:encoding "67498D09"
+
+lea rcx, [r9d]
+
+# test:subtest
+# test:encoding "8D08"
+
+lea ecx, [rax]
+
+# test:subtest
+# test:encoding "448D20"
+
+lea r12d, [rax]
+
+# test:subtest
+# test:encoding "418D09"
+
+lea ecx, [r9]
+
+# test:subtest
+# test:encoding "678D08"
+
+lea ecx, [eax]
+
+# test:subtest
+# test:encoding "67448D20"
+
+lea r12d, [eax]
+
+# test:subtest
+# test:encoding "67418D09"
+
+lea ecx, [r9d]
+
+# test:subtest
+# test:encoding "668D08"
+
+lea cx, [rax]
+
+# test:subtest
+# test:encoding "66448D20"
+
+lea r12w, [rax]
+
+# test:subtest
+# test:encoding "66418D09"
+
+lea cx, [r9]
+
+# test:subtest
+# test:encoding "67668D08"
+
+lea cx, [eax]
+
+# test:subtest
+# test:encoding "6766448D20"
+
+lea r12w, [eax]
+
+# test:subtest
+# test:encoding "67418D09"
+
+lea ecx, [r9d]

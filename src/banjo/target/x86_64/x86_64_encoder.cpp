@@ -554,13 +554,18 @@ void X8664Encoder::encode_cmovno(mcode::Instruction &instr) {
 void X8664Encoder::encode_lea(mcode::Instruction &instr) {
     mcode::Operand &dst = instr.get_operand(0);
     mcode::Operand &src = instr.get_operand(1);
-    unsigned size = dst.get_size();
+    unsigned dst_size = dst.get_size();
+    unsigned src_size = src.get_size();
 
     RegCode dst_reg = reg(dst);
     Address src_addr = addr(src);
 
-    emit_16bit_prefix_if_required(size);
-    emit_rex_rm(size, dst_reg, src_addr);
+    if (src_size == 4) {
+        text.write_u8(0x67);
+    }
+
+    emit_16bit_prefix_if_required(dst_size);
+    emit_rex_rm(dst_size, dst_reg, src_addr);
     text.write_u8(0x8D);
     emit_mem_reg(src_addr, dst_reg);
 }

@@ -98,7 +98,7 @@ enum {
     CMOVNO = CMOVCC + X8664ConditionCode::NO,
     CALL,
     RET,
-    LEA, // TODO: Test
+    LEA,
     MOVZX,
     MOVSX,
     MOVSXD,

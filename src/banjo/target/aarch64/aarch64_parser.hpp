@@ -19,7 +19,7 @@ private:
     std::optional<mcode::Opcode> parse_opcode();
     std::optional<mcode::Operand> parse_operand();
 
-    std::optional<target::AArch64Address> parse_address();
+    std::optional<AArch64Address> parse_address();
     std::optional<mcode::Register> parse_register();
 };
 

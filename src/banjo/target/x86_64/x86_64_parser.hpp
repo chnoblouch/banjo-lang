@@ -6,6 +6,7 @@
 #include "banjo/target/x86_64/x86_64_address.hpp"
 
 #include <optional>
+#include <utility>
 
 namespace banjo::target {
 
@@ -18,8 +19,8 @@ private:
     std::optional<mcode::Opcode> parse_opcode() override;
     std::optional<mcode::Operand> parse_operand() override;
 
-    std::optional<target::X8664Address> parse_address();
-    std::optional<mcode::Register> parse_register();
+    std::optional<std::pair<X8664Address, unsigned>> parse_address();
+    std::optional<std::pair<mcode::Register, unsigned>> parse_register();
 };
 
 } // namespace banjo::target
