@@ -46,6 +46,14 @@ void LivenessAnalysis::compute_ins_and_outs(RegAllocFunc &func, LivenessAnalysis
     std::unordered_set<unsigned> blocks_visited;
     collect_blocks_post_order(func, 0, block_indices_post_order, blocks_visited);
 
+    // Make sure unreachable blocks are analyzed as well because otherwise we
+    // run into trouble during register allocation.
+    for (unsigned i = 0; i < func.blocks.size(); i++) {
+        if (!blocks_visited.contains(i)) {
+            block_indices_post_order.push_back(i);
+        }
+    }
+
     while (changes) {
         changes = false;
 
@@ -211,8 +219,6 @@ void LivenessAnalysis::dump(mcode::Printer &printer, std::ostream &stream) {
     for (unsigned i = 0; i < func.blocks.size(); i++) {
         RegAllocBlock &block = func.blocks[i];
 
-        std::string name = block.m_block->debug_label();
-
         std::vector<std::vector<char>> lines(block.instrs.size(), std::vector<char>(reg_ranges.size(), '.'));
         unsigned vreg_index = 0;
 
@@ -244,6 +250,8 @@ void LivenessAnalysis::dump(mcode::Printer &printer, std::ostream &stream) {
 
             vreg_index += 1;
         }
+
+        stream << block.m_block->debug_label() << ":\n";
 
         for (unsigned j = 0; j < block.instrs.size(); j++) {
             std::string instr;

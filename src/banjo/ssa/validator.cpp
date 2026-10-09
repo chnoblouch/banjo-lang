@@ -1,7 +1,9 @@
 #include "validator.hpp"
 
 #include "banjo/passes/pass_utils.hpp"
+#include "banjo/ssa/control_flow_graph.hpp"
 #include "banjo/ssa/primitive.hpp"
+#include "banjo/utils/hash_map.hpp"
 
 #include <set>
 
@@ -55,38 +57,45 @@ bool Validator::validate(Module &mod) {
 }
 
 bool Validator::validate(Module &mod, Function &func) {
+    cfg = ControlFlowGraph::build(func);
+    dom_tree = DominatorTree::build(cfg);
+
     bool valid = true;
 
-    std::set<VirtualRegister> defs;
+    HashMap<VirtualRegister, ControlFlowGraph::NodeID> defs;
 
-    for (BasicBlock &block : func) {
-        for (VirtualRegister param_reg : block.get_param_regs()) {
-            defs.insert(param_reg);
+    for (BasicBlockIter block = func.begin(); block != func.end(); ++block) {
+        ControlFlowGraph::NodeID node = cfg.contains(block) ? cfg.node_id(block) : 0xFFFFFFFF;
+
+        for (VirtualRegister param_reg : block->get_param_regs()) {
+            defs.insert(param_reg, node);
         }
 
-        for (Instruction &instr : block) {
+        for (Instruction &instr : *block) {
             if (instr.get_dest()) {
-                defs.insert(*instr.get_dest());
+                defs.insert(*instr.get_dest(), node);
             }
         }
     }
 
-    for (BasicBlock &block : func) {
+    for (BasicBlockIter block = func.begin(); block != func.end(); ++block) {
+        ControlFlowGraph::NodeID node = cfg.contains(block) ? cfg.node_id(block) : 0xFFFFFFFF;
         unsigned index = 0;
 
-        for (Instruction &instr : block) {
+        for (Instruction &instr : *block) {
+            bool instr_valid = true;
+
             passes::PassUtils::iter_regs(instr.get_operands(), [&](VirtualRegister reg) {
-                if (!defs.contains(reg)) {
-                    stream << "error in `" << func.name << "`: %" << reg << " is not defined\n";
-                    valid = false;
+                if (ControlFlowGraph::NodeID *def_node = defs.try_find(reg)) {
+                    if (node != 0xFFFFFFFF && !dom_tree.dominates(node, *def_node)) {
+                        stream << "%" << reg << " def does not dominate its use";
+                        instr_valid = false;
+                    }
+                } else {
+                    stream << "%" << reg << " is not defined";
+                    instr_valid = false;
                 }
             });
-
-            if (instr.get_dest()) {
-                defs.insert(*instr.get_dest());
-            }
-
-            bool instr_valid = true;
 
             switch (instr.get_opcode()) {
                 case Opcode::ALLOCA: instr_valid = validate_alloca(instr); break;
@@ -142,7 +151,8 @@ bool Validator::validate(Module &mod, Function &func) {
             }
 
             if (!instr_valid) {
-                stream << " (func " << func.name << ", block " << block.get_debug_label() << ", instr " << index << ")";
+                std::string label = block->get_debug_label();
+                stream << " (func " << func.name << ", block " << label << ", instr " << index << ")";
                 stream << '\n';
             }
 

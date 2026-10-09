@@ -32,6 +32,9 @@ public:
     LinkedListIter get_prev() { return node->prev; }
     LinkedListIter get_next() { return node->next; }
 
+    bool is_first() const { return !node->prev->prev; }
+    bool is_last() const { return !node->next->next; }
+
     friend bool operator==(const LinkedListIter &rhs, const LinkedListIter &lhs) { return rhs.node == lhs.node; }
     friend bool operator!=(const LinkedListIter &rhs, const LinkedListIter &lhs) { return !(rhs == lhs); }
     friend bool operator<(const LinkedListIter &rhs, const LinkedListIter &lhs) { return lhs.node < rhs.node; }

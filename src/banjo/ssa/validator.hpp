@@ -1,6 +1,7 @@
 #ifndef BANJO_SSA_VALIDATOR_H
 #define BANJO_SSA_VALIDATOR_H
 
+#include "banjo/ssa/control_flow_graph.hpp"
 #include "banjo/ssa/instruction.hpp"
 #include "banjo/ssa/module.hpp"
 
@@ -12,6 +13,9 @@ class Validator {
 
 private:
     std::ostream &stream;
+
+    ControlFlowGraph cfg;
+    DominatorTree dom_tree;
 
 public:
     Validator(std::ostream &stream);

@@ -327,13 +327,8 @@ std::vector<mcode::RegOp> X8664RegAnalyzer::get_operands(codegen::InstrContext &
 }
 
 void X8664RegAnalyzer::collect_successors(mcode::BasicBlockIter block, std::vector<mcode::BasicBlock *> &out_succs) {
-    if (block->instrs.get_size() == 0) {
-        return;
-    }
-
     for (mcode::Instruction &instr : block->instrs) {
         switch (instr.get_opcode()) {
-            case X8664Opcode::JMP:
             case X8664Opcode::JE:
             case X8664Opcode::JNE:
             case X8664Opcode::JA:
@@ -352,14 +347,19 @@ void X8664RegAnalyzer::collect_successors(mcode::BasicBlockIter block, std::vect
                 out_succs.push_back(&operand.get_basic_block());
                 break;
             }
+
+            case X8664Opcode::JMP: {
+                mcode::Operand &operand = instr.get_operand(0);
+                out_succs.push_back(&operand.get_basic_block());
+                return;
+            }
+
+            case X8664Opcode::RET: return;
         }
     }
 
-    switch (block->instrs.get_last().get_opcode()) {
-        case X8664Opcode::JMP:
-        case X8664Opcode::RET: return;
-
-        default: out_succs.push_back(&*block.get_next());
+    if (!block.is_last()) {
+        out_succs.push_back(&*block.get_next());
     }
 }
 

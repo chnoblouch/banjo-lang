@@ -235,13 +235,8 @@ std::vector<mcode::RegOp> AArch64RegAnalyzer::get_operands(codegen::InstrContext
 }
 
 void AArch64RegAnalyzer::collect_successors(mcode::BasicBlockIter block, std::vector<mcode::BasicBlock *> &out_succs) {
-    if (block->instrs.get_size() == 0) {
-        return;
-    }
-
-    for (mcode::Instruction &instr : *block) {
+    for (mcode::Instruction &instr : block->instrs) {
         switch (instr.get_opcode()) {
-            case AArch64Opcode::B:
             case AArch64Opcode::B_EQ:
             case AArch64Opcode::B_NE:
             case AArch64Opcode::B_HS:
@@ -257,16 +252,19 @@ void AArch64RegAnalyzer::collect_successors(mcode::BasicBlockIter block, std::ve
                 break;
             }
 
-            default: break;
+            case AArch64Opcode::B: {
+                mcode::Operand &operand = instr.get_operand(0);
+                out_succs.push_back(&operand.get_basic_block());
+                return;
+            }
+
+            case AArch64Opcode::BR:
+            case AArch64Opcode::RET: return;
         }
     }
 
-    switch (block->instrs.get_last().get_opcode()) {
-        case AArch64Opcode::B:
-        case AArch64Opcode::BR:
-        case AArch64Opcode::RET: return;
-
-        default: out_succs.push_back(&*block.get_next());
+    if (!block.is_last()) {
+        out_succs.push_back(&*block.get_next());
     }
 }
 
