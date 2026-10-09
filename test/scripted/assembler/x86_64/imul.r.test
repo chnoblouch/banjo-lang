@@ -1,0 +1,39 @@
+# test:subtest
+# test:encoding "48F7EA"
+
+imul rdx
+
+# test:subtest
+# test:encoding "49F7ED"
+
+imul r13
+
+# test:subtest
+# test:encoding "F7EA"
+
+imul edx
+
+# test:subtest
+# test:encoding "41F7ED"
+
+imul r13d
+
+# test:subtest
+# test:encoding "66F7EA"
+
+imul dx
+
+# test:subtest
+# test:encoding "6641F7ED"
+
+imul r13w
+
+# test:subtest
+# test:encoding "F6EA"
+
+imul dl
+
+# test:subtest
+# test:encoding "41F6ED"
+
+imul r13b

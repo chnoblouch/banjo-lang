@@ -1,0 +1,44 @@
+# test:subtest
+# test:encoding "480FAFD3"
+
+imul rdx, rbx
+
+# test:subtest
+# test:encoding "4C0FAFEB"
+
+imul r13, rbx
+
+# test:subtest
+# test:encoding "490FAFD2"
+
+imul rdx, r10
+
+# test:subtest
+# test:encoding "0FAFD3"
+
+imul edx, ebx
+
+# test:subtest
+# test:encoding "440FAFEB"
+
+imul r13d, ebx
+
+# test:subtest
+# test:encoding "410FAFD2"
+
+imul edx, r10d
+
+# test:subtest
+# test:encoding "660FAFD3"
+
+imul dx, bx
+
+# test:subtest
+# test:encoding "66440FAFEB"
+
+imul r13w, bx
+
+# test:subtest
+# test:encoding "66410FAFD2"
+
+imul dx, r10w

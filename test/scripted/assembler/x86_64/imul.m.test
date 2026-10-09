@@ -1,0 +1,39 @@
+# test:subtest
+# test:encoding "48F72A"
+
+imul qword [rdx]
+
+# test:subtest
+# test:encoding "49F76D00"
+
+imul qword [r13]
+
+# test:subtest
+# test:encoding "F72A"
+
+imul dword [rdx]
+
+# test:subtest
+# test:encoding "41F76D00"
+
+imul dword [r13]
+
+# test:subtest
+# test:encoding "66F72A"
+
+imul word [rdx]
+
+# test:subtest
+# test:encoding "6641F76D00"
+
+imul word [r13]
+
+# test:subtest
+# test:encoding "F62A"
+
+imul byte [rdx]
+
+# test:subtest
+# test:encoding "41F66D00"
+
+imul byte [r13]

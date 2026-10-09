@@ -34,7 +34,7 @@ enum {
     POP,
     ADD,
     SUB,
-    IMUL, // TODO: Test
+    IMUL,
     DIV,
     IDIV,
     AND,

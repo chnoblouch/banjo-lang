@@ -1,0 +1,104 @@
+# test:subtest
+# test:encoding "486BD32A"
+
+imul rdx, rbx, 42
+
+# test:subtest
+# test:encoding "4C6BEB2A"
+
+imul r13, rbx, 42
+
+# test:subtest
+# test:encoding "496BD22A"
+
+imul rdx, r10, 42
+
+# test:subtest
+# test:encoding "486BD37F"
+
+imul rdx, rbx, 127
+
+# test:subtest
+# test:encoding "4869D380000000"
+
+imul rdx, rbx, 128
+
+# test:subtest
+# test:encoding "486BD380"
+
+imul rdx, rbx, -128
+
+# test:subtest
+# test:encoding "4869D37FFFFFFF"
+
+imul rdx, rbx, -129
+
+# test:subtest
+# test:encoding "6BD32A"
+
+imul edx, ebx, 42
+
+# test:subtest
+# test:encoding "446BEB2A"
+
+imul r13d, ebx, 42
+
+# test:subtest
+# test:encoding "416BD22A"
+
+imul edx, r10d, 42
+
+# test:subtest
+# test:encoding "6BD37F"
+
+imul edx, ebx, 127
+
+# test:subtest
+# test:encoding "69D380000000"
+
+imul edx, ebx, 128
+
+# test:subtest
+# test:encoding "6BD380"
+
+imul edx, ebx, -128
+
+# test:subtest
+# test:encoding "69D37FFFFFFF"
+
+imul edx, ebx, -129
+
+# test:subtest
+# test:encoding "666BD32A"
+
+imul dx, bx, 42
+
+# test:subtest
+# test:encoding "66446BEB2A"
+
+imul r13w, bx, 42
+
+# test:subtest
+# test:encoding "66416BD22A"
+
+imul dx, r10w, 42
+
+# test:subtest
+# test:encoding "666BD37F"
+
+imul dx, bx, 127
+
+# test:subtest
+# test:encoding "6669D38000"
+
+imul dx, bx, 128
+
+# test:subtest
+# test:encoding "666BD380"
+
+imul dx, bx, -128
+
+# test:subtest
+# test:encoding "6669D37FFF"
+
+imul dx, bx, -129

@@ -1,0 +1,104 @@
+# test:subtest
+# test:encoding "486B132A"
+
+imul rdx, [rbx], 42
+
+# test:subtest
+# test:encoding "4C6B2B2A"
+
+imul r13, [rbx], 42
+
+# test:subtest
+# test:encoding "496B122A"
+
+imul rdx, [r10], 42
+
+# test:subtest
+# test:encoding "486B137F"
+
+imul rdx, [rbx], 127
+
+# test:subtest
+# test:encoding "48691380000000"
+
+imul rdx, [rbx], 128
+
+# test:subtest
+# test:encoding "486B1380"
+
+imul rdx, [rbx], -128
+
+# test:subtest
+# test:encoding "4869137FFFFFFF"
+
+imul rdx, [rbx], -129
+
+# test:subtest
+# test:encoding "6B132A"
+
+imul edx, [rbx], 42
+
+# test:subtest
+# test:encoding "446B2B2A"
+
+imul r13d, [rbx], 42
+
+# test:subtest
+# test:encoding "416B122A"
+
+imul edx, [r10], 42
+
+# test:subtest
+# test:encoding "6B137F"
+
+imul edx, [rbx], 127
+
+# test:subtest
+# test:encoding "691380000000"
+
+imul edx, [rbx], 128
+
+# test:subtest
+# test:encoding "6B1380"
+
+imul edx, [rbx], -128
+
+# test:subtest
+# test:encoding "69137FFFFFFF"
+
+imul edx, [rbx], -129
+
+# test:subtest
+# test:encoding "666B132A"
+
+imul dx, [rbx], 42
+
+# test:subtest
+# test:encoding "66446B2B2A"
+
+imul r13w, [rbx], 42
+
+# test:subtest
+# test:encoding "66416B122A"
+
+imul dx, [r10], 42
+
+# test:subtest
+# test:encoding "666B137F"
+
+imul dx, [rbx], 127
+
+# test:subtest
+# test:encoding "6669138000"
+
+imul dx, [rbx], 128
+
+# test:subtest
+# test:encoding "666B1380"
+
+imul dx, [rbx], -128
+
+# test:subtest
+# test:encoding "6669137FFF"
+
+imul dx, [rbx], -129

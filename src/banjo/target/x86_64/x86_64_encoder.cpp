@@ -296,33 +296,87 @@ void X8664Encoder::encode_sub(mcode::Instruction &instr) {
 }
 
 void X8664Encoder::encode_imul(mcode::Instruction &instr) {
-    mcode::Operand &m_dst = instr.get_operand(0);
-    mcode::Operand &m_src = instr.get_operand(1);
-    unsigned size = m_dst.get_size();
+    if (instr.get_operands().size() == 1) {
+        mcode::Operand &m_src = instr.get_operand(0);
+        unsigned size = m_src.get_size();
 
-    if (is_roa(m_src)) {
-        RegCode dst = reg(m_dst);
         RegOrAddr src = roa(m_src);
 
         emit_16bit_prefix_if_required(size);
-        emit_rex_rroa(size, dst, src);
-        emit_opcode(0x0F);
-        emit_opcode(0xAF);
-        emit_modrm_sib(dst, src);
-    } else if (is_imm(m_src)) {
+        emit_rex_rroa(size, 0, src);
+        emit_opcode(size == 1 ? 0xF6 : 0xF7);
+        emit_modrm_sib(5, src);
+    } else if (instr.get_operands().size() == 2) {
+        mcode::Operand &m_dst = instr.get_operand(0);
+        mcode::Operand &m_src = instr.get_operand(1);
+        unsigned size = m_dst.get_size();
+
+        if (is_roa(m_src)) {
+            ASSERT(size == 2 || size == 4 || size == 8);
+
+            RegCode dst = reg(m_dst);
+            RegOrAddr src = roa(m_src);
+
+            emit_16bit_prefix_if_required(size);
+            emit_rex_rroa(size, dst, src);
+            emit_opcode(0x0F);
+            emit_opcode(0xAF);
+            emit_modrm_sib(dst, src);
+        } else if (is_imm(m_src)) {
+            RegCode dst = reg(m_dst);
+            Immediate src = imm(m_src);
+
+            ASSERT(src.symbol_index == -1);
+
+            emit_16bit_prefix_if_required(size);
+            emit_rex_rr(size, dst, dst);
+
+            if (size == 1 || fits_in_i8(m_src.get_int_immediate())) {
+                emit_opcode(0x6B);
+                emit_modrm_rr(dst, dst);
+                text.write_u8(src.value);
+            } else {
+                emit_opcode(0x69);
+                emit_modrm_rr(dst, dst);
+
+                if (size == 2) {
+                    text.write_u16(src.value);
+                } else {
+                    text.write_u32(src.value);
+                }
+            }
+        } else {
+            ASSERT_UNREACHABLE;
+        }
+    } else if (instr.get_operands().size() == 3) {
+        mcode::Operand &m_dst = instr.get_operand(0);
+        mcode::Operand &m_lhs = instr.get_operand(1);
+        mcode::Operand &m_rhs = instr.get_operand(2);
+        unsigned size = m_dst.get_size();
+
         RegCode dst = reg(m_dst);
-        Immediate src = imm(m_src);
+        RegOrAddr lhs = roa(m_lhs);
+        Immediate rhs = imm(m_rhs);
 
-        // TODO: optimization for 8-bit immediates
-
-        ASSERT_MESSAGE(size == 4 || size == 8, "imul_rri size must be 4 or 8");
-        ASSERT_MESSAGE(src.symbol_index == -1, "64-bit symbol cannot be encoded here");
+        ASSERT(src.symbol_index == -1);
 
         emit_16bit_prefix_if_required(size);
-        emit_rex_rr(size, dst, dst);
-        emit_opcode(0x69);
-        emit_modrm_rr(dst, dst);
-        text.write_u32(src.value);
+        emit_rex_rroa(size, dst, lhs);
+
+        if (size == 1 || fits_in_i8(m_rhs.get_int_immediate())) {
+            emit_opcode(0x6B);
+            emit_modrm_sib(dst, lhs);
+            text.write_u8(rhs.value);
+        } else {
+            emit_opcode(0x69);
+            emit_modrm_sib(dst, lhs);
+
+            if (size == 2) {
+                text.write_u16(rhs.value);
+            } else {
+                text.write_u32(rhs.value);
+            }
+        }
     } else {
         ASSERT_UNREACHABLE;
     }
