@@ -1,0 +1,59 @@
+# test:subtest
+# test:encoding "48873E"
+
+xchg rdi, [rsi]
+
+# test:subtest
+# test:encoding "4C870E"
+
+xchg r9, [rsi]
+
+# test:subtest
+# test:encoding "49873E"
+
+xchg rdi, [r14]
+
+# test:subtest
+# test:encoding "873E"
+
+xchg edi, [rsi]
+
+# test:subtest
+# test:encoding "44870E"
+
+xchg r9d, [rsi]
+
+# test:subtest
+# test:encoding "41873E"
+
+xchg edi, [r14]
+
+# test:subtest
+# test:encoding "66873E"
+
+xchg di, [rsi]
+
+# test:subtest
+# test:encoding "6644870E"
+
+xchg r9w, [rsi]
+
+# test:subtest
+# test:encoding "6641873E"
+
+xchg di, [r14]
+
+# test:subtest
+# test:encoding "40863E"
+
+xchg dil, [rsi]
+
+# test:subtest
+# test:encoding "44860E"
+
+xchg r9b, [rsi]
+
+# test:subtest
+# test:encoding "41863E"
+
+xchg dil, [r14]

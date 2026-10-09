@@ -30,6 +30,9 @@ namespace X8664Opcode {
 
 enum {
     MOV,
+    MOVZX,
+    MOVSX,
+    MOVSXD,
     PUSH,
     POP,
     ADD,
@@ -46,8 +49,8 @@ enum {
     CWD,
     CDQ,
     CQO,
-    XCHG,         // TODO: Test
-    LOCK_CMPXCHG, // TODO: Test
+    XCHG,
+    LOCK_CMPXCHG,
     JMP,
     CMP,
     TEST,
@@ -99,9 +102,6 @@ enum {
     CALL,
     RET,
     LEA,
-    MOVZX,
-    MOVSX,
-    MOVSXD,
     MOVSS,
     MOVSD,
     MOVAPS,

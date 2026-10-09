@@ -1,0 +1,120 @@
+# test:subtest
+# test:encoding "F0480FB1C1"
+
+lock cmpxchg rcx, rax
+
+# test:subtest
+# test:encoding "F0490FB1C0"
+
+lock cmpxchg r8, rax
+
+# test:subtest
+# test:encoding "F04C0FB1F9"
+
+lock cmpxchg rcx, r15
+
+# test:subtest
+# test:encoding "F0480FB101"
+
+lock cmpxchg [rcx], rax
+
+# test:subtest
+# test:encoding "F0490FB100"
+
+lock cmpxchg [r8], rax
+
+# test:subtest
+# test:encoding "F04C0FB139"
+
+lock cmpxchg [rcx], r15
+
+# test:subtest
+# test:encoding "F00FB1C1"
+
+lock cmpxchg ecx, eax
+
+# test:subtest
+# test:encoding "F0410FB1C0"
+
+lock cmpxchg r8d, eax
+
+# test:subtest
+# test:encoding "F0440FB1F9"
+
+lock cmpxchg ecx, r15d
+
+# test:subtest
+# test:encoding "F00FB101"
+
+lock cmpxchg [rcx], eax
+
+# test:subtest
+# test:encoding "F0410FB100"
+
+lock cmpxchg [r8], eax
+
+# test:subtest
+# test:encoding "F0440FB139"
+
+lock cmpxchg [rcx], r15d
+
+# test:subtest
+# test:encoding "66F00FB1C1"
+
+lock cmpxchg cx, ax
+
+# test:subtest
+# test:encoding "66F0410FB1C0"
+
+lock cmpxchg r8w, ax
+
+# test:subtest
+# test:encoding "66F0440FB1F9"
+
+lock cmpxchg cx, r15w
+
+# test:subtest
+# test:encoding "66F00FB101"
+
+lock cmpxchg [rcx], ax
+
+# test:subtest
+# test:encoding "66F0410FB100"
+
+lock cmpxchg [r8], ax
+
+# test:subtest
+# test:encoding "66F0440FB139"
+
+lock cmpxchg [rcx], r15w
+
+# test:subtest
+# test:encoding "F00FB0C1"
+
+lock cmpxchg cl, al
+
+# test:subtest
+# test:encoding "F0410FB0C0"
+
+lock cmpxchg r8b, al
+
+# test:subtest
+# test:encoding "F0440FB0F9"
+
+lock cmpxchg cl, r15b
+
+# test:subtest
+# test:encoding "F00FB001"
+
+lock cmpxchg [rcx], al
+
+# test:subtest
+# test:encoding "F0410FB000"
+
+lock cmpxchg [r8], al
+
+# test:subtest
+# test:encoding "F0440FB039"
+
+lock cmpxchg [rcx], r15b
+

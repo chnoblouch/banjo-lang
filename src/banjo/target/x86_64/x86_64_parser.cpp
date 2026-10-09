@@ -119,11 +119,24 @@ std::optional<mcode::Opcode> X8664Parser::parse_opcode() {
         RETURN_ERROR("expected opcode, got '" + std::string{token.value} + "'");
     }
 
-    if (const mcode::Opcode *opcode = X86_64_OPCODE_NAMES.try_find_by_right(token.value)) {
+    std::string value{token.value};
+
+    if (token.value == "lock") {
+        tokens.advance();
+        utils::Token token = tokens.get();
+
+        if (token.type != utils::TokenType::IDENTIFIER) {
+            RETURN_ERROR("expected opcode, got '" + std::string{token.value} + "'");
+        }
+
+        value += " " + std::string{token.value};
+    }
+
+    if (const mcode::Opcode *opcode = X86_64_OPCODE_NAMES.try_find_by_right(value)) {
         tokens.advance();
         return *opcode;
     } else {
-        RETURN_ERROR("unknown opcode '" + std::string{token.value} + "'");
+        RETURN_ERROR("unknown opcode '" + std::string{value} + "'");
     }
 }
 

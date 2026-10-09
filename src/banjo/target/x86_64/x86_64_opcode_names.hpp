@@ -12,6 +12,9 @@ namespace banjo::target {
 // clang-format off
 const BiHashMap<mcode::Opcode, std::string_view> X86_64_OPCODE_NAMES{
     {X8664Opcode::MOV, "mov"},
+    {X8664Opcode::MOVZX, "movzx"},
+    {X8664Opcode::MOVSX, "movsx"},
+    {X8664Opcode::MOVSXD, "movsxd"},
     {X8664Opcode::PUSH, "push"},
     {X8664Opcode::POP, "pop"},
     {X8664Opcode::ADD, "add"},
@@ -29,7 +32,7 @@ const BiHashMap<mcode::Opcode, std::string_view> X86_64_OPCODE_NAMES{
     {X8664Opcode::CDQ, "cdq"},
     {X8664Opcode::CQO, "cqo"},
     {X8664Opcode::XCHG, "xchg"},
-    {X8664Opcode::LOCK_CMPXCHG, "lock cmpxch"},
+    {X8664Opcode::LOCK_CMPXCHG, "lock cmpxchg"},
     {X8664Opcode::JMP, "jmp"},
     {X8664Opcode::CMP, "cmp"},
     {X8664Opcode::TEST, "test"},
@@ -78,9 +81,6 @@ const BiHashMap<mcode::Opcode, std::string_view> X86_64_OPCODE_NAMES{
     {X8664Opcode::CALL, "call"},
     {X8664Opcode::RET, "ret"},
     {X8664Opcode::LEA, "lea"},
-    {X8664Opcode::MOVZX, "movzx"},
-    {X8664Opcode::MOVSX, "movsx"},
-    {X8664Opcode::MOVSXD, "movsxd"},
     {X8664Opcode::MOVSS, "movss"},
     {X8664Opcode::MOVSD, "movsd"},
     {X8664Opcode::MOVAPS, "movaps"},

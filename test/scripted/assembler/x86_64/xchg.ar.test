@@ -1,0 +1,39 @@
+# test:subtest
+# test:encoding "4897"
+
+xchg rdi, rax
+
+# test:subtest
+# test:encoding "4991"
+
+xchg r9, rax
+
+# test:subtest
+# test:encoding "97"
+
+xchg edi, eax
+
+# test:subtest
+# test:encoding "4191"
+
+xchg r9d, eax
+
+# test:subtest
+# test:encoding "6697"
+
+xchg di, ax
+
+# test:subtest
+# test:encoding "664191"
+
+xchg r9w, ax
+
+# test:subtest
+# test:encoding "4086F8"
+
+xchg dil, al
+
+# test:subtest
+# test:encoding "4486C8"
+
+xchg r9b, al
