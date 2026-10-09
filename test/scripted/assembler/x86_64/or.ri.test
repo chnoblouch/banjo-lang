@@ -1,0 +1,104 @@
+# test:subtest
+# test:encoding "4883C92A"
+
+or rcx, 42
+
+# test:subtest
+# test:encoding "4983CB2A"
+
+or r11, 42
+
+# test:subtest
+# test:encoding "4883C97F"
+
+or rcx, 127
+
+# test:subtest
+# test:encoding "4881C980000000"
+
+or rcx, 128
+
+# test:subtest
+# test:encoding "4883C980"
+
+or rcx, -128
+
+# test:subtest
+# test:encoding "4881C97FFFFFFF"
+
+or rcx, -129
+
+# test:subtest
+# test:encoding "83C92A"
+
+or ecx, 42
+
+# test:subtest
+# test:encoding "4183CB2A"
+
+or r11d, 42
+
+# test:subtest
+# test:encoding "83C97F"
+
+or ecx, 127
+
+# test:subtest
+# test:encoding "81C980000000"
+
+or ecx, 128
+
+# test:subtest
+# test:encoding "83C980"
+
+or ecx, -128
+
+# test:subtest
+# test:encoding "81C97FFFFFFF"
+
+or ecx, -129
+
+# test:subtest
+# test:encoding "6683C92A"
+
+or cx, 42
+
+# test:subtest
+# test:encoding "664183CB2A"
+
+or r11w, 42
+
+# test:subtest
+# test:encoding "6683C97F"
+
+or cx, 127
+
+# test:subtest
+# test:encoding "6681C98000"
+
+or cx, 128
+
+# test:subtest
+# test:encoding "6683C980"
+
+or cx, -128
+
+# test:subtest
+# test:encoding "80C92A"
+
+or cl, 42
+
+# test:subtest
+# test:encoding "4180CB2A"
+
+or r11b, 42
+
+# test:subtest
+# test:encoding "80C97F"
+
+or cl, 127
+
+# test:subtest
+# test:encoding "80C980"
+
+or cl, -128

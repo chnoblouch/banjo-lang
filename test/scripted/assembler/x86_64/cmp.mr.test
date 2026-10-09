@@ -1,0 +1,59 @@
+# test:subtest
+# test:encoding "483931"
+
+cmp [rcx], rsi
+
+# test:subtest
+# test:encoding "493933"
+
+cmp [r11], rsi
+
+# test:subtest
+# test:encoding "4C3931"
+
+cmp [rcx], r14
+
+# test:subtest
+# test:encoding "3931"
+
+cmp [rcx], esi
+
+# test:subtest
+# test:encoding "413933"
+
+cmp [r11], esi
+
+# test:subtest
+# test:encoding "443931"
+
+cmp [rcx], r14d
+
+# test:subtest
+# test:encoding "663931"
+
+cmp [rcx], si
+
+# test:subtest
+# test:encoding "66413933"
+
+cmp [r11], si
+
+# test:subtest
+# test:encoding "66443931"
+
+cmp [rcx], r14w
+
+# test:subtest
+# test:encoding "403831"
+
+cmp [rcx], sil
+
+# test:subtest
+# test:encoding "413833"
+
+cmp [r11], sil
+
+# test:subtest
+# test:encoding "443831"
+
+cmp [rcx], r14b

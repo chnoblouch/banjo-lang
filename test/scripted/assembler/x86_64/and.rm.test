@@ -1,0 +1,59 @@
+# test:subtest
+# test:encoding "48230E"
+
+and rcx, [rsi]
+
+# test:subtest
+# test:encoding "4C231E"
+
+and r11, [rsi]
+
+# test:subtest
+# test:encoding "49230E"
+
+and rcx, [r14]
+
+# test:subtest
+# test:encoding "230E"
+
+and ecx, [rsi]
+
+# test:subtest
+# test:encoding "44231E"
+
+and r11d, [rsi]
+
+# test:subtest
+# test:encoding "41230E"
+
+and ecx, [r14]
+
+# test:subtest
+# test:encoding "66230E"
+
+and cx, [rsi]
+
+# test:subtest
+# test:encoding "6644231E"
+
+and r11w, [rsi]
+
+# test:subtest
+# test:encoding "6641230E"
+
+and cx, [r14]
+
+# test:subtest
+# test:encoding "220E"
+
+and cl, [rsi]
+
+# test:subtest
+# test:encoding "44221E"
+
+and r11b, [rsi]
+
+# test:subtest
+# test:encoding "41220E"
+
+and cl, [r14]

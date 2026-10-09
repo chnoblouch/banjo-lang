@@ -1,0 +1,59 @@
+# test:subtest
+# test:encoding "4831F1"
+
+xor rcx, rsi
+
+# test:subtest
+# test:encoding "4931F3"
+
+xor r11, rsi
+
+# test:subtest
+# test:encoding "4C31F1"
+
+xor rcx, r14
+
+# test:subtest
+# test:encoding "31F1"
+
+xor ecx, esi
+
+# test:subtest
+# test:encoding "4131F3"
+
+xor r11d, esi
+
+# test:subtest
+# test:encoding "4431F1"
+
+xor ecx, r14d
+
+# test:subtest
+# test:encoding "6631F1"
+
+xor cx, si
+
+# test:subtest
+# test:encoding "664131F3"
+
+xor r11w, si
+
+# test:subtest
+# test:encoding "664431F1"
+
+xor cx, r14w
+
+# test:subtest
+# test:encoding "4030F1"
+
+xor cl, sil
+
+# test:subtest
+# test:encoding "4130F3"
+
+xor r11b, sil
+
+# test:subtest
+# test:encoding "4430F1"
+
+xor cl, r14b

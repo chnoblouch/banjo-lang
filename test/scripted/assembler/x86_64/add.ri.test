@@ -9,14 +9,14 @@ add rcx, 42
 add r11, 42
 
 # test:subtest
-# test:encoding "4881C1FF000000"
+# test:encoding "4883C17F"
 
-add rcx, 255
+add rcx, 127
 
 # test:subtest
-# test:encoding "4881C100010000"
+# test:encoding "4881C180000000"
 
-add rcx, 256
+add rcx, 128
 
 # test:subtest
 # test:encoding "4883C180"
@@ -39,14 +39,14 @@ add ecx, 42
 add r11d, 42
 
 # test:subtest
-# test:encoding "81C1FF000000"
+# test:encoding "83C17F"
 
-add ecx, 255
+add ecx, 127
 
 # test:subtest
-# test:encoding "81C100010000"
+# test:encoding "81C180000000"
 
-add ecx, 256
+add ecx, 128
 
 # test:subtest
 # test:encoding "83C180"
@@ -69,14 +69,14 @@ add cx, 42
 add r11w, 42
 
 # test:subtest
-# test:encoding "6681C1FF00"
+# test:encoding "6683C17F"
 
-add cx, 255
+add cx, 127
 
 # test:subtest
-# test:encoding "6681C10001"
+# test:encoding "6681C18000"
 
-add cx, 256
+add cx, 128
 
 # test:subtest
 # test:encoding "6683C180"

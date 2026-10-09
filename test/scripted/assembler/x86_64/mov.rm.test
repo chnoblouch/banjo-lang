@@ -1,0 +1,59 @@
+# test:subtest
+# test:encoding "488B0E"
+
+mov rcx, [rsi]
+
+# test:subtest
+# test:encoding "4C8B1E"
+
+mov r11, [rsi]
+
+# test:subtest
+# test:encoding "498B0E"
+
+mov rcx, [r14]
+
+# test:subtest
+# test:encoding "8B0E"
+
+mov ecx, [rsi]
+
+# test:subtest
+# test:encoding "448B1E"
+
+mov r11d, [rsi]
+
+# test:subtest
+# test:encoding "418B0E"
+
+mov ecx, [r14]
+
+# test:subtest
+# test:encoding "668B0E"
+
+mov cx, [rsi]
+
+# test:subtest
+# test:encoding "66448B1E"
+
+mov r11w, [rsi]
+
+# test:subtest
+# test:encoding "66418B0E"
+
+mov cx, [r14]
+
+# test:subtest
+# test:encoding "8A0E"
+
+mov cl, [rsi]
+
+# test:subtest
+# test:encoding "448A1E"
+
+mov r11b, [rsi]
+
+# test:subtest
+# test:encoding "418A0E"
+
+mov cl, [r14]

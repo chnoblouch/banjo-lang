@@ -1,0 +1,104 @@
+# test:subtest
+# test:encoding "4883F12A"
+
+xor rcx, 42
+
+# test:subtest
+# test:encoding "4983F32A"
+
+xor r11, 42
+
+# test:subtest
+# test:encoding "4883F17F"
+
+xor rcx, 127
+
+# test:subtest
+# test:encoding "4881F180000000"
+
+xor rcx, 128
+
+# test:subtest
+# test:encoding "4883F180"
+
+xor rcx, -128
+
+# test:subtest
+# test:encoding "4881F17FFFFFFF"
+
+xor rcx, -129
+
+# test:subtest
+# test:encoding "83F12A"
+
+xor ecx, 42
+
+# test:subtest
+# test:encoding "4183F32A"
+
+xor r11d, 42
+
+# test:subtest
+# test:encoding "83F17F"
+
+xor ecx, 127
+
+# test:subtest
+# test:encoding "81F180000000"
+
+xor ecx, 128
+
+# test:subtest
+# test:encoding "83F180"
+
+xor ecx, -128
+
+# test:subtest
+# test:encoding "81F17FFFFFFF"
+
+xor ecx, -129
+
+# test:subtest
+# test:encoding "6683F12A"
+
+xor cx, 42
+
+# test:subtest
+# test:encoding "664183F32A"
+
+xor r11w, 42
+
+# test:subtest
+# test:encoding "6683F17F"
+
+xor cx, 127
+
+# test:subtest
+# test:encoding "6681F18000"
+
+xor cx, 128
+
+# test:subtest
+# test:encoding "6683F180"
+
+xor cx, -128
+
+# test:subtest
+# test:encoding "80F12A"
+
+xor cl, 42
+
+# test:subtest
+# test:encoding "4180F32A"
+
+xor r11b, 42
+
+# test:subtest
+# test:encoding "80F17F"
+
+xor cl, 127
+
+# test:subtest
+# test:encoding "80F180"
+
+xor cl, -128

@@ -1,0 +1,59 @@
+# test:subtest
+# test:encoding "482931"
+
+sub [rcx], rsi
+
+# test:subtest
+# test:encoding "492933"
+
+sub [r11], rsi
+
+# test:subtest
+# test:encoding "4C2931"
+
+sub [rcx], r14
+
+# test:subtest
+# test:encoding "2931"
+
+sub [rcx], esi
+
+# test:subtest
+# test:encoding "412933"
+
+sub [r11], esi
+
+# test:subtest
+# test:encoding "442931"
+
+sub [rcx], r14d
+
+# test:subtest
+# test:encoding "662931"
+
+sub [rcx], si
+
+# test:subtest
+# test:encoding "66412933"
+
+sub [r11], si
+
+# test:subtest
+# test:encoding "66442931"
+
+sub [rcx], r14w
+
+# test:subtest
+# test:encoding "402831"
+
+sub [rcx], sil
+
+# test:subtest
+# test:encoding "412833"
+
+sub [r11], sil
+
+# test:subtest
+# test:encoding "442831"
+
+sub [rcx], r14b

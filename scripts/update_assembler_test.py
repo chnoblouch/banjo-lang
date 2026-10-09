@@ -13,8 +13,19 @@ if __name__ == "__main__":
             if line.startswith("# test:encoding"):
                 encoding_line_index = len(lines)
             elif not line.startswith("# ") and line.strip():
+                assembly = line
+
+                if arch == "x86_64":
+                    for specifier in ("byte", "word", "dword", "qword"):
+                        index = assembly.find(specifier)
+
+                        if index != -1:
+                            end = index + len(specifier)
+                            assembly = assembly[:end] + " ptr" + assembly[end:]
+                            break
+
                 script = Path(__file__).parent / f"assemble_{arch}.py"
-                child = subprocess.run(["python3", str(script), line], stdout=subprocess.PIPE, text=True)
+                child = subprocess.run(["python3", str(script), assembly], stdout=subprocess.PIPE, text=True)
                 encoding = str(child.stdout).strip()
                 lines[encoding_line_index] = f"# test:encoding \"{encoding}\"\n"
 

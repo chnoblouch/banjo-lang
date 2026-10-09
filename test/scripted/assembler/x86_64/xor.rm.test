@@ -1,0 +1,59 @@
+# test:subtest
+# test:encoding "48330E"
+
+xor rcx, [rsi]
+
+# test:subtest
+# test:encoding "4C331E"
+
+xor r11, [rsi]
+
+# test:subtest
+# test:encoding "49330E"
+
+xor rcx, [r14]
+
+# test:subtest
+# test:encoding "330E"
+
+xor ecx, [rsi]
+
+# test:subtest
+# test:encoding "44331E"
+
+xor r11d, [rsi]
+
+# test:subtest
+# test:encoding "41330E"
+
+xor ecx, [r14]
+
+# test:subtest
+# test:encoding "66330E"
+
+xor cx, [rsi]
+
+# test:subtest
+# test:encoding "6644331E"
+
+xor r11w, [rsi]
+
+# test:subtest
+# test:encoding "6641330E"
+
+xor cx, [r14]
+
+# test:subtest
+# test:encoding "320E"
+
+xor cl, [rsi]
+
+# test:subtest
+# test:encoding "44321E"
+
+xor r11b, [rsi]
+
+# test:subtest
+# test:encoding "41320E"
+
+xor cl, [r14]

@@ -1,0 +1,19 @@
+# test:subtest
+# test:encoding "48A92A000000"
+
+test rax, 42
+
+# test:subtest
+# test:encoding "A92A000000"
+
+test eax, 42
+
+# test:subtest
+# test:encoding "66A92A00"
+
+test ax, 42
+
+# test:subtest
+# test:encoding "A82A"
+
+test al, 42

@@ -1,0 +1,104 @@
+# test:subtest
+# test:encoding "4883F92A"
+
+cmp rcx, 42
+
+# test:subtest
+# test:encoding "4983FB2A"
+
+cmp r11, 42
+
+# test:subtest
+# test:encoding "4883F97F"
+
+cmp rcx, 127
+
+# test:subtest
+# test:encoding "4881F980000000"
+
+cmp rcx, 128
+
+# test:subtest
+# test:encoding "4883F980"
+
+cmp rcx, -128
+
+# test:subtest
+# test:encoding "4881F97FFFFFFF"
+
+cmp rcx, -129
+
+# test:subtest
+# test:encoding "83F92A"
+
+cmp ecx, 42
+
+# test:subtest
+# test:encoding "4183FB2A"
+
+cmp r11d, 42
+
+# test:subtest
+# test:encoding "83F97F"
+
+cmp ecx, 127
+
+# test:subtest
+# test:encoding "81F980000000"
+
+cmp ecx, 128
+
+# test:subtest
+# test:encoding "83F980"
+
+cmp ecx, -128
+
+# test:subtest
+# test:encoding "81F97FFFFFFF"
+
+cmp ecx, -129
+
+# test:subtest
+# test:encoding "6683F92A"
+
+cmp cx, 42
+
+# test:subtest
+# test:encoding "664183FB2A"
+
+cmp r11w, 42
+
+# test:subtest
+# test:encoding "6683F97F"
+
+cmp cx, 127
+
+# test:subtest
+# test:encoding "6681F98000"
+
+cmp cx, 128
+
+# test:subtest
+# test:encoding "6683F980"
+
+cmp cx, -128
+
+# test:subtest
+# test:encoding "80F92A"
+
+cmp cl, 42
+
+# test:subtest
+# test:encoding "4180FB2A"
+
+cmp r11b, 42
+
+# test:subtest
+# test:encoding "80F97F"
+
+cmp cl, 127
+
+# test:subtest
+# test:encoding "80F980"
+
+cmp cl, -128

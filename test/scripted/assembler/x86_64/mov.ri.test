@@ -1,0 +1,59 @@
+# test:subtest
+# test:encoding "48C7C12A000000"
+
+mov rcx, 42
+
+# test:subtest
+# test:encoding "49C7C32A000000"
+
+mov r11, 42
+
+# test:subtest
+# test:encoding "48C7C1FFFFFF7F"
+
+mov rcx, 2147483647  # 0x7FFFFFFF
+
+# test:subtest
+# test:encoding "48B90000008000000000"
+
+mov rcx, 2147483648  # 0x80000000
+
+# test:subtest
+# test:encoding "48C7C100000080"
+
+mov rcx, -2147483648  # -0x80000000
+
+# test:subtest
+# test:encoding "48B90100008000000000"
+
+mov rcx, 2147483649  # -0x80000001
+
+# test:subtest
+# test:encoding "B92A000000"
+
+mov ecx, 42
+
+# test:subtest
+# test:encoding "41BB2A000000"
+
+mov r11d, 42
+
+# test:subtest
+# test:encoding "66B92A00"
+
+mov cx, 42
+
+# test:subtest
+# test:encoding "6641BB2A00"
+
+mov r11w, 42
+
+# test:subtest
+# test:encoding "B12A"
+
+mov cl, 42
+
+# test:subtest
+# test:encoding "41B32A"
+
+mov r11b, 42

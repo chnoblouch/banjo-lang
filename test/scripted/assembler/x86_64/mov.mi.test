@@ -1,0 +1,49 @@
+# test:subtest
+# test:encoding "48C7012A000000"
+
+mov qword [rcx], 42
+
+# test:subtest
+# test:encoding "49C7032A000000"
+
+mov qword [r11], 42
+
+# test:subtest
+# test:encoding "48C701FFFFFF7F"
+
+mov qword [rcx], 2147483647  # 0x7FFFFFFF
+
+# test:subtest
+# test:encoding "48C70100000080"
+
+mov qword [rcx], -2147483648  # -0x80000000
+
+# test:subtest
+# test:encoding "C7012A000000"
+
+mov dword [rcx], 42
+
+# test:subtest
+# test:encoding "41C7032A000000"
+
+mov dword [r11], 42
+
+# test:subtest
+# test:encoding "66C7012A00"
+
+mov word [rcx], 42
+
+# test:subtest
+# test:encoding "6641C7032A00"
+
+mov word [r11], 42
+
+# test:subtest
+# test:encoding "C6012A"
+
+mov byte [rcx], 42
+
+# test:subtest
+# test:encoding "41C6032A"
+
+mov byte [r11], 42

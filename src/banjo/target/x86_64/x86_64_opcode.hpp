@@ -32,14 +32,14 @@ enum {
     MOV,
     PUSH,
     POP,
-    ADD,  // TODO: Test
-    SUB,  // TODO: Test
+    ADD,
+    SUB,
     IMUL, // TODO: Test
     DIV,
     IDIV,
-    AND, // TODO: Test
-    OR,  // TODO: Test
-    XOR, // TODO: Test
+    AND,
+    OR,
+    XOR,
     SHL,
     SHR,
     SAR,
@@ -49,7 +49,7 @@ enum {
     XCHG,         // TODO: Test
     LOCK_CMPXCHG, // TODO: Test
     JMP,
-    CMP, // TODO: Test
+    CMP,
     TEST,
     JCC,
     JE = JCC + X8664ConditionCode::E,

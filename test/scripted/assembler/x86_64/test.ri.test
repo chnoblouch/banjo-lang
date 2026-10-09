@@ -1,0 +1,39 @@
+# test:subtest
+# test:encoding "48F7C12A000000"
+
+test rcx, 42
+
+# test:subtest
+# test:encoding "49F7C32A000000"
+
+test r11, 42
+
+# test:subtest
+# test:encoding "F7C12A000000"
+
+test ecx, 42
+
+# test:subtest
+# test:encoding "41F7C32A000000"
+
+test r11d, 42
+
+# test:subtest
+# test:encoding "66F7C12A00"
+
+test cx, 42
+
+# test:subtest
+# test:encoding "6641F7C32A00"
+
+test r11w, 42
+
+# test:subtest
+# test:encoding "F6C12A"
+
+test cl, 42
+
+# test:subtest
+# test:encoding "41F6C32A"
+
+test r11b, 42

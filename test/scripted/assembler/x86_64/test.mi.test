@@ -1,0 +1,39 @@
+# test:subtest
+# test:encoding "48F7012A000000"
+
+test qword [rcx], 42
+
+# test:subtest
+# test:encoding "49F7032A000000"
+
+test qword [r11], 42
+
+# test:subtest
+# test:encoding "F7012A000000"
+
+test dword [rcx], 42
+
+# test:subtest
+# test:encoding "41F7032A000000"
+
+test dword [r11], 42
+
+# test:subtest
+# test:encoding "66F7012A00"
+
+test word [rcx], 42
+
+# test:subtest
+# test:encoding "6641F7032A00"
+
+test word [r11], 42
+
+# test:subtest
+# test:encoding "F6012A"
+
+test byte [rcx], 42
+
+# test:subtest
+# test:encoding "41F6032A"
+
+test byte [r11], 42

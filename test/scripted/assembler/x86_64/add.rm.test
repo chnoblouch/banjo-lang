@@ -9,6 +9,11 @@ add rcx, [rsi]
 add r11, [rsi]
 
 # test:subtest
+# test:encoding "49030E"
+
+add rcx, [r14]
+
+# test:subtest
 # test:encoding "030E"
 
 add ecx, [rsi]
@@ -17,6 +22,11 @@ add ecx, [rsi]
 # test:encoding "44031E"
 
 add r11d, [rsi]
+
+# test:subtest
+# test:encoding "41030E"
+
+add ecx, [r14]
 
 # test:subtest
 # test:encoding "66030E"
@@ -29,6 +39,11 @@ add cx, [rsi]
 add r11w, [rsi]
 
 # test:subtest
+# test:encoding "6641030E"
+
+add cx, [r14]
+
+# test:subtest
 # test:encoding "020E"
 
 add cl, [rsi]
@@ -37,3 +52,8 @@ add cl, [rsi]
 # test:encoding "44021E"
 
 add r11b, [rsi]
+
+# test:subtest
+# test:encoding "41020E"
+
+add cl, [r14]

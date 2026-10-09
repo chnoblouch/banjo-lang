@@ -4,14 +4,14 @@
 add rax, 42
 
 # test:subtest
-# test:encoding "4805FF000000"
+# test:encoding "4883C07F"
 
-add rax, 255
+add rax, 127
 
 # test:subtest
-# test:encoding "480500010000"
+# test:encoding "480580000000"
 
-add rax, 256
+add rax, 128
 
 # test:subtest
 # test:encoding "4883C080"
@@ -29,14 +29,14 @@ add rax, -129
 add eax, 42
 
 # test:subtest
-# test:encoding "05FF000000"
+# test:encoding "83C07F"
 
-add eax, 255
+add eax, 127
 
 # test:subtest
-# test:encoding "0500010000"
+# test:encoding "0580000000"
 
-add eax, 256
+add eax, 128
 
 # test:subtest
 # test:encoding "83C080"
@@ -54,14 +54,14 @@ add eax, -129
 add ax, 42
 
 # test:subtest
-# test:encoding "6605FF00"
+# test:encoding "6683C07F"
 
-add ax, 255
+add ax, 127
 
 # test:subtest
-# test:encoding "66050001"
+# test:encoding "66058000"
 
-add ax, 256
+add ax, 128
 
 # test:subtest
 # test:encoding "6683C080"

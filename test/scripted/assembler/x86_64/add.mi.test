@@ -4,14 +4,19 @@
 add qword [rcx], 42
 
 # test:subtest
-# test:encoding "488101FF000000"
+# test:encoding "4983032A"
 
-add qword [rcx], 255
+add qword [r11], 42
 
 # test:subtest
-# test:encoding "48810100010000"
+# test:encoding "4883017F"
 
-add qword [rcx], 256
+add qword [rcx], 127
+
+# test:subtest
+# test:encoding "48810180000000"
+
+add qword [rcx], 128
 
 # test:subtest
 # test:encoding "48830180"
@@ -29,14 +34,19 @@ add qword [rcx], -129
 add dword [rcx], 42
 
 # test:subtest
-# test:encoding "8101FF000000"
+# test:encoding "4183032A"
 
-add dword [rcx], 255
+add dword [r11], 42
 
 # test:subtest
-# test:encoding "810100010000"
+# test:encoding "83017F"
 
-add dword [rcx], 256
+add dword [rcx], 127
+
+# test:subtest
+# test:encoding "810180000000"
+
+add dword [rcx], 128
 
 # test:subtest
 # test:encoding "830180"
@@ -54,14 +64,19 @@ add dword [rcx], -129
 add word [rcx], 42
 
 # test:subtest
-# test:encoding "668101FF00"
+# test:encoding "664183032A"
 
-add word [rcx], 255
+add word [r11], 42
 
 # test:subtest
-# test:encoding "6681010001"
+# test:encoding "6683017F"
 
-add word [rcx], 256
+add word [rcx], 127
+
+# test:subtest
+# test:encoding "6681018000"
+
+add word [rcx], 128
 
 # test:subtest
 # test:encoding "66830180"
@@ -72,6 +87,11 @@ add word [rcx], -128
 # test:encoding "80012A"
 
 add byte [rcx], 42
+
+# test:subtest
+# test:encoding "4180032A"
+
+add byte [r11], 42
 
 # test:subtest
 # test:encoding "80017F"
