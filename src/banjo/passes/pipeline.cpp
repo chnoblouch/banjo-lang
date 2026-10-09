@@ -25,7 +25,7 @@
 #include <fstream>
 #include <iostream>
 
-#define SROA_PASS SROAPass
+#define SROA_PASS SROAPass2
 
 namespace banjo::passes {
 

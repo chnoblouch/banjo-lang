@@ -3,6 +3,7 @@
 
 #include "banjo/passes/pass.hpp"
 #include "banjo/ssa/control_flow_graph.hpp"
+#include "banjo/ssa/function.hpp"
 #include "banjo/ssa/virtual_register.hpp"
 #include "banjo/target/target_data_layout.hpp"
 #include "banjo/utils/bit_set.hpp"
@@ -22,7 +23,6 @@ private:
         BitSet load_nodes;
         BitSet nodes_having_val_as_param;
         bool promotable;
-        ssa::Value cur_replacement;
     };
 
     struct ParamInfo {
@@ -42,7 +42,10 @@ private:
 
     ssa::Function *func;
     ssa::ControlFlowGraph cfg;
-    ssa::DominatorTree domtree;
+    ssa::DominatorTree dom_tree;
+
+    StackSlotMap slots;
+    BlockMap blocks;
 
 public:
     StackToRegPass(target::Target *target);
@@ -50,22 +53,22 @@ public:
 
 private:
     void run(ssa::Function &func);
-    StackSlotMap find_stack_slots();
-    void find_slot_uses(StackSlotMap &slots, NodeID node, ssa::Instruction &instr);
-    void analyze_reg_use(StackSlotMap &slots, ssa::VirtualRegister reg, NodeID node, ssa::Opcode opcode);
+
+    void find_stack_slots(ssa::Instruction &instr);
+    void find_slot_uses(NodeID node, ssa::Instruction &instr);
+    void analyze_reg_use(ssa::VirtualRegister reg, NodeID node, ssa::Opcode opcode);
     bool is_slot_loaded(StackSlotInfo &slot, NodeID node, BitSet &nodes_visited);
 
-    void rename(ssa::BasicBlockIter block_iter, StackSlotMap &slots, BlockMap &blocks, ValueMap cur_replacements);
-    void rename_in_load(ssa::BasicBlock &block, ssa::InstrIter &instr, StackSlotMap &slots, ValueMap &cur_replacements);
-    void rename_in_store(
-        ssa::BasicBlock &block,
-        ssa::InstrIter &instr,
-        StackSlotMap &slots,
-        ValueMap &cur_replacements
-    );
+    void try_promote(ssa::VirtualRegister reg, StackSlotInfo &slot, ValueMap &initial_values);
 
-    void replace_regs(std::vector<ssa::Operand> &operands, ValueMap cur_replacements);
-    void update_branch_target(ssa::Operand &operand, BlockMap &blocks, ValueMap cur_replacements);
+    void update_uses(ssa::BasicBlockIter block_iter, ValueMap current_values);
+    void update_uses_in_load(ssa::BasicBlock &block, ssa::InstrIter &instr, ValueMap &current_values);
+    void update_uses_in_store(ssa::BasicBlock &block, ssa::InstrIter &instr, ValueMap &current_values);
+
+    void replace_regs(std::vector<ssa::Operand> &operands, ValueMap current_values);
+    void update_branch_target(ssa::Operand &operand, ValueMap current_values);
+
+    void print_dump();
 };
 
 } // namespace banjo::passes
