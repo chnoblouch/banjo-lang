@@ -161,7 +161,7 @@ void InliningPass::inline_instr(ssa::Instruction instr, ssa::BasicBlock &block, 
         ssa::BranchTarget target{.block = ctx.end_block, .args{}};
 
         if (!ctx.end_block->param_regs.empty()) {
-            target.args.push_back(get_inlined_value(instr.get_operand(0), ctx));
+            target.args.push_back(instr.get_operand(0));
         }
 
         instr = {ssa::Opcode::JMP, {ssa::Operand::from_branch_target(target)}};
