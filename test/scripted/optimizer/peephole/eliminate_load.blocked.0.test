@@ -1,4 +1,3 @@
-# test:pass "peephole"
 # test:section input
 
 func i32 @f(addr %0) {

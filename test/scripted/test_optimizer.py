@@ -3,14 +3,11 @@ from framework import TestResult, run_tests, find_executable
 
 
 def run_test(test, conditions):
+    pass_name = arch = test.name.split(".")[0]
     util_path = find_executable("banjo-test-util")
     
     input_source = test.sections["input"].strip()
     output_source = test.sections["output"].strip()
-
-    for name, args in conditions:
-        if name == "pass":
-            pass_name = args[0]
 
     result = subprocess.run(
         [util_path, "ssa", pass_name],

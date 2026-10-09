@@ -1,4 +1,3 @@
-# test:pass "stack_to_reg"
 # test:section input
 
 func i32 @test() {

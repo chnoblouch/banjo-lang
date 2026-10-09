@@ -1,5 +1,6 @@
 #include "ssa_util.hpp"
 
+#include "banjo/passes/control_flow_opt_pass.hpp"
 #include "banjo/passes/inlining_pass.hpp"
 #include "banjo/passes/peephole_optimizer.hpp"
 #include "banjo/passes/sroa_pass.hpp"
@@ -92,13 +93,15 @@ void SSAUtil::optimize(std::string_view pass_name, std::string_view source) {
     ssa::Module ssa_mod = ssa::Parser{tokens, target->get_default_calling_conv()}.parse();
 
     if (pass_name == "peephole") {
-        passes::PeepholeOptimizer(target).run(ssa_mod);
+        passes::PeepholeOptimizer{target}.run(ssa_mod);
     } else if (pass_name == "sroa") {
-        passes::SROAPass(target).run(ssa_mod);
+        passes::SROAPass{target}.run(ssa_mod);
     } else if (pass_name == "stack_to_reg") {
-        passes::StackToRegPass(target).run(ssa_mod);
+        passes::StackToRegPass{target}.run(ssa_mod);
     } else if (pass_name == "inlining") {
-        passes::InliningPass(target).run(ssa_mod);
+        passes::InliningPass{target}.run(ssa_mod);
+    } else if (pass_name == "control_flow_opt") {
+        passes::ControlFlowOptPass{target}.run(ssa_mod);
     } else {
         ASSERT_UNREACHABLE;
     }

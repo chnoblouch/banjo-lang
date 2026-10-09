@@ -1,0 +1,17 @@
+# test:section input
+
+func void @f() {
+    jmp void b1
+
+b0:
+    jmp void b1
+
+b1:
+    ret
+}
+
+# test:section output
+
+func void @f() {
+    ret
+}

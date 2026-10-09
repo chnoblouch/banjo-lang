@@ -59,6 +59,7 @@ private:
     std::optional<Instruction> parse_instr();
     std::optional<Opcode> parse_opcode();
     std::optional<Operand> parse_operand();
+    std::optional<BranchTarget> parse_branch_target();
     std::optional<VirtualRegister> parse_reg();
 
     bool parse_struct(Module &mod);

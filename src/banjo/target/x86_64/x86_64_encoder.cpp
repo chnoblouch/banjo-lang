@@ -358,7 +358,7 @@ void X8664Encoder::encode_imul(mcode::Instruction &instr) {
         RegOrAddr lhs = roa(m_lhs);
         Immediate rhs = imm(m_rhs);
 
-        ASSERT(src.symbol_index == -1);
+        ASSERT(rhs.symbol_index == -1);
 
         emit_16bit_prefix_if_required(size);
         emit_rex_rroa(size, dst, lhs);

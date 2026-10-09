@@ -1,0 +1,21 @@
+# test:section input
+
+func i32 @f() {
+    jmp void b1(i32 2)
+
+b1(i32 %0):
+    jmp void b2(i32 %0, i32 8)
+
+b2(i32 %1, i32 %2):
+    %3 = add i32 %1, i32 %2
+    jmp void b3(i32 %3)
+
+b3(i32 %3):
+    ret i32 %3
+}
+
+# test:section output
+
+func i32 @f() {
+    ret i32 10
+}

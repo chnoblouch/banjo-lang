@@ -1,4 +1,3 @@
-# test:pass "peephole"
 # test:section input
 
 func i64 @f(i64 %0) {

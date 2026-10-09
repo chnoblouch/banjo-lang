@@ -6,6 +6,7 @@
 #include "banjo/ssa/instruction.hpp"
 #include "banjo/ssa/module.hpp"
 #include "banjo/ssa/opcode.hpp"
+#include "banjo/ssa/operand.hpp"
 #include "banjo/ssa/primitive.hpp"
 #include "banjo/ssa/structure.hpp"
 #include "banjo/ssa/type.hpp"
@@ -302,20 +303,55 @@ std::optional<BasicBlock> Parser::parse_block(bool is_entry) {
     utils::Token &token = tokens.get();
 
     if (!is_entry) {
-        tokens.advance();
+        std::string_view label = tokens.get().value;
 
-        if (token.value[0] != 'b') {
+        if (tokens.get().value[0] == 'b') {
+            tokens.advance();
+        } else {
             report_error("invalid block label '" + std::string{token.value} + "'");
             return {};
         }
 
-        block = BasicBlock{std::string{token.value}};
+        std::vector<VirtualRegister> param_regs;
+        std::vector<Type> param_types;
 
-        if (tokens.next().type == utils::TokenType::COLON) {
-            report_unexpected(":");
-            return {};
-        } else {
+        if (tokens.is_current(utils::TokenType::LPAREN)) {
             tokens.advance();
+
+            while (true) {
+                if (std::optional<Type> type = parse_type()) {
+                    param_types.push_back(*type);
+                } else {
+                    return {};
+                }
+
+                if (std::optional<VirtualRegister> reg = parse_reg()) {
+                    param_regs.push_back(*reg);
+                } else {
+                    return {};
+                }
+
+                if (tokens.is_current(utils::TokenType::COMMA)) {
+                    tokens.advance();
+                } else if (tokens.is_current(utils::TokenType::RPAREN)) {
+                    tokens.advance();
+                    break;
+                } else {
+                    report_unexpected("',' or ')'");
+                    return {};
+                }
+            }
+        }
+
+        block = BasicBlock{std::string{label}};
+        block.param_regs = param_regs;
+        block.param_types = param_types;
+
+        if (tokens.is_current(utils::TokenType::COLON)) {
+            tokens.advance();
+        } else {
+            report_unexpected("':'");
+            return {};
         }
     }
 
@@ -327,8 +363,10 @@ std::optional<BasicBlock> Parser::parse_block(bool is_entry) {
             break;
         }
 
-        if (tokens.get().type == utils::TokenType::IDENTIFIER && tokens.next().type == utils::TokenType::COLON) {
-            break;
+        if (tokens.is_current(utils::TokenType::IDENTIFIER)) {
+            if (tokens.is_next(utils::TokenType::COLON) || tokens.is_next(utils::TokenType::LPAREN)) {
+                break;
+            }
         }
 
         operand_context.instr_index = block.get_instrs().get_size();
@@ -442,12 +480,10 @@ std::optional<Operand> Parser::parse_operand() {
         }
 
         case utils::TokenType::IDENTIFIER: {
-            if (token.value[0] == 'b') {
-                tokens.advance();
-                unresolved_blocks.push_back({operand_context, std::string{token.value}});
-                return Operand::from_branch_target({.block = nullptr});
+            if (std::optional<BranchTarget> branch_target = parse_branch_target()) {
+                return Operand::from_branch_target(*branch_target, *type);
             } else {
-                break;
+                return {};
             }
         }
 
@@ -480,6 +516,49 @@ std::optional<Operand> Parser::parse_operand() {
 
     report_unexpected("operand");
     return {};
+}
+
+std::optional<BranchTarget> Parser::parse_branch_target() {
+    if (!tokens.is_current(utils::TokenType::IDENTIFIER)) {
+        report_unexpected("block label");
+        return {};
+    }
+
+    std::string_view label = tokens.get().value;
+
+    if (label[0] == 'b') {
+        tokens.advance();
+    } else {
+        report_error("invalid block label '" + std::string{label} + "'");
+        return {};
+    }
+
+    std::vector<Value> args;
+
+    if (tokens.is_current(utils::TokenType::LPAREN)) {
+        tokens.advance();
+
+        while (true) {
+            if (std::optional<Value> arg = parse_operand()) {
+                args.push_back(*arg);
+            } else {
+                return {};
+            }
+
+            if (tokens.is_current(utils::TokenType::COMMA)) {
+                tokens.advance();
+            } else if (tokens.is_current(utils::TokenType::RPAREN)) {
+                tokens.advance();
+                break;
+            } else {
+                report_unexpected("',' or ')'");
+                return {};
+            }
+        }
+    }
+
+    unresolved_blocks.push_back({operand_context, std::string{label}});
+    return BranchTarget{.block = nullptr, .args = args};
 }
 
 std::optional<VirtualRegister> Parser::parse_reg() {
