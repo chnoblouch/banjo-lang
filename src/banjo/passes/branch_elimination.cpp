@@ -62,6 +62,12 @@ void BranchElimination::run(ssa::Function &func) {
             continue;
         }
 
+        // TODO: Currently disabled because x86_64 doesn't support lowering
+        // floating-point select instructions yet.
+        if (target_0.args[unequal_arg_index].get_type().is_floating_point()) {
+            continue;
+        }
+
         ssa::VirtualRegister dst;
         if (join_node.predecessors.size() == 2) {
             // If the entry and exit blocks will be merged, we use the param reg directly as the dst.

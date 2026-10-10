@@ -116,9 +116,6 @@ bool X8664SSALowerer::lower_stored_operation(ssa::Instruction &store) {
                 discard_use(store_addr.get_register());
             }
 
-            discard_use(store_value);
-            discard_use(lhs->get_register());
-
             AddrComponents addr = collect_addr(store_addr);
             unsigned size = get_size(lhs_def->get_type());
             emit({m_opcode, {lower_addr_mem_access(addr).with_size(size), lower_as_operand(*rhs)}});
@@ -380,40 +377,50 @@ void X8664SSALowerer::lower_select(ssa::Instruction &instr) {
     ssa::Operand &val_true = instr.get_operand(3);
     ssa::Operand &val_false = instr.get_operand(4);
 
-    const ssa::Type &type = instr.get_operand(0).get_type();
-    unsigned size = std::max(get_size(type), 4u);
+    ssa::Type cmp_type = cmp_lhs.get_type();
+    ssa::Type value_type = val_true.get_type();
+    unsigned value_size = get_size(value_type) == 8 ? 8 : 4;
 
-    mcode::Operand m_dst = map_vreg_dst(instr, size);
+    // TODO: Implement for floats.
+    ASSERT(value_type.is_integer());
 
-    if (cmp_lhs.get_type().is_floating_point()) {
-        unsigned mov_opcode = size == 4 ? X8664Opcode::MOVSS : X8664Opcode::MOVSD;
+    mcode::Operand m_dst = map_vreg_dst(instr, value_size);
 
+    if (cmp_type.is_floating_point()) {
         if (cmp_lhs == val_true && cmp_rhs == val_false) {
+            mcode::Opcode mov_opcode = value_size == 4 ? X8664Opcode::MOVSS : X8664Opcode::MOVSD;
+
             if (cmp == ssa::Comparison::FGT) {
-                unsigned opcode = size == 4 ? X8664Opcode::MAXSS : X8664Opcode::MAXSD;
-                emit(mcode::Instruction(mov_opcode, {m_dst, lower_as_operand(cmp_lhs)}));
-                emit(mcode::Instruction(opcode, {m_dst, lower_as_operand(cmp_rhs)}));
+                mcode::Opcode m_opcode = value_size == 4 ? X8664Opcode::MAXSS : X8664Opcode::MAXSD;
+                emit({mov_opcode, {m_dst, lower_as_operand(cmp_lhs)}});
+                emit({m_opcode, {m_dst, lower_as_operand(cmp_rhs)}});
                 return;
             } else if (cmp == ssa::Comparison::FLT) {
-                unsigned opcode = size == 4 ? X8664Opcode::MINSS : X8664Opcode::MINSD;
-                emit(mcode::Instruction(mov_opcode, {m_dst, lower_as_operand(cmp_lhs)}));
-                emit(mcode::Instruction(opcode, {m_dst, lower_as_operand(cmp_rhs)}));
+                mcode::Opcode m_opcode = value_size == 4 ? X8664Opcode::MINSS : X8664Opcode::MINSD;
+                emit({mov_opcode, {m_dst, lower_as_operand(cmp_lhs)}});
+                emit({m_opcode, {m_dst, lower_as_operand(cmp_rhs)}});
                 return;
             }
         }
 
-        std::cout << "ERROR: can't handle this floating point select" << std::endl;
-        return;
+        bool is_f64 = value_type == ssa::Primitive::F64;
+
+        mcode::Operand m_lhs = lower_as_operand(cmp_lhs);
+        mcode::Operand m_rhs = lower_as_operand(cmp_rhs, {.allow_addrs = true});
+        mcode::Opcode cmp_opcode = is_f64 ? X8664Opcode::UCOMISD : X8664Opcode::UCOMISS;
+        emit({cmp_opcode, {m_lhs, m_rhs}});
+    } else {
+        mcode::Operand m_lhs = lower_as_operand(cmp_lhs);
+        mcode::Operand m_rhs = lower_as_operand(cmp_rhs, {.allow_addrs = true});
+        emit({X8664Opcode::CMP, {m_lhs, m_rhs}});
     }
 
-    mcode::Operand tmp_op = mcode::Operand::from_register(create_reg(), size);
-
-    emit(mcode::Instruction(X8664Opcode::CMP, {lower_as_operand(cmp_lhs), lower_as_operand(cmp_rhs)}));
-    emit(mcode::Instruction(X8664Opcode::MOV, {tmp_op, lower_as_operand(val_true)}));
-    emit(mcode::Instruction(X8664Opcode::MOV, {m_dst, lower_as_operand(val_false)}));
-
+    mcode::Operand m_tmp = mcode::Operand::from_register(create_reg(), value_size);
     mcode::Opcode cmovcc_opcode = X8664Opcode::CMOVCC + static_cast<unsigned>(lower_condition(cmp));
-    emit(mcode::Instruction(cmovcc_opcode, {m_dst, tmp_op}));
+
+    emit({X8664Opcode::MOV, {m_tmp, lower_as_operand(val_true)}});
+    emit({X8664Opcode::MOV, {m_dst, lower_as_operand(val_false)}});
+    emit({cmovcc_opcode, {m_dst, m_tmp}});
 }
 
 void X8664SSALowerer::lower_call(ssa::Instruction &instr) {
