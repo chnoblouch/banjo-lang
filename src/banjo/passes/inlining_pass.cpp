@@ -71,7 +71,7 @@ void InliningPass::run(ssa::Function *func) {
         }
     }
 
-    Precomputing::precompute_instrs(*func);
+    precompute_instrs(*func);
 }
 
 void InliningPass::try_inline(ssa::Function *func, ssa::BasicBlockIter &block_iter, ssa::InstrIter &call_iter) {

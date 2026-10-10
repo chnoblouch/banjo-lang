@@ -64,7 +64,7 @@ void StackToRegPass::run(ssa::Function &func) {
 
     update_uses(func.get_entry_block_iter(), initial_values);
 
-    Precomputing::precompute_instrs(func);
+    precompute_instrs(func);
     ssa::DeadCodeElimination{}.run(func);
 
     print_dump();

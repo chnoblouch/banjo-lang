@@ -1,16 +1,13 @@
 #ifndef BANJO_PASSES_PRECOMPUTING_H
 #define BANJO_PASSES_PRECOMPUTING_H
 
-#include "banjo/ssa/module.hpp"
+#include "banjo/ssa/function.hpp"
+#include "banjo/ssa/instruction.hpp"
+#include "banjo/ssa/operand.hpp"
 
-#include <functional>
 #include <optional>
 
-namespace banjo {
-
-namespace passes {
-
-namespace Precomputing {
+namespace banjo::passes {
 
 void precompute_instrs(ssa::Function &func);
 std::optional<ssa::Value> precompute_result(ssa::Instruction &instr);
@@ -32,17 +29,12 @@ std::optional<ssa::Value> precompute_lshl(ssa::Instruction &instr);
 std::optional<ssa::Value> precompute_lshr(ssa::Instruction &instr);
 std::optional<ssa::Value> precompute_ashr(ssa::Instruction &instr);
 std::optional<ssa::Value> precompute_select(ssa::Instruction &instr);
-std::optional<ssa::Value> precompute_extend(ssa::Instruction &instr);
-std::optional<ssa::Value> precompute_itof(ssa::Instruction &instr);
-std::optional<ssa::Value> precompute_sqrt(ssa::Instruction &instr);
+std::optional<ssa::Value> precompute_uextend(ssa::Instruction &instr);
+std::optional<ssa::Value> precompute_sextend(ssa::Instruction &instr);
 
 std::optional<bool> try_precompute_cmp(ssa::Value &lhs, ssa::Value &rhs, ssa::Comparison comparison);
 bool precompute_cmp(const ssa::Value &lhs, const ssa::Value &rhs, ssa::Comparison comparison);
 
-} // namespace Precomputing
-
-} // namespace passes
-
-} // namespace banjo
+} // namespace banjo::passes
 
 #endif

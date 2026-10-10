@@ -134,7 +134,7 @@ void ControlFlowOptPass::run_iteration(ssa::Function &func) {
         }
     }
 
-    Precomputing::precompute_instrs(func);
+    precompute_instrs(func);
 }
 
 void ControlFlowOptPass::try_inline_into_jmp(ssa::BasicBlockIter origin_block, ssa::Instruction &branch_instr) {
@@ -234,7 +234,7 @@ void ControlFlowOptPass::try_inline_into_cjmp(ssa::BasicBlockIter origin_block, 
         try_replace_regs_with_block_args(lhs, target, origin_block);
         try_replace_regs_with_block_args(rhs, target, origin_block);
 
-        std::optional<bool> condition_value = Precomputing::try_precompute_cmp(lhs, rhs, comparison);
+        std::optional<bool> condition_value = try_precompute_cmp(lhs, rhs, comparison);
         if (!condition_value) {
             return;
         }

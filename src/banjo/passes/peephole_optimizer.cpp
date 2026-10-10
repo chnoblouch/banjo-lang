@@ -34,7 +34,7 @@ void PeepholeOptimizer::run(ssa::Function &func) {
 void PeepholeOptimizer::run(ssa::BasicBlock &block) {
     // TODO: canonicalization
     for (ssa::InstrIter iter = block.begin(); iter != block.end(); ++iter) {
-        std::optional<ssa::Value> value = Precomputing::precompute_result(*iter);
+        std::optional<ssa::Value> value = precompute_result(*iter);
         if (value) {
             PassUtils::replace_in_block(block, *iter->get_dest(), *value);
             continue;
