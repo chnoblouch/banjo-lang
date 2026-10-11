@@ -1286,7 +1286,7 @@ mcode::Operand X8664SSALowerer::lower_symbol_as_operand(const ssa::Value &value,
         }
     }
 
-    mcode::Symbol symbol(symbol_name, reloc);
+    mcode::Symbol symbol{symbol_name, reloc};
 
     if (target->get_descr().is_darwin() && (value.is_func() || value.is_extern_func())) {
         return mcode::Operand::from_symbol(symbol, 8);
@@ -1298,12 +1298,14 @@ mcode::Operand X8664SSALowerer::lower_symbol_as_operand(const ssa::Value &value,
 
     if (target->get_code_model() == CodeModel::SMALL) {
         if (reloc == mcode::Relocation::PLT || reloc == mcode::Relocation::GOT) {
-            mcode::Operand m_src = mcode::Operand::from_symbol_deref(symbol, 8);
+            X8664Address addr{.base = symbol};
+            mcode::Operand m_src = mcode::Operand::from_x86_64_addr(addr, 8);
             mcode::Operand m_dst = mcode::Operand::from_register(create_reg(), 8);
             emit({X8664Opcode::MOV, {m_dst, m_src}});
             return m_dst;
         } else {
-            mcode::Operand m_src = mcode::Operand::from_symbol_deref(symbol, size);
+            X8664Address addr{.base = symbol};
+            mcode::Operand m_src = mcode::Operand::from_x86_64_addr(addr, size);
             mcode::Operand m_dst = mcode::Operand::from_register(create_reg(), 8);
             emit({X8664Opcode::LEA, {m_dst, m_src}});
             return m_dst;

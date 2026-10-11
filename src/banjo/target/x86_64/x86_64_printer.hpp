@@ -3,7 +3,6 @@
 
 #include "banjo/mcode/printer.hpp"
 #include "banjo/mcode/register.hpp"
-#include "banjo/mcode/symbol.hpp"
 #include "banjo/target/x86_64/x86_64_address.hpp"
 
 namespace banjo::target {
@@ -18,7 +17,6 @@ public:
 private:
     void print_register(mcode::Register reg, unsigned size);
     void print_address(mcode::Function &func, const X8664Address &addr);
-    void print_symbol_deref(const mcode::Symbol &symbol);
     void print_size(unsigned size);
 };
 

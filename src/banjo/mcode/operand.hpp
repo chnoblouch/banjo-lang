@@ -26,7 +26,6 @@ private:
         StackSlotID,
         Symbol,
         BasicBlock *,
-        Symbol,
         target::X8664Address,
         target::AArch64Address,
         StackAddress,
@@ -62,28 +61,24 @@ public:
         return Operand{InternalValue{std::in_place_index<5>, &basic_block}, size};
     }
 
-    static Operand from_symbol_deref(Symbol symbol, int size = 0) {
-        return Operand{InternalValue{std::in_place_index<6>, std::move(symbol)}, size};
-    }
-
     static Operand from_x86_64_addr(target::X8664Address addr, int size = 0) {
-        return Operand{InternalValue{std::in_place_index<7>, addr}, size};
+        return Operand{InternalValue{std::in_place_index<6>, addr}, size};
     }
 
     static Operand from_aarch64_addr(target::AArch64Address addr, int size = 0) {
-        return Operand{InternalValue{std::in_place_index<8>, addr}, size};
+        return Operand{InternalValue{std::in_place_index<7>, addr}, size};
     }
 
     static Operand from_stack_offset(StackAddress offset, int size = 0) {
-        return Operand{InternalValue{std::in_place_index<9>, offset}, size};
+        return Operand{InternalValue{std::in_place_index<8>, offset}, size};
     }
 
     static Operand from_aarch64_left_shift(unsigned left_shift, int size = 0) {
-        return Operand{InternalValue{std::in_place_index<10>, left_shift}, size};
+        return Operand{InternalValue{std::in_place_index<9>, left_shift}, size};
     }
 
     static Operand from_aarch64_condition(target::AArch64Condition condition, int size = 0) {
-        return Operand{InternalValue{std::in_place_index<11>, condition}, size};
+        return Operand{InternalValue{std::in_place_index<10>, condition}, size};
     }
 
     Operand() : value{std::in_place_index<0>, 0}, size(0) {};
@@ -98,12 +93,11 @@ public:
     bool is_stack_slot() const { return value.index() == 3; }
     bool is_symbol() const { return value.index() == 4; }
     bool is_basic_block() const { return value.index() == 5; }
-    bool is_symbol_deref() const { return value.index() == 6; }
-    bool is_x86_64_addr() const { return value.index() == 7; }
-    bool is_aarch64_addr() const { return value.index() == 8; }
-    bool is_stack_offset() const { return value.index() == 9; }
-    bool is_aarch64_left_shift() const { return value.index() == 10; }
-    bool is_aarch64_condition() const { return value.index() == 11; }
+    bool is_x86_64_addr() const { return value.index() == 6; }
+    bool is_aarch64_addr() const { return value.index() == 7; }
+    bool is_stack_offset() const { return value.index() == 8; }
+    bool is_aarch64_left_shift() const { return value.index() == 9; }
+    bool is_aarch64_condition() const { return value.index() == 10; }
 
     bool is_virtual_reg() const { return is_register() && get_register().is_virtual(); }
     bool is_physical_reg() const { return is_register() && get_register().is_physical(); }
@@ -114,12 +108,11 @@ public:
     StackSlotID get_stack_slot() const { return std::get<3>(value); }
     Symbol get_symbol() const { return std::get<4>(value); }
     BasicBlock &get_basic_block() const { return *std::get<5>(value); }
-    Symbol get_deref_symbol() const { return std::get<6>(value); }
-    const target::X8664Address &get_x86_64_addr() const { return std::get<7>(value); }
-    const target::AArch64Address &get_aarch64_addr() const { return std::get<8>(value); }
-    StackAddress get_stack_offset() const { return std::get<9>(value); }
-    unsigned get_aarch64_left_shift() const { return std::get<10>(value); }
-    target::AArch64Condition get_aarch64_condition() const { return std::get<11>(value); }
+    const target::X8664Address &get_x86_64_addr() const { return std::get<6>(value); }
+    const target::AArch64Address &get_aarch64_addr() const { return std::get<7>(value); }
+    StackAddress get_stack_offset() const { return std::get<8>(value); }
+    unsigned get_aarch64_left_shift() const { return std::get<9>(value); }
+    target::AArch64Condition get_aarch64_condition() const { return std::get<10>(value); }
 
     VirtualReg get_virtual_reg() const { return get_register().get_virtual_reg(); }
     PhysicalReg get_physical_reg() const { return get_register().get_physical_reg(); }

@@ -208,7 +208,6 @@ std::string NASMEmitter::get_operand_name(
     else if (operand.is_stack_slot()) return get_stack_slot_name(func, operand.get_stack_slot());
     else if (operand.is_symbol()) return gen_symbol(operand.get_symbol());
     else if (operand.is_basic_block()) return operand.get_basic_block().label;
-    else if (operand.is_symbol_deref()) return "[" + gen_symbol(operand.get_deref_symbol()) + "]";
     else if (operand.is_x86_64_addr()) {
         const target::X8664Address &addr = operand.get_x86_64_addr();
         std::string str;

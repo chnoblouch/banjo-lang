@@ -9,7 +9,6 @@
 #include "banjo/target/x86_64/x86_64_condition.hpp"
 #include "banjo/target/x86_64/x86_64_const_lowering.hpp"
 
-#include <functional>
 #include <optional>
 #include <unordered_map>
 

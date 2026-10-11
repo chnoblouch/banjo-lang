@@ -155,8 +155,6 @@ void X8664Printer::print_operand(mcode::Function &func, mcode::Instruction &inst
 
     if (operand.is_x86_64_addr()) {
         print_address(func, operand.get_x86_64_addr());
-    } else if (operand.is_symbol_deref()) {
-        print_symbol_deref(operand.get_deref_symbol());
     } else {
         ASSERT_UNREACHABLE;
     }
@@ -217,12 +215,6 @@ void X8664Printer::print_address(mcode::Function &func, const X8664Address &addr
         print_stack_addr(func, addr.get_offset_stack_addr());
     }
 
-    emit(']');
-}
-
-void X8664Printer::print_symbol_deref(const mcode::Symbol &symbol) {
-    emit('[');
-    print_symbol(symbol.name);
     emit(']');
 }
 
