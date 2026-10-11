@@ -336,7 +336,7 @@ void PeepholeOptimizer::discard_stack_values() {
 bool PeepholeOptimizer::types_compatible(ssa::Type a, ssa::Type b) {
     // TODO: Move this into the backend.
 
-    if (a.is_struct() || b.is_struct()) {
+    if (a.is_struct() || b.is_struct() || a.get_array_length() != 1 || b.get_array_length() != 1) {
         return false;
     }
 
