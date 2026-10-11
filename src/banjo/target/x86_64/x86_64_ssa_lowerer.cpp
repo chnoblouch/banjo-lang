@@ -560,11 +560,11 @@ void X8664SSALowerer::lower_utof(ssa::Instruction &instr) {
             emit({X8664Opcode::MOVZX, {m_ext, m_src}});
             m_src = m_ext;
         } else if (src_size == 4) {
-            mcode::Operand m_ext = mcode::Operand::from_register(create_tmp_reg(), 8);
+            mcode::Operand m_ext = mcode::Operand::from_register(create_tmp_reg(), 4);
             emit({X8664Opcode::MOV, {m_ext, m_src}, mcode::Instruction::FLAG_DONT_REMOVE});
             m_src = m_ext;
         } else {
-            ASSERT_UNREACHABLE;
+            ASSERT(src_size == 8);
         }
 
         emit({X8664Opcode::XORPS, {m_dst, m_dst}});
@@ -637,7 +637,7 @@ void X8664SSALowerer::lower_ftou(ssa::Instruction &instr) {
 
         start_block(end_block);
     } else {
-        mcode::Operand m_dst = map_vreg_dst(instr, dst_size == 4 ? 8 : 4);
+        mcode::Operand m_dst = map_vreg_dst(instr, dst_size == 8 ? 8 : 4);
         mcode::Operand m_src = lower_as_operand(instr.get_operand(0));
         emit({cvt_opcode, {m_dst, m_src}});
     }
