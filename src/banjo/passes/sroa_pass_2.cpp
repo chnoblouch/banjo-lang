@@ -196,61 +196,67 @@ bool SROAPass2::collect_members(StackSlot &slot, ssa::Structure &struct_, unsign
 
 void SROAPass2::collect_stack_refs(ssa::BasicBlock &block) {
     for (ssa::InstrIter instr = block.begin(); instr != block.end(); ++instr) {
+        bool skip = false;
+
         if (instr->get_opcode() == ssa::Opcode::MEMBERPTR) {
-            collect_memberptr(instr, block);
+            skip = collect_memberptr(instr, block);
         } else if (instr->get_opcode() == ssa::Opcode::OFFSETPTR) {
-            collect_offsetptr(instr, block);
+            skip = collect_offsetptr(instr, block);
         } else if (instr->get_opcode() == ssa::Opcode::LOAD) {
-            collect_load(*instr);
+            skip = collect_load(*instr);
         } else if (instr->get_opcode() == ssa::Opcode::STORE) {
-            collect_store(*instr);
-        } else {
-            PassUtils::iter_regs(instr->get_operands(), [this](ssa::VirtualRegister reg) {
-                if (StackReference *reference = stack_refs.try_find(reg)) {
-                    stack_slots[reference->slot_index].splittable = false;
-                }
-            });
+            skip = collect_store(*instr);
         }
+
+        if (skip) {
+            continue;
+        }
+
+        PassUtils::iter_regs(instr->get_operands(), [this](ssa::VirtualRegister reg) {
+            if (StackReference *reference = stack_refs.try_find(reg)) {
+                stack_slots[reference->slot_index].splittable = false;
+            }
+        });
     }
 }
 
-void SROAPass2::collect_memberptr(ssa::InstrIter instr, ssa::BasicBlock &block) {
+bool SROAPass2::collect_memberptr(ssa::InstrIter instr, ssa::BasicBlock &block) {
     ssa::Operand &base = instr->get_operand(1);
     if (!base.is_register()) {
-        return;
+        return false;
     }
 
     ssa::Structure &struct_ = *instr->get_operand(0).get_type().get_struct();
     unsigned member_index = instr->get_operand(2).get_int_immediate().to_u64();
     unsigned member_offset = data_layout.get_member_offset(&struct_, member_index);
-    analyze_sub_pointer({instr, block}, base.get_register(), member_offset);
+    return analyze_sub_pointer({instr, block}, base.get_register(), member_offset);
 }
 
-void SROAPass2::collect_offsetptr(ssa::InstrIter instr, ssa::BasicBlock &block) {
+bool SROAPass2::collect_offsetptr(ssa::InstrIter instr, ssa::BasicBlock &block) {
     ssa::Operand &base = instr->get_operand(0);
     if (!base.is_register()) {
-        return;
+        return false;
     }
 
     ssa::Operand &offset = instr->get_operand(1);
     if (!offset.is_int_immediate()) {
-        return;
+        return false;
     }
 
     ssa::Type base_type = instr->get_operand(2).get_type();
     int member_offset = data_layout.get_size(base_type) * offset.get_int_immediate().to_s32();
-    analyze_sub_pointer({instr, block}, base.get_register(), member_offset);
+    return analyze_sub_pointer({instr, block}, base.get_register(), member_offset);
 }
 
-void SROAPass2::collect_load(ssa::Instruction &instr) {
+bool SROAPass2::collect_load(ssa::Instruction &instr) {
     ssa::Operand &addr = instr.get_operand(1);
     if (!addr.is_register()) {
-        return;
+        return false;
     }
 
     StackReference *stack_ref = stack_refs.try_find(addr.get_register());
     if (!stack_ref) {
-        return;
+        return false;
     }
 
     stack_accesses.push_back({addr, *stack_ref});
@@ -262,9 +268,11 @@ void SROAPass2::collect_load(ssa::Instruction &instr) {
     if (data_layout.get_size(type) > data_layout.get_size(member.type)) {
         slot.splittable = false;
     }
+
+    return true;
 }
 
-void SROAPass2::collect_store(ssa::Instruction &instr) {
+bool SROAPass2::collect_store(ssa::Instruction &instr) {
     if (instr.get_operand(0).is_register()) {
         ssa::VirtualRegister reg = instr.get_operand(0).get_register();
 
@@ -275,12 +283,12 @@ void SROAPass2::collect_store(ssa::Instruction &instr) {
 
     ssa::Operand &addr = instr.get_operand(1);
     if (!addr.is_register()) {
-        return;
+        return false;
     }
 
     StackReference *stack_ref = stack_refs.try_find(addr.get_register());
     if (!stack_ref) {
-        return;
+        return false;
     }
 
     stack_accesses.push_back({addr, *stack_ref});
@@ -292,12 +300,14 @@ void SROAPass2::collect_store(ssa::Instruction &instr) {
     if (data_layout.get_size(type) > data_layout.get_size(member.type)) {
         slot.splittable = false;
     }
+
+    return true;
 }
 
-void SROAPass2::analyze_sub_pointer(InstrContext context, ssa::VirtualRegister base, int offset) {
+bool SROAPass2::analyze_sub_pointer(InstrContext context, ssa::VirtualRegister base, int offset) {
     StackReference *base_ref = stack_refs.try_find(base);
     if (!base_ref) {
-        return;
+        return false;
     }
 
     StackSlot &slot = stack_slots[base_ref->slot_index];
@@ -315,10 +325,11 @@ void SROAPass2::analyze_sub_pointer(InstrContext context, ssa::VirtualRegister b
 
         stack_refs.insert(*context.instr->get_dest(), reference);
         stack_ref_instrs.push_back({context, reference});
-        return;
+        return true;
     }
 
     slot.splittable = false;
+    return false;
 }
 
 void SROAPass2::dump(ssa::Function &func) {

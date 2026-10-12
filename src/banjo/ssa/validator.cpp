@@ -84,16 +84,17 @@ bool Validator::validate(Module &mod, Function &func) {
 
         for (Instruction &instr : *block) {
             bool instr_valid = true;
+            bool regs_defined = true;
 
             passes::PassUtils::iter_regs(instr.get_operands(), [&](VirtualRegister reg) {
                 if (ControlFlowGraph::NodeID *def_node = defs.try_find(reg)) {
-                    if (node != 0xFFFFFFFF && !dom_tree.dominates(node, *def_node)) {
+                    if (node != 0xFFFFFFFF && !dom_tree.dominates(*def_node, node)) {
                         stream << "%" << reg << " def does not dominate its use";
-                        instr_valid = false;
+                        regs_defined = false;
                     }
                 } else {
                     stream << "%" << reg << " is not defined";
-                    instr_valid = false;
+                    regs_defined = false;
                 }
             });
 
@@ -150,13 +151,13 @@ bool Validator::validate(Module &mod, Function &func) {
                 case Opcode::FRAME_ADDRESS: instr_valid = validate_frame_address(instr); break;
             }
 
-            if (!instr_valid) {
+            if (!instr_valid || !regs_defined) {
                 std::string label = block->get_debug_label();
                 stream << " (func " << func.name << ", block " << label << ", instr " << index << ")";
                 stream << '\n';
             }
 
-            valid = valid && instr_valid;
+            valid = valid && instr_valid && regs_defined;
             index += 1;
         }
     }

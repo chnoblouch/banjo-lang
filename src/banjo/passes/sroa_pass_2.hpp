@@ -66,11 +66,11 @@ private:
     bool collect_members(StackSlot &slot, ssa::Structure &struct_, unsigned base_offset);
 
     void collect_stack_refs(ssa::BasicBlock &block);
-    void collect_memberptr(ssa::InstrIter instr, ssa::BasicBlock &block);
-    void collect_offsetptr(ssa::InstrIter instr, ssa::BasicBlock &block);
-    void collect_load(ssa::Instruction &instr);
-    void collect_store(ssa::Instruction &instr);
-    void analyze_sub_pointer(InstrContext context, ssa::VirtualRegister base, int offset);
+    bool collect_memberptr(ssa::InstrIter instr, ssa::BasicBlock &block);
+    bool collect_offsetptr(ssa::InstrIter instr, ssa::BasicBlock &block);
+    bool collect_load(ssa::Instruction &instr);
+    bool collect_store(ssa::Instruction &instr);
+    bool analyze_sub_pointer(InstrContext context, ssa::VirtualRegister base, int offset);
 
     void dump(ssa::Function &func);
     void dump_primitive(ssa::Primitive primitive);
