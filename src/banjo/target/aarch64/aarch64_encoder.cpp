@@ -686,7 +686,6 @@ void AArch64Encoder::encode_add_family(mcode::Instruction &instr, std::array<std
             std::uint32_t shift = m_shift ? encode_imm(m_shift->get_aarch64_left_shift(), 6, 0) : 0;
             text.write_u32(params[1] | (sf << 31) | (r_rhs << 16) | (shift << 10) | (r_lhs << 5) | r_dst);
         }
-
     } else if (m_rhs.is_int_immediate()) {
         bool shifted = false;
 

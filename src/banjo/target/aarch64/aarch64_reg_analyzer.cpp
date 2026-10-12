@@ -340,7 +340,7 @@ bool AArch64RegAnalyzer::is_instr_removable(mcode::Instruction &instr) {
         return false;
     }
 
-    if (!instr.is_flag(mcode::Instruction::FLAG_DONT_REMOVE)) {
+    if (instr.is_flag(mcode::Instruction::FLAG_DONT_REMOVE)) {
         return false;
     }
 
