@@ -290,6 +290,8 @@ std::string Writer::value_to_str(Value value) {
             str += "(";
 
             for (unsigned i = 0; i < value.get_branch_target().args.size(); i++) {
+                str += type_to_str(value.get_branch_target().args[i].get_type());
+                str += ' ';
                 str += value_to_str(value.get_branch_target().args[i]);
 
                 if (i != value.get_branch_target().args.size() - 1) {

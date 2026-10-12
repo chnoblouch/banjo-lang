@@ -1,35 +1,21 @@
 # test:subtest
 # test:section ssa
 
-func void @f(i16 %0, i16 %1) {
-    %2 = add i16 %0, i16 %1
-    ret i16 %2
+func i64 @f(i64 %0, i64 %1) {
+    %2 = add i64 %0, i64 %1
+    ret i64 %2
 }
 
 # test:section mcode
 
 func f:
-    add w0, w0, w1
+    add x0, x0, x1
     ret
 
 # test:subtest
 # test:section ssa
 
-func void @f(i16 %0, i16 %1) {
-    %2 = add i16 %0, i16 %1
-    ret i16 %2
-}
-
-# test:section mcode
-
-func f:
-    add w0, w0, w1
-    ret
-
-# test:subtest
-# test:section ssa
-
-func void @f(i32 %0, i32 %1) {
+func i32 @f(i32 %0, i32 %1) {
     %2 = add i32 %0, i32 %1
     ret i32 %2
 }
@@ -43,13 +29,27 @@ func f:
 # test:subtest
 # test:section ssa
 
-func void @f(i64 %0, i64 %1) {
-    %2 = add i64 %0, i64 %1
-    ret i64 %2
+func i16 @f(i16 %0, i16 %1) {
+    %2 = add i16 %0, i16 %1
+    ret i16 %2
 }
 
 # test:section mcode
 
 func f:
-    add x0, x0, x1
+    add w0, w0, w1
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i8 @f(i8 %0, i8 %1) {
+    %2 = add i8 %0, i8 %1
+    ret i8 %2
+}
+
+# test:section mcode
+
+func f:
+    add w0, w0, w1
     ret

@@ -6,7 +6,11 @@
 #include "banjo/ssa/comparison.hpp"
 #include "banjo/ssa/control_flow_graph.hpp"
 #include "banjo/ssa/instruction.hpp"
+#include "banjo/ssa/operand.hpp"
 #include "banjo/ssa/virtual_register.hpp"
+
+#include <utility>
+#include <vector>
 
 #define DEBUG_LOG is_logging() && log()
 
@@ -124,6 +128,10 @@ void ControlFlowOptPass::run_iteration(ssa::Function &func) {
     }
 
     cfg = ssa::ControlFlowGraph::build(func);
+
+    for (ssa::ControlFlowGraph::NodeID node = 0; node < cfg.nodes.size(); node++) {
+        remove_const_args(node);
+    }
 
     // Remove all blocks that are not in the control flow graph and therefore
     // unreachable.
@@ -299,6 +307,95 @@ bool ControlFlowOptPass::is_reg_always_defined(ssa::VirtualRegister reg, ssa::Ba
     }
 
     return dom_tree.dominates(def_block, block);
+}
+
+void ControlFlowOptPass::remove_const_args(ssa::ControlFlowGraph::NodeID node) {
+    ssa::BasicBlockIter block = cfg.block(node);
+    if (block->param_regs.empty()) {
+        return;
+    }
+
+    std::vector<ssa::ControlFlowGraph::NodeID> &preds = cfg.nodes[node].predecessors;
+    if (preds.empty()) {
+        return;
+    }
+
+    std::vector<ssa::BranchTarget *> targets;
+
+    for (ssa::ControlFlowGraph::NodeID pred : preds) {
+        ssa::Instruction &branch_instr = cfg.block(pred)->instrs.get_last();
+
+        if (branch_instr.get_opcode() == ssa::Opcode::JMP) {
+            ssa::BranchTarget &target = branch_instr.get_operand(0).get_branch_target();
+            ASSERT(target.block == block);
+            targets.push_back(&target);
+        } else if (branch_instr.is_cond_branch()) {
+            ssa::BranchTarget &target_true = branch_instr.get_operand(3).get_branch_target();
+            ssa::BranchTarget &target_false = branch_instr.get_operand(4).get_branch_target();
+
+            if (target_true.block == block) {
+                targets.push_back(&target_true);
+            }
+
+            if (target_false.block == block) {
+                targets.push_back(&target_false);
+            }
+        } else {
+            return;
+        }
+    }
+
+    std::vector<std::pair<ssa::Value, bool>> args;
+    args.resize(block->param_regs.size());
+
+    for (unsigned i = 0; i < args.size(); i++) {
+        args[i] = {targets[0]->args[i], true};
+    }
+
+    for (ssa::BranchTarget *target : targets) {
+        for (unsigned i = 0; i < args.size(); i++) {
+            auto &[const_value, is_const] = args[i];
+
+            if (target->args[i] != const_value) {
+                is_const = false;
+            }
+        }
+    }
+
+    for (unsigned i = 0; i < block->param_regs.size(); i++) {
+        auto &[value, is_const] = args[i];
+
+        if (!is_const) {
+            continue;
+        }
+
+        PassUtils::replace_in_func(*func, block->param_regs[i], value);
+    }
+
+    std::vector<ssa::VirtualRegister> new_param_regs;
+    std::vector<ssa::Type> new_param_types;
+
+    for (unsigned i = 0; i < args.size(); i++) {
+        if (!args[i].second) {
+            new_param_regs.push_back(block->param_regs[i]);
+            new_param_types.push_back(block->param_types[i]);
+        }
+    }
+
+    block->param_regs = new_param_regs;
+    block->param_types = new_param_types;
+
+    for (ssa::BranchTarget *target : targets) {
+        std::vector<ssa::Value> new_args;
+
+        for (unsigned i = 0; i < args.size(); i++) {
+            if (!args[i].second) {
+                new_args.push_back(target->args[i]);
+            }
+        }
+
+        target->args = new_args;
+    }
 }
 
 } // namespace banjo::passes

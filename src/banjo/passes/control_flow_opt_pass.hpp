@@ -34,6 +34,8 @@ private:
     void try_inline_into_cjmp(ssa::BasicBlockIter origin_block, ssa::BranchTarget &target);
     bool try_replace_regs_with_block_args(ssa::Value &value, ssa::BranchTarget &target, ssa::BasicBlockIter block);
     bool is_reg_always_defined(ssa::VirtualRegister reg, ssa::BasicBlockIter block);
+
+    void remove_const_args(ssa::ControlFlowGraph::NodeID node);
 };
 
 } // namespace banjo::passes

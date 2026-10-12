@@ -1,0 +1,39 @@
+# test:section input
+
+func void @f1()
+func void @f2()
+
+func i32 @f(i32 %0) {
+    cjmp i32 %0, void eq, i32 1, void b0, void b1
+
+b0:
+    call void @f1
+    jmp void b2(i32 42)
+
+b1:
+    call void @f2
+    jmp void b2(i32 42)
+
+b2(i32 %1):
+    ret i32 %1
+}
+
+# test:section output
+
+func void @f1()
+func void @f2()
+
+func i32 @f(i32 %0) {
+    cjmp i32 %0, void eq, i32 1, void b0, void b1
+
+b0:
+    call void @f1
+    jmp void b2
+
+b1:
+    call void @f2
+    jmp void b2
+
+b2:
+    ret i32 42
+}

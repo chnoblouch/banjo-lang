@@ -1,6 +1,7 @@
 #include "ssa_parser.hpp"
 
 #include "banjo/ssa/basic_block.hpp"
+#include "banjo/ssa/comparison.hpp"
 #include "banjo/ssa/function.hpp"
 #include "banjo/ssa/function_type.hpp"
 #include "banjo/ssa/instruction.hpp"
@@ -91,6 +92,25 @@ static const HashMap<std::string_view, Primitive> PRIMITIVES{
     {"f32", Primitive::F32},
     {"f64", Primitive::F64},
     {"addr", Primitive::ADDR},
+};
+
+static const HashMap<std::string_view, Comparison> COMPARISONS{
+    {"eq", Comparison::EQ},
+    {"ne", Comparison::NE},
+    {"ugt", Comparison::UGT},
+    {"uge", Comparison::UGE},
+    {"ult", Comparison::ULT},
+    {"ule", Comparison::ULE},
+    {"sgt", Comparison::SGT},
+    {"sge", Comparison::SGE},
+    {"slt", Comparison::SLT},
+    {"sle", Comparison::SLE},
+    {"feq", Comparison::FEQ},
+    {"fne", Comparison::FNE},
+    {"fgt", Comparison::FGT},
+    {"fge", Comparison::FGE},
+    {"flt", Comparison::FLT},
+    {"fle", Comparison::FLE},
 };
 
 static std::string token_to_string(utils::Token &token) {
@@ -480,6 +500,11 @@ std::optional<Operand> Parser::parse_operand() {
         }
 
         case utils::TokenType::IDENTIFIER: {
+            if (const Comparison *comparison = COMPARISONS.try_find(tokens.get().value)) {
+                tokens.advance();
+                return Operand::from_comparison(*comparison, *type);
+            }
+
             if (std::optional<BranchTarget> branch_target = parse_branch_target()) {
                 return Operand::from_branch_target(*branch_target, *type);
             } else {

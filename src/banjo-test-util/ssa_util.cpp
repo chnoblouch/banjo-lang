@@ -60,7 +60,7 @@ void renumber(ssa::Module &mod) {
     for (ssa::Function *func : mod.get_functions()) {
         for (ssa::BasicBlock &block : *func) {
             if (block.has_label()) {
-                block.label = "b." + std::to_string(block_map.find(&block));
+                block.label = "b" + std::to_string(block_map.find(&block));
             }
 
             for (ssa::VirtualRegister &param_reg : block.param_regs) {
