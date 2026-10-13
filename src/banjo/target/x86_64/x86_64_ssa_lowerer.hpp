@@ -6,6 +6,7 @@
 #include "banjo/mcode/register.hpp"
 #include "banjo/ssa/basic_block.hpp"
 #include "banjo/ssa/instruction.hpp"
+#include "banjo/ssa/virtual_register.hpp"
 #include "banjo/target/x86_64/x86_64_condition.hpp"
 #include "banjo/target/x86_64/x86_64_const_lowering.hpp"
 
@@ -17,6 +18,13 @@ namespace banjo::target {
 class X8664SSALowerer : public codegen::SSALowerer {
 
 private:
+    enum class OperandKind {
+        REG,
+        REG_ADDR,
+        REG_IMM,
+        REG_ADDR_IMM,
+    };
+
     struct ValueLowerFlags {
         bool allow_addrs = false;
         bool is_callee = false;
@@ -126,6 +134,10 @@ public:
     mcode::Operand lower_fp_imm_as_operand(double value, unsigned size);
     mcode::Operand lower_reg_as_operand(ssa::VirtualRegister src_reg, unsigned size, ValueLowerFlags flags);
     mcode::Operand lower_symbol_as_operand(const ssa::Value &value, unsigned size, ValueLowerFlags flags);
+
+    mcode::Operand lower_value(ssa::Value &value, OperandKind kind);
+    mcode::Operand lower_reg(ssa::VirtualRegister reg, unsigned size, OperandKind kind);
+    mcode::Operand lower_int_imm(LargeInt value, unsigned size, OperandKind kind);
 
     mcode::Operand lower_addr_mem_access(AddrComponents addr);
 

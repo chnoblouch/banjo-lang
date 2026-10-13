@@ -24,12 +24,20 @@
 #include "banjo/utils/utils.hpp"
 
 #include <algorithm>
-#include <iostream>
 #include <string>
 #include <utility>
 #include <variant>
 
 namespace banjo::target {
+
+static void optimize_encoding(mcode::Operand &m_lhs, mcode::Operand &m_rhs, unsigned size) {
+    if (size == 1 || size == 2) {
+        if (m_lhs.is_register() && (m_rhs.is_register() || m_rhs.is_int_immediate())) {
+            m_lhs.set_size(4);
+            m_rhs.set_size(4);
+        }
+    }
+}
 
 X8664SSALowerer::X8664SSALowerer(Target *target) : SSALowerer(target), const_lowering(*this) {}
 
@@ -112,6 +120,9 @@ bool X8664SSALowerer::lower_stored_operation(ssa::Instruction &store) {
         }
 
         if (lhs_def->get_operand(1) == store_addr) {
+            discard_use(lhs->get_register());
+            discard_use(store_value);
+
             if (store_addr.is_register()) {
                 discard_use(store_addr.get_register());
             }
@@ -210,27 +221,22 @@ void X8664SSALowerer::lower_store(ssa::Instruction &instr) {
 }
 
 void X8664SSALowerer::lower_add(ssa::Instruction &instr) {
-    ssa::Operand lhs = instr.get_operand(0);
-    ssa::Operand rhs = instr.get_operand(1);
-    // int size = get_size(lhs.get_type());
+    ssa::Operand *lhs = &instr.get_operand(0);
+    ssa::Operand *rhs = &instr.get_operand(1);
+    ssa::VirtualRegister dst = *instr.get_dest();
+    unsigned size = get_size(lhs->get_type());
 
-    // Try to use a LEA dst, [lhs + rhs] instruction.
-    /*
-    if(lhs.is_register() && rhs.is_register()) {
-        size = std::max(size, 4);
-
-        emit(mcode::Instruction(X8664Opcode::LEA, {
-            mcode::Operand::from_register(lower_reg(*instr.get_dest()), size),
-            mcode::Operand::from_x86_64_addr(X8664Address(
-                lower_reg(lhs.get_register()), lower_reg(rhs.get_register()), 1
-            ), 8)
-        }));
-
-        return;
+    if (lhs->is_int_immediate() && !rhs->is_int_immediate()) {
+        std::swap(lhs, rhs);
     }
-    */
 
-    append_mov_and_operation(X8664Opcode::ADD, *instr.get_dest(), instr.get_operand(0), instr.get_operand(1), true);
+    mcode::Operand m_lhs = lower_value(*lhs, OperandKind::REG);
+    mcode::Operand m_rhs = lower_value(*rhs, OperandKind::REG_ADDR_IMM);
+    mcode::Operand m_dst = map_vreg_as_operand(dst, size == 8 ? 8 : 4);
+    optimize_encoding(m_lhs, m_rhs, size);
+
+    emit({X8664Opcode::ADD, {m_lhs, m_rhs}});
+    emit({X8664Opcode::MOV, {m_dst, m_lhs}});
 }
 
 void X8664SSALowerer::lower_sub(ssa::Instruction &instr) {
@@ -1318,6 +1324,60 @@ mcode::Operand X8664SSALowerer::lower_symbol_as_operand(const ssa::Value &value,
         return dst;
     } else {
         ASSERT_UNREACHABLE;
+    }
+}
+
+mcode::Operand X8664SSALowerer::lower_value(ssa::Value &value, OperandKind kind) {
+    unsigned size = get_size(value.get_type());
+
+    if (value.is_register()) {
+        return lower_reg(value.get_register(), size, kind);
+    } else if (value.is_int_immediate()) {
+        return lower_int_imm(value.get_int_immediate(), size, kind);
+    } else {
+        ASSERT_UNREACHABLE;
+    }
+}
+
+mcode::Operand X8664SSALowerer::lower_reg(ssa::VirtualRegister reg, unsigned size, OperandKind kind) {
+    mcode::Operand m_src = map_vreg_as_operand(reg, size);
+
+    if (m_src.is_stack_slot()) {
+        mcode::Operand m_dst = mcode::Operand::from_register(create_reg(), size);
+        emit({X8664Opcode::LEA, {m_dst, m_src}});
+        return m_dst;
+    }
+
+    if (kind == OperandKind::REG_ADDR || kind == OperandKind::REG_ADDR_IMM) {
+        ssa::InstrIter def = find_def(reg, codegen::DefSearchScope::BLOCK_NO_SIDE_EFFECTS);
+
+        // If this register was produced by a load, use the loaded value
+        // directly instead of first loading it into a register.
+        if (def && def->get_opcode() == ssa::Opcode::LOAD && get_num_uses(*def->get_dest()) == 1) {
+            AddrComponents addr = collect_addr(def->get_operand(1));
+            mcode::Operand m_load_dst = lower_addr_mem_access(addr);
+            discard_use(*def->get_dest());
+            return m_load_dst;
+        }
+    }
+
+    return m_src;
+}
+
+mcode::Operand X8664SSALowerer::lower_int_imm(LargeInt value, unsigned size, OperandKind kind) {
+    bool direct_operand = kind == OperandKind::REG_IMM || kind == OperandKind::REG_ADDR_IMM;
+
+    if (size == 8 && value.to_bits() > 0x7FFFFFFF) {
+        direct_operand = false;
+    }
+
+    if (direct_operand) {
+        return mcode::Operand::from_int_immediate(value, size);
+    } else {
+        mcode::Operand m_dst = mcode::Operand::from_register(create_reg(), size);
+        mcode::Operand m_src = mcode::Operand::from_int_immediate(value, size);
+        emit({X8664Opcode::MOV, {m_dst, m_src}});
+        return m_dst;
     }
 }
 
