@@ -58,15 +58,13 @@ void PassUtils::replace_in_range(ssa::InstrIter start, ssa::InstrIter end, ssa::
 }
 
 void PassUtils::replace_in_instr(ssa::Instruction &instr, ssa::VirtualRegister reg, ssa::Value value) {
-    // FIXME: Why do we modify the type here? This seems dangerous...
-
     for (Operand &operand : instr.get_operands()) {
         if (operand.is_register(reg)) {
-            operand = value.with_type(operand.get_type());
+            operand = std::move(value);
         } else if (operand.is_branch_target()) {
             for (ssa::Value &arg : operand.get_branch_target().args) {
                 if (arg.is_register(reg)) {
-                    arg = value.with_type(arg.get_type());
+                    arg = value;
                 }
             }
         }

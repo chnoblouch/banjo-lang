@@ -213,11 +213,13 @@ void PeepholeOptimizer::process_cjmp(ssa::InstrIter &iter) {
     ssa::Operand &target_true = iter->get_operand(3);
     ssa::Operand &target_false = iter->get_operand(4);
 
-    if (lhs.is_int_immediate() && !rhs.is_int_immediate()) {
-        std::swap(lhs, rhs);
+    if (comparison == ssa::Comparison::EQ || comparison == ssa::Comparison::NE) {
+        if (lhs.is_int_immediate() && !rhs.is_int_immediate()) {
+            std::swap(lhs, rhs);
+        }
     }
 
-    if (!lhs.is_register() && rhs.is_int_immediate()) {
+    if (!lhs.is_register() || !rhs.is_int_immediate()) {
         return;
     }
 

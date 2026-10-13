@@ -209,20 +209,20 @@ std::optional<ssa::Value> precompute_mul(ssa::Instruction &instr) {
 std::optional<ssa::Value> precompute_sdiv(ssa::Instruction &instr) {
     return compute_two_operands_signed(
         instr,
-        [](std::uint8_t lhs, std::uint8_t rhs) { return lhs / rhs; },
-        [](std::uint16_t lhs, std::uint16_t rhs) { return lhs / rhs; },
-        [](std::uint32_t lhs, std::uint32_t rhs) { return lhs / rhs; },
-        [](std::uint64_t lhs, std::uint64_t rhs) { return lhs / rhs; }
+        [](std::int8_t lhs, std::int8_t rhs) { return lhs / rhs; },
+        [](std::int16_t lhs, std::int16_t rhs) { return lhs / rhs; },
+        [](std::int32_t lhs, std::int32_t rhs) { return lhs / rhs; },
+        [](std::int64_t lhs, std::int64_t rhs) { return lhs / rhs; }
     );
 }
 
 std::optional<ssa::Value> precompute_srem(ssa::Instruction &instr) {
     return compute_two_operands_signed(
         instr,
-        [](std::uint8_t lhs, std::uint8_t rhs) { return lhs % rhs; },
-        [](std::uint16_t lhs, std::uint16_t rhs) { return lhs % rhs; },
-        [](std::uint32_t lhs, std::uint32_t rhs) { return lhs % rhs; },
-        [](std::uint64_t lhs, std::uint64_t rhs) { return lhs % rhs; }
+        [](std::int8_t lhs, std::int8_t rhs) { return lhs % rhs; },
+        [](std::int16_t lhs, std::int16_t rhs) { return lhs % rhs; },
+        [](std::int32_t lhs, std::int32_t rhs) { return lhs % rhs; },
+        [](std::int64_t lhs, std::int64_t rhs) { return lhs % rhs; }
     );
 }
 
