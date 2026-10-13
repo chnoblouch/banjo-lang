@@ -16,11 +16,11 @@ func i32 @f() {
 }
 
 func i32 @test() global {
-    jmp void b.0
+    jmp void b0
 
-b.0:
-    jmp void b.1(100)
+b0:
+    jmp void b1(i32 100)
 
-b.1(i32 %0):
+b1(i32 %0):
     ret i32 %0
 }

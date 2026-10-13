@@ -1,0 +1,37 @@
+# test:section input
+
+struct @S {
+    i32 @a
+    i32 @b
+}
+
+func i32 @f() {
+    %0 = alloca @S
+    %1 = memberptr @S, addr %0, void 1
+    cjmp addr %1, void eq, addr 0, void b0, void b1
+
+b0:
+    ret i32 0
+
+b1:
+    ret i32 1
+}
+
+# test:section output
+
+struct @S {
+    i32 @a
+    i32 @b
+}
+
+func i32 @f() {
+    %0 = alloca @S
+    %1 = memberptr @S, addr %0, void 1
+    jmp void b1
+
+b0:
+    ret i32 0
+
+b1:
+    ret i32 1
+}

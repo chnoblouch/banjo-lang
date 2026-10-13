@@ -1,0 +1,25 @@
+# test:section input
+
+func i32 @f() {
+    %0 = alloca i32
+    cjmp addr %0, void ne, addr 0, void b1, void b0
+
+b0:
+    ret i32 0
+
+b1:
+    ret i32 1
+}
+
+# test:section output
+
+func i32 @f() {
+    %0 = alloca i32
+    jmp void b1
+
+b0:
+    ret i32 0
+
+b1:
+    ret i32 1
+}

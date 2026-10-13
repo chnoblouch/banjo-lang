@@ -6,8 +6,17 @@ def run_test(test, conditions):
     pass_name = arch = test.name.split(".")[0]
     util_path = find_executable("banjo-test-util")
     
-    input_source = test.sections["input"].strip()
-    output_source = test.sections["output"].strip()
+    input_source = None
+    output_source = None
+
+    for condition, args in conditions:
+        if condition == "identical":
+            input_source = "\n".join(test.source.splitlines()[1:]).strip()
+            output_source = input_source
+    
+    if input_source is None:
+        input_source = test.sections["input"].strip()
+        output_source = test.sections["output"].strip()
 
     result = subprocess.run(
         [util_path, "ssa", pass_name],

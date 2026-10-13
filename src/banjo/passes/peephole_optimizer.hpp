@@ -33,6 +33,7 @@ private:
     void process_sdiv(ssa::InstrIter &iter, ssa::BasicBlock &block);
     void process_udiv(ssa::InstrIter &iter, ssa::BasicBlock &block);
     void process_fmul(ssa::InstrIter &iter, ssa::BasicBlock &block);
+    void process_cjmp(ssa::InstrIter &iter);
     void process_call(ssa::InstrIter &iter, ssa::BasicBlock &block);
     void process_offsetptr(ssa::InstrIter &iter, ssa::BasicBlock &block);
     void process_memberptr(ssa::InstrIter &iter, ssa::BasicBlock &block);

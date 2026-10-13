@@ -137,6 +137,10 @@ std::optional<ssa::VirtualRegister> StackLayout::find_base_slot(ssa::VirtualRegi
     return reg;
 }
 
+bool StackLayout::is_stack_pointer(ssa::VirtualRegister reg) {
+    return find_base_slot(reg).has_value();
+}
+
 bool StackLayout::is_non_overlapping(ssa::VirtualRegister a, ssa::VirtualRegister b, unsigned size) {
     Member *member_a = find_member(a);
     Member *member_b = find_member(b);

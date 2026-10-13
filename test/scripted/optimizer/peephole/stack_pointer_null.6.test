@@ -1,0 +1,29 @@
+# test:section input
+
+func i32 @f(i64 %0) {
+    %1 = alloca i64
+    %2 = offsetptr addr %1, i64 4, i8
+    %3 = offsetptr addr %2, i64 %0, i8
+    cjmp addr %3, void eq, addr 0, void b0, void b1
+
+b0:
+    ret i32 0
+
+b1:
+    ret i32 1
+}
+
+# test:section output
+
+func i32 @f(i64 %0) {
+    %1 = alloca i64
+    %2 = offsetptr addr %1, i64 4, i8
+    %3 = offsetptr addr %2, i64 %0, i8
+    jmp void b1
+
+b0:
+    ret i32 0
+
+b1:
+    ret i32 1
+}

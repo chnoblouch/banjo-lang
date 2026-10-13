@@ -3,6 +3,7 @@
 #include "banjo/passes/analysis/stack_layout.hpp"
 #include "banjo/passes/pass_utils.hpp"
 #include "banjo/passes/precomputing.hpp"
+#include "banjo/ssa/comparison.hpp"
 #include "banjo/ssa/virtual_register.hpp"
 #include "banjo/target/target_data_layout.hpp"
 #include "banjo/utils/utils.hpp"
@@ -52,6 +53,7 @@ void PeepholeOptimizer::run(ssa::BasicBlock &block) {
             case ssa::Opcode::SDIV: process_sdiv(iter, block); break;
             case ssa::Opcode::UDIV: process_udiv(iter, block); break;
             case ssa::Opcode::FMUL: process_fmul(iter, block); break;
+            case ssa::Opcode::CJMP: process_cjmp(iter); break;
             case ssa::Opcode::CALL: process_call(iter, block); break;
             case ssa::Opcode::OFFSETPTR: process_offsetptr(iter, block); break;
             case ssa::Opcode::MEMBERPTR: process_memberptr(iter, block); break;
@@ -199,6 +201,34 @@ void PeepholeOptimizer::process_fmul(ssa::InstrIter &iter, ssa::BasicBlock &bloc
         eliminate(iter, lhs, block);
     } else if (lhs.is_fp_immediate() && !rhs.is_fp_immediate()) {
         std::swap(lhs, rhs);
+    }
+}
+
+void PeepholeOptimizer::process_cjmp(ssa::InstrIter &iter) {
+    // TODO: select instructions
+
+    ssa::Operand &lhs = iter->get_operand(0);
+    ssa::Comparison comparison = iter->get_operand(1).get_comparison();
+    ssa::Operand &rhs = iter->get_operand(2);
+    ssa::Operand &target_true = iter->get_operand(3);
+    ssa::Operand &target_false = iter->get_operand(4);
+
+    if (lhs.is_int_immediate() && !rhs.is_int_immediate()) {
+        std::swap(lhs, rhs);
+    }
+
+    if (!lhs.is_register() && rhs.is_int_immediate()) {
+        return;
+    }
+
+    if (stack_layout.is_stack_pointer(lhs.get_register()) && rhs.get_int_immediate() == 0) {
+        // TODO: reg > 0 could also be eliminated, I guess.
+
+        if (comparison == ssa::Comparison::EQ) {
+            *iter = ssa::Instruction{ssa::Opcode::JMP, {target_false}};
+        } else if (comparison == ssa::Comparison::NE) {
+            *iter = ssa::Instruction{ssa::Opcode::JMP, {target_true}};
+        }
     }
 }
 
