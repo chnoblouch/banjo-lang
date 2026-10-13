@@ -1,0 +1,63 @@
+# test:subtest
+# test:section ssa
+
+func void @f(i64 %0, addr %1) {
+    %2 = sub i64 %0, i64 42
+    store i64 %2, addr %1
+    ret
+}
+
+# test:section mcode
+
+func f:
+    sub rdi, 42
+    mov [rsi], rdi
+    ret
+
+# test:subtest
+# test:section ssa
+
+func void @f(i32 %0, addr %1) {
+    %2 = sub i32 %0, i32 42
+    store i32 %2, addr %1
+    ret
+}
+
+# test:section mcode
+
+func f:
+    sub edi, 42
+    mov [rsi], edi
+    ret
+
+# test:subtest
+# test:section ssa
+
+func void @f(i16 %0, addr %1) {
+    %2 = sub i16 %0, i16 42
+    store i16 %2, addr %1
+    ret
+}
+
+# test:section mcode
+
+func f:
+    sub edi, 42
+    mov [rsi], di
+    ret
+
+# test:subtest
+# test:section ssa
+
+func void @f(i8 %0, addr %1) {
+    %2 = sub i8 %0, i8 42
+    store i8 %2, addr %1
+    ret
+}
+
+# test:section mcode
+
+func f:
+    sub edi, 42
+    mov [rsi], dil
+    ret

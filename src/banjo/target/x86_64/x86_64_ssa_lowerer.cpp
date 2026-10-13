@@ -240,7 +240,18 @@ void X8664SSALowerer::lower_add(ssa::Instruction &instr) {
 }
 
 void X8664SSALowerer::lower_sub(ssa::Instruction &instr) {
-    append_mov_and_operation(X8664Opcode::SUB, *instr.get_dest(), instr.get_operand(0), instr.get_operand(1), true);
+    ssa::Operand *lhs = &instr.get_operand(0);
+    ssa::Operand *rhs = &instr.get_operand(1);
+    ssa::VirtualRegister dst = *instr.get_dest();
+    unsigned size = get_size(lhs->get_type());
+
+    mcode::Operand m_lhs = lower_value(*lhs, OperandKind::REG);
+    mcode::Operand m_rhs = lower_value(*rhs, OperandKind::REG_ADDR_IMM);
+    mcode::Operand m_dst = map_vreg_as_operand(dst, size == 8 ? 8 : 4);
+    optimize_encoding(m_lhs, m_rhs, size);
+
+    emit({X8664Opcode::SUB, {m_lhs, m_rhs}});
+    emit({X8664Opcode::MOV, {m_dst, m_lhs}});
 }
 
 void X8664SSALowerer::lower_mul(ssa::Instruction &instr) {
@@ -1374,10 +1385,12 @@ mcode::Operand X8664SSALowerer::lower_int_imm(LargeInt value, unsigned size, Ope
     if (direct_operand) {
         return mcode::Operand::from_int_immediate(value, size);
     } else {
-        mcode::Operand m_dst = mcode::Operand::from_register(create_reg(), size);
-        mcode::Operand m_src = mcode::Operand::from_int_immediate(value, size);
+        unsigned mov_size = size == 8 ? 8 : 4;
+        mcode::Operand m_dst = mcode::Operand::from_register(create_reg(), mov_size);
+        mcode::Operand m_src = mcode::Operand::from_int_immediate(value, mov_size);
+
         emit({X8664Opcode::MOV, {m_dst, m_src}});
-        return m_dst;
+        return m_dst.with_size(size);
     }
 }
 
