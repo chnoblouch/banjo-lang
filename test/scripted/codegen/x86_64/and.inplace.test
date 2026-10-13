@@ -1,0 +1,127 @@
+# test:subtest
+# test:section ssa
+
+func void @f(addr %0, i64 %1) {
+    %2 = load i64, addr %0
+    %3 = and i64 %2, i64 %1
+    store i64 %3, addr %0 
+    ret
+}
+
+# test:section mcode
+
+func f:
+    and [rdi], rsi
+    ret
+
+# test:subtest
+# test:section ssa
+
+func void @f(addr %0, i64 %1) {
+    %2 = load i64, addr %0
+    %3 = and i64 %1, i64 %2
+    store i64 %3, addr %0 
+    ret
+}
+
+# test:section mcode
+
+func f:
+    and [rdi], rsi
+    ret
+
+# test:subtest
+# test:section ssa
+
+func void @f(addr %0, i32 %1) {
+    %2 = load i32, addr %0
+    %3 = and i32 %2, i32 %1
+    store i32 %3, addr %0 
+    ret
+}
+
+# test:section mcode
+
+func f:
+    and [rdi], esi
+    ret
+
+# test:subtest
+# test:section ssa
+
+func void @f(addr %0, i32 %1) {
+    %2 = load i32, addr %0
+    %3 = and i32 %1, i32 %2
+    store i32 %3, addr %0 
+    ret
+}
+
+# test:section mcode
+
+func f:
+    and [rdi], esi
+    ret
+
+# test:subtest
+# test:section ssa
+
+func void @f(addr %0, i16 %1) {
+    %2 = load i16, addr %0
+    %3 = and i16 %2, i16 %1
+    store i16 %3, addr %0 
+    ret
+}
+
+# test:section mcode
+
+func f:
+    and [rdi], si
+    ret
+
+# test:subtest
+# test:section ssa
+
+func void @f(addr %0, i16 %1) {
+    %2 = load i16, addr %0
+    %3 = and i16 %1, i16 %2
+    store i16 %3, addr %0 
+    ret
+}
+
+# test:section mcode
+
+func f:
+    and [rdi], si
+    ret
+
+# test:subtest
+# test:section ssa
+
+func void @f(addr %0, i8 %1) {
+    %2 = load i8, addr %0
+    %3 = and i8 %2, i8 %1
+    store i8 %3, addr %0 
+    ret
+}
+
+# test:section mcode
+
+func f:
+    and [rdi], sil
+    ret
+
+# test:subtest
+# test:section ssa
+
+func void @f(addr %0, i8 %1) {
+    %2 = load i8, addr %0
+    %3 = and i8 %1, i8 %2
+    store i8 %3, addr %0 
+    ret
+}
+
+# test:section mcode
+
+func f:
+    and [rdi], sil
+    ret

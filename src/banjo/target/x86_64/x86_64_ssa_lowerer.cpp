@@ -31,6 +31,10 @@
 namespace banjo::target {
 
 static void optimize_encoding(mcode::Operand &m_lhs, mcode::Operand &m_rhs, unsigned size) {
+    // We generate 32-bit instructions for 8-bit and 16-bit operations because
+    // they have a smaller encoding. Latency and throughput are equivalent on
+    // modern processors.
+
     if (size == 1 || size == 2) {
         if (m_lhs.is_register() && (m_rhs.is_register() || m_rhs.is_int_immediate())) {
             m_lhs.set_size(4);
@@ -55,18 +59,9 @@ void X8664SSALowerer::append_mov_and_operation(
     mcode::Opcode m_opcode,
     ssa::VirtualRegister dst,
     ssa::Value &lhs,
-    ssa::Value &rhs,
-    bool prefer_32_bit
+    ssa::Value &rhs
 ) {
     unsigned size = get_size(lhs.get_type());
-
-    // We generate 32-bit instructions for 8-bit and 16-bit operations because
-    // they have a smaller encoding. Latency and throughput are equivalent on
-    // modern processors.
-    if (prefer_32_bit) {
-        size = size == 8 ? 8 : 4;
-    }
-
     mcode::Operand m_dst = map_vreg_as_operand(dst, size);
     lower_as_move(m_dst, lhs);
     mcode::Operand m_rhs = lower_as_operand(rhs, {.allow_addrs = m_dst.is_register()}).with_size(size);
@@ -97,6 +92,18 @@ bool X8664SSALowerer::lower_stored_operation(ssa::Instruction &store) {
         case ssa::Opcode::SUB:
             m_opcode = X8664Opcode::SUB;
             commutative = false;
+            break;
+        case ssa::Opcode::AND:
+            m_opcode = X8664Opcode::AND;
+            commutative = true;
+            break;
+        case ssa::Opcode::OR:
+            m_opcode = X8664Opcode::OR;
+            commutative = true;
+            break;
+        case ssa::Opcode::XOR:
+            m_opcode = X8664Opcode::XOR;
+            commutative = true;
             break;
         default: return false;
     }
@@ -305,7 +312,7 @@ void X8664SSALowerer::lower_urem(ssa::Instruction &instr) {
 void X8664SSALowerer::lower_fadd(ssa::Instruction &instr) {
     ssa::Primitive type = instr.get_operand(0).get_type().get_primitive();
     mcode::Opcode opcode = type == ssa::Primitive::F64 ? X8664Opcode::ADDSD : X8664Opcode::ADDSS;
-    append_mov_and_operation(opcode, *instr.get_dest(), instr.get_operand(0), instr.get_operand(1), false);
+    append_mov_and_operation(opcode, *instr.get_dest(), instr.get_operand(0), instr.get_operand(1));
 }
 
 void X8664SSALowerer::lower_fsub(ssa::Instruction &instr) {
@@ -327,31 +334,31 @@ void X8664SSALowerer::lower_fsub(ssa::Instruction &instr) {
     }
 
     mcode::Opcode opcode = type == ssa::Primitive::F64 ? X8664Opcode::SUBSD : X8664Opcode::SUBSS;
-    append_mov_and_operation(opcode, *instr.get_dest(), instr.get_operand(0), instr.get_operand(1), false);
+    append_mov_and_operation(opcode, *instr.get_dest(), instr.get_operand(0), instr.get_operand(1));
 }
 
 void X8664SSALowerer::lower_fmul(ssa::Instruction &instr) {
     ssa::Primitive type = instr.get_operand(0).get_type().get_primitive();
     mcode::Opcode opcode = type == ssa::Primitive::F64 ? X8664Opcode::MULSD : X8664Opcode::MULSS;
-    append_mov_and_operation(opcode, *instr.get_dest(), instr.get_operand(0), instr.get_operand(1), false);
+    append_mov_and_operation(opcode, *instr.get_dest(), instr.get_operand(0), instr.get_operand(1));
 }
 
 void X8664SSALowerer::lower_fdiv(ssa::Instruction &instr) {
     ssa::Primitive type = instr.get_operand(0).get_type().get_primitive();
     mcode::Opcode opcode = type == ssa::Primitive::F64 ? X8664Opcode::DIVSD : X8664Opcode::DIVSS;
-    append_mov_and_operation(opcode, *instr.get_dest(), instr.get_operand(0), instr.get_operand(1), false);
+    append_mov_and_operation(opcode, *instr.get_dest(), instr.get_operand(0), instr.get_operand(1));
 }
 
 void X8664SSALowerer::lower_and(ssa::Instruction &instr) {
-    append_mov_and_operation(X8664Opcode::AND, *instr.get_dest(), instr.get_operand(0), instr.get_operand(1), true);
+    lower_bitwise(X8664Opcode::AND, instr);
 }
 
 void X8664SSALowerer::lower_or(ssa::Instruction &instr) {
-    append_mov_and_operation(X8664Opcode::OR, *instr.get_dest(), instr.get_operand(0), instr.get_operand(1), true);
+    lower_bitwise(X8664Opcode::OR, instr);
 }
 
 void X8664SSALowerer::lower_xor(ssa::Instruction &instr) {
-    append_mov_and_operation(X8664Opcode::XOR, *instr.get_dest(), instr.get_operand(0), instr.get_operand(1), true);
+    lower_bitwise(X8664Opcode::XOR, instr);
 }
 
 void X8664SSALowerer::lower_lshl(ssa::Instruction &instr) {
@@ -995,6 +1002,25 @@ void X8664SSALowerer::lower_into_idiv(mcode::PhysicalReg result, ssa::Instructio
     emit({X8664Opcode::MOV, {map_vreg_dst(instr, size), m_result}});
 }
 
+void X8664SSALowerer::lower_bitwise(mcode::Opcode opcode, ssa::Instruction &instr) {
+    ssa::Operand *lhs = &instr.get_operand(0);
+    ssa::Operand *rhs = &instr.get_operand(1);
+    ssa::VirtualRegister dst = *instr.get_dest();
+    unsigned size = get_size(lhs->get_type());
+
+    if (lhs->is_int_immediate() && !rhs->is_int_immediate()) {
+        std::swap(lhs, rhs);
+    }
+
+    mcode::Operand m_lhs = lower_value(*lhs, OperandKind::REG);
+    mcode::Operand m_rhs = lower_value(*rhs, OperandKind::REG_ADDR_IMM);
+    mcode::Operand m_dst = map_vreg_as_operand(dst, size == 8 ? 8 : 4);
+    optimize_encoding(m_lhs, m_rhs, size);
+
+    emit({opcode, {m_lhs, m_rhs}});
+    emit({X8664Opcode::MOV, {m_dst, m_lhs}});
+}
+
 void X8664SSALowerer::lower_shift(mcode::Opcode opcode, ssa::Instruction &instr) {
     unsigned size = get_size(instr.get_operand(0).get_type());
 
@@ -1034,7 +1060,7 @@ void X8664SSALowerer::lower_cond_branch(mcode::Opcode cmp_opcode, ssa::Instructi
         mcode::Opcode branch_opcode = X8664Opcode::JCC + static_cast<unsigned>(condition);
 
         move_branch_args(target_false);
-        append_mov_and_operation(cmp_opcode, get_func().next_virtual_reg(), lhs, rhs, false);
+        append_mov_and_operation(cmp_opcode, get_func().next_virtual_reg(), lhs, rhs);
         emit({branch_opcode, {m_target_false}});
         move_branch_args(target_true);
     } else {
@@ -1042,7 +1068,7 @@ void X8664SSALowerer::lower_cond_branch(mcode::Opcode cmp_opcode, ssa::Instructi
         mcode::Opcode branch_opcode = X8664Opcode::JCC + static_cast<unsigned>(condition);
 
         move_branch_args(target_true);
-        append_mov_and_operation(cmp_opcode, get_func().next_virtual_reg(), lhs, rhs, false);
+        append_mov_and_operation(cmp_opcode, get_func().next_virtual_reg(), lhs, rhs);
         emit({branch_opcode, {m_target_true}});
         move_branch_args(target_false);
 

@@ -43,14 +43,7 @@ public:
     mcode::CallingConvention *get_calling_convention(ssa::CallingConv calling_conv) override;
 
 public:
-    void append_mov_and_operation(
-        mcode::Opcode m_opcode,
-        ssa::VirtualRegister dst,
-        ssa::Value &lhs,
-        ssa::Value &rhs,
-        bool prefer_32_bit
-    );
-
+    void append_mov_and_operation(mcode::Opcode m_opcode, ssa::VirtualRegister dst, ssa::Value &lhs, ssa::Value &rhs);
     bool lower_stored_operation(ssa::Instruction &store);
 
     void init_func(ssa::Function &func) override;
@@ -115,6 +108,7 @@ public:
 
     void lower_into_div(mcode::PhysicalReg result, ssa::Instruction &instr);
     void lower_into_idiv(mcode::PhysicalReg result, ssa::Instruction &instr);
+    void lower_bitwise(mcode::Opcode opcode, ssa::Instruction &instr);
     void lower_shift(mcode::Opcode opcode, ssa::Instruction &instr);
     void lower_cond_branch(mcode::Opcode cmp_opcode, ssa::Instruction &instr);
     void lower_atomic_cas_loop(mcode::Opcode opcode, ssa::Instruction &instr);
