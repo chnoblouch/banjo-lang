@@ -133,12 +133,16 @@ public:
     mcode::Operand lower_value(ssa::Value &value, OperandKind kind);
     mcode::Operand lower_reg(ssa::VirtualRegister reg, unsigned size, OperandKind kind);
     mcode::Operand lower_int_imm(LargeInt value, unsigned size, OperandKind kind);
+    mcode::Operand lower_fp_imm(double value, unsigned size, OperandKind kind);
 
     mcode::Operand lower_addr_mem_access(AddrComponents addr);
 
     mcode::Register create_reg();
     mcode::Operand create_fp_const_load(double value, unsigned size);
     mcode::Symbol &create_const_neg_zero();
+
+    bool should_swap(ssa::Value &lhs, ssa::Value &rhs);
+    bool is_loaded(ssa::Value &value);
 };
 
 } // namespace banjo::target

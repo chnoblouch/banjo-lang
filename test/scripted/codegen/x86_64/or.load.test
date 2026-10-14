@@ -10,8 +10,8 @@ func i64 @f(addr %0, i64 %1) {
 # test:section mcode
 
 func f:
-    mov rax, [rdi]
-    or rax, rsi
+    or rsi, [rdi]
+    mov rax, rsi
     ret
 
 # test:subtest
@@ -42,8 +42,8 @@ func i32 @f(addr %0, i32 %1) {
 # test:section mcode
 
 func f:
-    mov eax, [rdi]
-    or eax, esi
+    or esi, [rdi]
+    mov eax, esi
     ret
 
 # test:subtest
@@ -74,8 +74,8 @@ func i16 @f(addr %0, i16 %1) {
 # test:section mcode
 
 func f:
-    mov ax, [rdi]
-    or eax, esi
+    or si, [rdi]
+    mov eax, esi
     ret
 
 # test:subtest
@@ -106,8 +106,8 @@ func i8 @f(addr %0, i8 %1) {
 # test:section mcode
 
 func f:
-    mov al, [rdi]
-    or eax, esi
+    or sil, [rdi]
+    mov eax, esi
     ret
 
 # test:subtest

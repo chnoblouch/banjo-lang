@@ -220,7 +220,7 @@ void X8664SSALowerer::lower_add(ssa::Instruction &instr) {
     ssa::VirtualRegister dst = *instr.get_dest();
     unsigned size = get_size(lhs->get_type());
 
-    if (lhs->is_int_immediate() && !rhs->is_int_immediate()) {
+    if (should_swap(*lhs, *rhs)) {
         std::swap(lhs, rhs);
     }
 
@@ -295,9 +295,22 @@ void X8664SSALowerer::lower_urem(ssa::Instruction &instr) {
 }
 
 void X8664SSALowerer::lower_fadd(ssa::Instruction &instr) {
-    ssa::Primitive type = instr.get_operand(0).get_type().get_primitive();
-    mcode::Opcode opcode = type == ssa::Primitive::F64 ? X8664Opcode::ADDSD : X8664Opcode::ADDSS;
-    append_mov_and_operation(opcode, *instr.get_dest(), instr.get_operand(0), instr.get_operand(1));
+    ssa::Operand *lhs = &instr.get_operand(0);
+    ssa::Operand *rhs = &instr.get_operand(1);
+    ssa::VirtualRegister dst = *instr.get_dest();
+    bool is_64_bit = lhs->get_type().get_primitive() == ssa::Primitive::F64;
+
+    // Floating-point addition is commutative.
+    if (should_swap(*lhs, *rhs)) {
+        std::swap(lhs, rhs);
+    }
+
+    mcode::Operand m_lhs = lower_value(*lhs, OperandKind::REG);
+    mcode::Operand m_rhs = lower_value(*rhs, OperandKind::REG_ADDR);
+    mcode::Operand m_dst = map_vreg_as_operand(dst, is_64_bit ? 8 : 4);
+
+    emit({is_64_bit ? X8664Opcode::MOVSD : X8664Opcode::MOVSS, {m_dst, m_lhs}});
+    emit({is_64_bit ? X8664Opcode::ADDSD : X8664Opcode::ADDSS, {m_dst, m_rhs}});
 }
 
 void X8664SSALowerer::lower_fsub(ssa::Instruction &instr) {
@@ -1000,7 +1013,7 @@ void X8664SSALowerer::lower_bitwise(mcode::Opcode opcode, ssa::Instruction &inst
     ssa::VirtualRegister dst = *instr.get_dest();
     unsigned size = get_size(lhs->get_type());
 
-    if (lhs->is_int_immediate() && !rhs->is_int_immediate()) {
+    if (should_swap(*lhs, *rhs)) {
         std::swap(lhs, rhs);
     }
 
@@ -1362,6 +1375,8 @@ mcode::Operand X8664SSALowerer::lower_value(ssa::Value &value, OperandKind kind)
         return lower_reg(value.get_register(), size, kind);
     } else if (value.is_int_immediate()) {
         return lower_int_imm(value.get_int_immediate(), size, kind);
+    } else if (value.is_fp_immediate()) {
+        return lower_fp_imm(value.get_fp_immediate(), size, kind);
     } else {
         ASSERT_UNREACHABLE;
     }
@@ -1408,6 +1423,35 @@ mcode::Operand X8664SSALowerer::lower_int_imm(LargeInt value, unsigned size, Ope
 
         emit({X8664Opcode::MOV, {m_dst, m_src}});
         return m_dst.with_size(size);
+    }
+}
+
+mcode::Operand X8664SSALowerer::lower_fp_imm(double value, unsigned size, OperandKind kind) {
+    if (value == 0.0) {
+        // Use `XORP[S,D] dst, dst` to generate zero so we don't have to load it
+        // from memory.
+
+        mcode::Opcode m_opcode = size == 8 ? X8664Opcode::XORPD : X8664Opcode::XORPS;
+        mcode::Operand m_dst = mcode::Operand::from_register(create_reg(), size);
+        emit({m_opcode, {m_dst, m_dst}});
+        return m_dst;
+    }
+
+    mcode::Operand m_src;
+
+    if (size == 8) {
+        m_src = const_lowering.load_f64_from_memory(value);
+    } else {
+        m_src = const_lowering.load_f32_from_memory(static_cast<float>(value));
+    }
+
+    if (kind == OperandKind::REG_ADDR || kind == OperandKind::REG_ADDR_IMM) {
+        return m_src;
+    } else {
+        mcode::Opcode m_opcode = size == 8 ? X8664Opcode::MOVSD : X8664Opcode::MOVSS;
+        mcode::Operand m_dst = mcode::Operand::from_register(create_reg(), size);
+        emit({m_opcode, {m_dst, m_src}});
+        return m_dst;
     }
 }
 
@@ -1483,7 +1527,7 @@ mcode::Register X8664SSALowerer::create_reg() {
 
 mcode::Operand X8664SSALowerer::create_fp_const_load(double value, unsigned size) {
     if (size == 4) {
-        return const_lowering.load_f32(static_cast<float>(value), ssa_instr);
+        return const_lowering.load_f32_from_memory(static_cast<float>(value));
     } else if (size == 8) {
         return const_lowering.load_f64_from_memory(value);
     } else {
@@ -1514,6 +1558,32 @@ mcode::Symbol &X8664SSALowerer::create_const_neg_zero() {
     }
 
     return *const_neg_zero;
+}
+
+bool X8664SSALowerer::should_swap(ssa::Value &lhs, ssa::Value &rhs) {
+    if (lhs.is_int_immediate() && !rhs.is_int_immediate()) {
+        return true;
+    }
+
+    if (lhs.is_fp_immediate() && !rhs.is_fp_immediate()) {
+        return true;
+    }
+
+    if (is_loaded(lhs) && !is_loaded(rhs)) {
+        return true;
+    }
+
+    return false;
+}
+
+bool X8664SSALowerer::is_loaded(ssa::Value &value) {
+    if (!value.is_register()) {
+        return false;
+    }
+
+    ssa::VirtualRegister reg = value.get_register();
+    ssa::InstrIter def = find_def(reg, codegen::DefSearchScope::BLOCK_NO_SIDE_EFFECTS);
+    return def && def->get_opcode() == ssa::Opcode::LOAD;
 }
 
 } // namespace banjo::target

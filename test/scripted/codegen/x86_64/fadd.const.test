@@ -1,0 +1,63 @@
+# test:subtest
+# test:section ssa
+
+func f64 @f(f64 %0) {
+    %1 = fadd f64 %0, f64 2.5
+    ret f64 %1
+}
+
+# test:section mcode
+
+data float.0: f64(2.5)
+
+func f:
+    addsd xmm0, [float.0]
+    ret
+
+# test:subtest
+# test:section ssa
+
+func f64 @f(f64 %0) {
+    %1 = fadd f64 2.5, f64 %0
+    ret f64 %1
+}
+
+# test:section mcode
+
+data float.0: f64(2.5)
+
+func f:
+    addsd xmm0, [float.0]
+    ret
+
+# test:subtest
+# test:section ssa
+
+func f32 @f(f32 %0) {
+    %1 = fadd f32 %0, f32 2.5
+    ret f32 %1
+}
+
+# test:section mcode
+
+data float.0: f32(2.5)
+
+func f:
+    addss xmm0, [float.0]
+    ret
+
+# test:subtest
+# test:section ssa
+
+func f32 @f(f32 %0) {
+    %1 = fadd f32 2.5, f32 %0
+    ret f32 %1
+}
+
+# test:section mcode
+
+data float.0: f32(2.5)
+
+func f:
+    addss xmm0, [float.0]
+    ret

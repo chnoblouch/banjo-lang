@@ -1,0 +1,73 @@
+# TODO: Try to keep the order of generated operands even if the SSA operands are swapped.
+
+# test:subtest
+# test:section ssa
+
+func f64 @f(addr %0) {
+    %1 = load f64, addr %0
+    %2 = fadd f64 %1, f64 2.5
+    ret f64 %2
+}
+
+# test:section mcode
+
+data float.0: f64(2.5)
+
+func f:
+    movsd xmm0, [float.0]
+    addsd xmm0, [rdi]
+    ret
+
+# test:subtest
+# test:section ssa
+
+func f64 @f(addr %0) {
+    %1 = load f64, addr %0
+    %2 = fadd f64 2.5, f64 %1
+    ret f64 %2
+}
+
+# test:section mcode
+
+data float.0: f64(2.5)
+
+func f:
+    movsd xmm0, [rdi]
+    addsd xmm0, [float.0]
+    ret
+
+# test:subtest
+# test:section ssa
+
+func f32 @f(addr %0) {
+    %1 = load f32, addr %0
+    %2 = fadd f32 %1, f32 2.5
+    ret f32 %2
+}
+
+# test:section mcode
+
+data float.0: f32(2.5)
+
+func f:
+    movss xmm0, [float.0]
+    addss xmm0, [rdi]
+    ret
+
+# test:subtest
+# test:section ssa
+
+func f32 @f(addr %0) {
+    %1 = load f32, addr %0
+    %2 = fadd f32 2.5, f32 %1
+    ret f32 %2
+}
+
+# test:section mcode
+
+data float.0: f32(2.5)
+
+func f:
+    movss xmm0, [rdi]
+    addss xmm0, [float.0]
+    ret

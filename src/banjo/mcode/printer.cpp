@@ -5,6 +5,7 @@
 #include "banjo/mcode/module.hpp"
 #include "banjo/utils/macros.hpp"
 
+#include <format>
 #include <string>
 
 namespace banjo::mcode {
@@ -78,7 +79,10 @@ void Printer::print_data(mcode::Global &global) {
     if (auto value = std::get_if<mcode::Global::Integer>(&global.value)) {
         emit(value->to_string());
     } else if (auto value = std::get_if<mcode::Global::FloatingPoint>(&global.value)) {
+        emit(global.size == 8 ? "f64" : "f32");
+        emit('(');
         emit(*value);
+        emit(')');
     } else if (auto value = std::get_if<mcode::Global::Bytes>(&global.value)) {
         emit('[');
 
@@ -285,11 +289,11 @@ void Printer::emit(unsigned long long value) {
 }
 
 void Printer::emit(float value) {
-    *buffer += std::to_string(value);
+    *buffer += std::format("{:g}", value);
 }
 
 void Printer::emit(double value) {
-    *buffer += std::to_string(value);
+    *buffer += std::format("{:g}", value);
 }
 
 } // namespace banjo::mcode
