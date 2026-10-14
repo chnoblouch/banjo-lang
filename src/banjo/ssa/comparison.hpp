@@ -23,6 +23,7 @@ enum class Comparison {
 };
 
 Comparison invert_comparison(Comparison comparison);
+Comparison comparison_swapped(Comparison comparison);
 bool is_comparison_signed(Comparison comparison);
 
 } // namespace banjo::ssa

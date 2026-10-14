@@ -84,7 +84,7 @@ void Printer::print_data(mcode::Global &global) {
         emit(*value);
         emit(')');
     } else if (auto value = std::get_if<mcode::Global::Bytes>(&global.value)) {
-        emit('[');
+        emit("bytes(");
 
         for (unsigned i = 0; i < value->size(); i++) {
             emit(static_cast<unsigned>((*value)[i]));
@@ -94,7 +94,7 @@ void Printer::print_data(mcode::Global &global) {
             }
         }
 
-        emit(']');
+        emit(')');
     } else if (auto value = std::get_if<mcode::Global::String>(&global.value)) {
         emit('\"');
 

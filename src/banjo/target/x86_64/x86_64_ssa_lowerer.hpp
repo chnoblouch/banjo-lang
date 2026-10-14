@@ -5,6 +5,7 @@
 #include "banjo/mcode/instruction.hpp"
 #include "banjo/mcode/register.hpp"
 #include "banjo/ssa/basic_block.hpp"
+#include "banjo/ssa/comparison.hpp"
 #include "banjo/ssa/instruction.hpp"
 #include "banjo/ssa/virtual_register.hpp"
 #include "banjo/target/x86_64/x86_64_condition.hpp"
@@ -44,9 +45,6 @@ public:
     mcode::CallingConvention *get_calling_convention(ssa::CallingConv calling_conv) override;
 
 public:
-    void append_mov_and_operation(mcode::Opcode m_opcode, ssa::VirtualRegister dst, ssa::Value &lhs, ssa::Value &rhs);
-    bool lower_stored_operation(ssa::Instruction &store);
-
     void init_func(ssa::Function &func) override;
     void emit_block_prologue(ssa::BasicBlock &block) override;
 
@@ -104,15 +102,15 @@ public:
     void copy_block_using_movs(ssa::Instruction &instr, unsigned size);
     mcode::Opcode get_cmovcc_opcode(ssa::Comparison comparison);
 
-    void emit_mov_op_32(mcode::Opcode m_opcode, mcode::Operand &m_dst, mcode::Operand &m_lhs, mcode::Operand &m_rhs);
     void emit_mov_zero_ext(mcode::Operand dst, mcode::Operand src);
     void emit_mov_sign_ext(mcode::Operand dst, mcode::Operand src);
 
+    bool lower_stored_operation(ssa::Instruction &store);
     void lower_into_div(mcode::PhysicalReg result, ssa::Instruction &instr);
     void lower_into_idiv(mcode::PhysicalReg result, ssa::Instruction &instr);
     void lower_bitwise(mcode::Opcode opcode, ssa::Instruction &instr);
     void lower_shift(mcode::Opcode opcode, ssa::Instruction &instr);
-    void lower_cond_branch(mcode::Opcode cmp_opcode, ssa::Instruction &instr);
+    void lower_cond_branch(ssa::Instruction &instr);
     void lower_atomic_cas_loop(mcode::Opcode opcode, ssa::Instruction &instr);
 
     X8664Condition lower_condition(ssa::Comparison comparison);
@@ -135,6 +133,7 @@ public:
     mcode::Operand lower_reg(ssa::VirtualRegister reg, unsigned size, OperandKind kind);
     mcode::Operand lower_int_imm(LargeInt value, unsigned size, OperandKind kind);
     mcode::Operand lower_fp_imm(double value, unsigned size, OperandKind kind);
+    X8664Condition lower_comparison(ssa::Operand *lhs, ssa::Operand *rhs, ssa::Comparison comparison);
 
     mcode::Operand lower_addr_mem_access(AddrComponents addr);
 

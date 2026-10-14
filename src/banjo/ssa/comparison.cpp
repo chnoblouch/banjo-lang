@@ -23,6 +23,27 @@ Comparison invert_comparison(Comparison comparison) {
     }
 }
 
+Comparison comparison_swapped(Comparison comparison) {
+    switch (comparison) {
+        case Comparison::EQ: return Comparison::EQ;
+        case Comparison::NE: return Comparison::NE;
+        case Comparison::UGT: return Comparison::ULE;
+        case Comparison::UGE: return Comparison::ULT;
+        case Comparison::ULT: return Comparison::UGE;
+        case Comparison::ULE: return Comparison::UGT;
+        case Comparison::SGT: return Comparison::SLE;
+        case Comparison::SGE: return Comparison::SLT;
+        case Comparison::SLT: return Comparison::SGE;
+        case Comparison::SLE: return Comparison::SGT;
+        case Comparison::FEQ: return Comparison::FEQ;
+        case Comparison::FNE: return Comparison::FNE;
+        case Comparison::FGT: return Comparison::FLE;
+        case Comparison::FGE: return Comparison::FLT;
+        case Comparison::FLT: return Comparison::FGE;
+        case Comparison::FLE: return Comparison::FGT;
+    }
+}
+
 bool is_comparison_signed(Comparison comparison) {
     switch (comparison) {
         case ssa::Comparison::SGT:
