@@ -1,0 +1,31 @@
+# test:subtest
+# test:section ssa
+
+func f64 @f(f64 %0) {
+    %1 = fsub f64 0.0, f64 %0
+    ret f64 %1
+}
+
+# test:section mcode
+
+data const.nzero_f64: bytes(0, 0, 0, 0, 0, 0, 0, 128, 0, 0, 0, 0, 0, 0, 0, 128)
+
+func f:
+    xorpd xmm0, [const.nzero_f64]
+    ret
+
+# test:subtest
+# test:section ssa
+
+func f32 @f(f32 %0) {
+    %1 = fsub f32 0.0, f32 %0
+    ret f32 %1
+}
+
+# test:section mcode
+
+data const.nzero_f32: bytes(0, 0, 0, 128, 0, 0, 0, 128, 0, 0, 0, 128, 0, 0, 0, 128)
+
+func f:
+    xorps xmm0, [const.nzero_f32]
+    ret

@@ -1,0 +1,71 @@
+# test:subtest
+# test:section ssa
+
+func f64 @f(addr %0) {
+    %1 = load f64, addr %0
+    %2 = fsub f64 %1, f64 2.5
+    ret f64 %2
+}
+
+# test:section mcode
+
+data float.0: f64(2.5)
+
+func f:
+    movsd xmm0, [rdi]
+    subsd xmm0, [float.0]
+    ret
+
+# test:subtest
+# test:section ssa
+
+func f64 @f(addr %0) {
+    %1 = load f64, addr %0
+    %2 = fsub f64 2.5, f64 %1
+    ret f64 %2
+}
+
+# test:section mcode
+
+data float.0: f64(2.5)
+
+func f:
+    movsd xmm0, [float.0]
+    subsd xmm0, [rdi]
+    ret
+
+# test:subtest
+# test:section ssa
+
+func f32 @f(addr %0) {
+    %1 = load f32, addr %0
+    %2 = fsub f32 %1, f32 2.5
+    ret f32 %2
+}
+
+# test:section mcode
+
+data float.0: f32(2.5)
+
+func f:
+    movss xmm0, [rdi]
+    subss xmm0, [float.0]
+    ret
+
+# test:subtest
+# test:section ssa
+
+func f32 @f(addr %0) {
+    %1 = load f32, addr %0
+    %2 = fsub f32 2.5, f32 %1
+    ret f32 %2
+}
+
+# test:section mcode
+
+data float.0: f32(2.5)
+
+func f:
+    movss xmm0, [float.0]
+    subss xmm0, [rdi]
+    ret

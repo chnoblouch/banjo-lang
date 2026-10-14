@@ -32,7 +32,8 @@ private:
 
     X8664ConstLowering const_lowering;
     std::unordered_map<ssa::VirtualRegister, ssa::VirtualRegister> block_arg_tmps;
-    std::optional<mcode::Symbol> const_neg_zero;
+    std::optional<mcode::Symbol> const_neg_zero_64;
+    std::optional<mcode::Symbol> const_neg_zero_32;
 
 public:
     X8664SSALowerer(Target *target);
@@ -139,7 +140,8 @@ public:
 
     mcode::Register create_reg();
     mcode::Operand create_fp_const_load(double value, unsigned size);
-    mcode::Symbol &create_const_neg_zero();
+    mcode::Symbol &create_const_neg_zero_64();
+    mcode::Symbol &create_const_neg_zero_32();
 
     bool should_swap(ssa::Value &lhs, ssa::Value &rhs);
     bool is_loaded(ssa::Value &value);

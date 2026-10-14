@@ -305,46 +305,70 @@ void X8664SSALowerer::lower_fadd(ssa::Instruction &instr) {
         std::swap(lhs, rhs);
     }
 
+    mcode::Operand m_dst = map_vreg_as_operand(dst, is_64_bit ? 8 : 4);
     mcode::Operand m_lhs = lower_value(*lhs, OperandKind::REG);
     mcode::Operand m_rhs = lower_value(*rhs, OperandKind::REG_ADDR);
-    mcode::Operand m_dst = map_vreg_as_operand(dst, is_64_bit ? 8 : 4);
 
     emit({is_64_bit ? X8664Opcode::MOVSD : X8664Opcode::MOVSS, {m_dst, m_lhs}});
     emit({is_64_bit ? X8664Opcode::ADDSD : X8664Opcode::ADDSS, {m_dst, m_rhs}});
 }
 
 void X8664SSALowerer::lower_fsub(ssa::Instruction &instr) {
-    ssa::Primitive type = instr.get_operand(0).get_type().get_primitive();
+    ssa::Operand *lhs = &instr.get_operand(0);
+    ssa::Operand *rhs = &instr.get_operand(1);
+    ssa::VirtualRegister dst = *instr.get_dest();
+    bool is_64_bit = lhs->get_type().get_primitive() == ssa::Primitive::F64;
 
-    if (type == ssa::Primitive::F32 && instr.get_operand(0).is_fp_immediate() &&
-        instr.get_operand(0).get_fp_immediate() == 0.0) {
+    if (lhs->is_fp_immediate() && lhs->get_fp_immediate() == 0.0) {
+        mcode::Symbol symbol = is_64_bit ? create_const_neg_zero_64() : create_const_neg_zero_32();
 
-        X8664Address const_addr{create_const_neg_zero()};
+        mcode::Operand m_dst = map_vreg_dst(instr, is_64_bit ? 8 : 4);
+        mcode::Operand m_src = lower_as_operand(*rhs);
+        mcode::Operand m_const_addr = mcode::Operand::from_x86_64_addr(X8664Address{symbol});
 
-        mcode::Operand m_dst = map_vreg_dst(instr, 4);
-        mcode::Operand m_src = lower_as_operand(instr.get_operand(1));
-        mcode::Operand m_const_addr = mcode::Operand::from_x86_64_addr(const_addr);
+        emit({is_64_bit ? X8664Opcode::MOVSD : X8664Opcode::MOVSS, {m_dst, m_src}});
+        emit({is_64_bit ? X8664Opcode::XORPD : X8664Opcode::XORPS, {m_dst, m_const_addr}});
+    } else {
+        mcode::Operand m_dst = map_vreg_as_operand(dst, is_64_bit ? 8 : 4);
+        mcode::Operand m_lhs = lower_value(*lhs, OperandKind::REG);
+        mcode::Operand m_rhs = lower_value(*rhs, OperandKind::REG_ADDR);
 
-        emit({get_move_opcode(type), {m_dst, m_src}});
-        emit({X8664Opcode::XORPS, {m_dst, m_const_addr}});
-
-        return;
+        emit({is_64_bit ? X8664Opcode::MOVSD : X8664Opcode::MOVSS, {m_dst, m_lhs}});
+        emit({is_64_bit ? X8664Opcode::SUBSD : X8664Opcode::SUBSS, {m_dst, m_rhs}});
     }
-
-    mcode::Opcode opcode = type == ssa::Primitive::F64 ? X8664Opcode::SUBSD : X8664Opcode::SUBSS;
-    append_mov_and_operation(opcode, *instr.get_dest(), instr.get_operand(0), instr.get_operand(1));
 }
 
 void X8664SSALowerer::lower_fmul(ssa::Instruction &instr) {
-    ssa::Primitive type = instr.get_operand(0).get_type().get_primitive();
-    mcode::Opcode opcode = type == ssa::Primitive::F64 ? X8664Opcode::MULSD : X8664Opcode::MULSS;
-    append_mov_and_operation(opcode, *instr.get_dest(), instr.get_operand(0), instr.get_operand(1));
+    ssa::Operand *lhs = &instr.get_operand(0);
+    ssa::Operand *rhs = &instr.get_operand(1);
+    ssa::VirtualRegister dst = *instr.get_dest();
+    bool is_64_bit = lhs->get_type().get_primitive() == ssa::Primitive::F64;
+
+    // Floating-point multiplication is commutative.
+    if (should_swap(*lhs, *rhs)) {
+        std::swap(lhs, rhs);
+    }
+
+    mcode::Operand m_dst = map_vreg_as_operand(dst, is_64_bit ? 8 : 4);
+    mcode::Operand m_lhs = lower_value(*lhs, OperandKind::REG);
+    mcode::Operand m_rhs = lower_value(*rhs, OperandKind::REG_ADDR);
+
+    emit({is_64_bit ? X8664Opcode::MOVSD : X8664Opcode::MOVSS, {m_dst, m_lhs}});
+    emit({is_64_bit ? X8664Opcode::MULSD : X8664Opcode::MULSS, {m_dst, m_rhs}});
 }
 
 void X8664SSALowerer::lower_fdiv(ssa::Instruction &instr) {
-    ssa::Primitive type = instr.get_operand(0).get_type().get_primitive();
-    mcode::Opcode opcode = type == ssa::Primitive::F64 ? X8664Opcode::DIVSD : X8664Opcode::DIVSS;
-    append_mov_and_operation(opcode, *instr.get_dest(), instr.get_operand(0), instr.get_operand(1));
+    ssa::Operand *lhs = &instr.get_operand(0);
+    ssa::Operand *rhs = &instr.get_operand(1);
+    ssa::VirtualRegister dst = *instr.get_dest();
+    bool is_64_bit = lhs->get_type().get_primitive() == ssa::Primitive::F64;
+
+    mcode::Operand m_dst = map_vreg_as_operand(dst, is_64_bit ? 8 : 4);
+    mcode::Operand m_lhs = lower_value(*lhs, OperandKind::REG);
+    mcode::Operand m_rhs = lower_value(*rhs, OperandKind::REG_ADDR);
+
+    emit({is_64_bit ? X8664Opcode::MOVSD : X8664Opcode::MOVSS, {m_dst, m_lhs}});
+    emit({is_64_bit ? X8664Opcode::DIVSD : X8664Opcode::DIVSS, {m_dst, m_rhs}});
 }
 
 void X8664SSALowerer::lower_and(ssa::Instruction &instr) {
@@ -1535,8 +1559,31 @@ mcode::Operand X8664SSALowerer::create_fp_const_load(double value, unsigned size
     }
 }
 
-mcode::Symbol &X8664SSALowerer::create_const_neg_zero() {
-    if (!const_neg_zero) {
+mcode::Symbol &X8664SSALowerer::create_const_neg_zero_64() {
+    if (!const_neg_zero_64) {
+        // clang-format off
+        mcode::Global::Bytes data{
+            0, 0, 0, 0, 0, 0, 0, 1u << 7,
+            0, 0, 0, 0, 0, 0, 0, 1u << 7,
+        };
+        // clang-format on
+
+        mcode::Global global{
+            .name = "const.nzero_f64",
+            .size = 16,
+            .alignment = 16,
+            .value = data,
+        };
+
+        const_neg_zero_64 = mcode::Symbol{global.name, mcode::Relocation::NONE};
+        m_module.add(std::move(global));
+    }
+
+    return *const_neg_zero_64;
+}
+
+mcode::Symbol &X8664SSALowerer::create_const_neg_zero_32() {
+    if (!const_neg_zero_32) {
         // clang-format off
         mcode::Global::Bytes data{
             0, 0, 0, 1u << 7,
@@ -1547,17 +1594,17 @@ mcode::Symbol &X8664SSALowerer::create_const_neg_zero() {
         // clang-format on
 
         mcode::Global global{
-            .name = "const.neg_zero",
-            .size = 4,
+            .name = "const.nzero_f32",
+            .size = 16,
             .alignment = 16,
             .value = data,
         };
 
-        const_neg_zero = mcode::Symbol{global.name, mcode::Relocation::NONE};
+        const_neg_zero_32 = mcode::Symbol{global.name, mcode::Relocation::NONE};
         m_module.add(std::move(global));
     }
 
-    return *const_neg_zero;
+    return *const_neg_zero_32;
 }
 
 bool X8664SSALowerer::should_swap(ssa::Value &lhs, ssa::Value &rhs) {
