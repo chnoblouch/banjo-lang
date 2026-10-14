@@ -1,0 +1,18 @@
+# test:subtest
+# test:section ssa
+
+func i64 @f(i64 %0, i64 %1) {
+    %2 = and i64 %0, i64 %1
+    %3 = and i64 %0, i64 %1
+    %4 = and i64 %2, i64 %3
+    ret i64 %4
+}
+
+# test:section mcode
+
+func f:
+    mov rax, rdi
+    and rax, rsi
+    and rdi, rsi
+    and rax, rdi
+    ret

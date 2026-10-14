@@ -1,0 +1,18 @@
+# test:subtest
+# test:section ssa
+
+func i64 @f(i64 %0, i64 %1) {
+    %2 = or i64 %0, i64 %1
+    %3 = or i64 %0, i64 %1
+    %4 = or i64 %2, i64 %3
+    ret i64 %4
+}
+
+# test:section mcode
+
+func f:
+    mov rax, rdi
+    or rax, rsi
+    or rdi, rsi
+    or rax, rdi
+    ret

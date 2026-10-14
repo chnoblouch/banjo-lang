@@ -103,6 +103,7 @@ public:
     void copy_block_using_movs(ssa::Instruction &instr, unsigned size);
     mcode::Opcode get_cmovcc_opcode(ssa::Comparison comparison);
 
+    void emit_mov_op_32(mcode::Opcode m_opcode, mcode::Operand &m_dst, mcode::Operand &m_lhs, mcode::Operand &m_rhs);
     void emit_mov_zero_ext(mcode::Operand dst, mcode::Operand src);
     void emit_mov_sign_ext(mcode::Operand dst, mcode::Operand src);
 

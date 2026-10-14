@@ -30,19 +30,6 @@
 
 namespace banjo::target {
 
-static void optimize_encoding(mcode::Operand &m_lhs, mcode::Operand &m_rhs, unsigned size) {
-    // We generate 32-bit instructions for 8-bit and 16-bit operations because
-    // they have a smaller encoding. Latency and throughput are equivalent on
-    // modern processors.
-
-    if (size == 1 || size == 2) {
-        if (m_lhs.is_register() && (m_rhs.is_register() || m_rhs.is_int_immediate())) {
-            m_lhs.set_size(4);
-            m_rhs.set_size(4);
-        }
-    }
-}
-
 X8664SSALowerer::X8664SSALowerer(Target *target) : SSALowerer(target), const_lowering(*this) {}
 
 void X8664SSALowerer::init_func(ssa::Function &func) {
@@ -239,11 +226,10 @@ void X8664SSALowerer::lower_add(ssa::Instruction &instr) {
 
     mcode::Operand m_lhs = lower_value(*lhs, OperandKind::REG);
     mcode::Operand m_rhs = lower_value(*rhs, OperandKind::REG_ADDR_IMM);
-    mcode::Operand m_dst = map_vreg_as_operand(dst, size == 8 ? 8 : 4);
-    optimize_encoding(m_lhs, m_rhs, size);
+    mcode::Operand m_dst = map_vreg_as_operand(dst, size);
 
-    emit({X8664Opcode::ADD, {m_lhs, m_rhs}});
     emit({X8664Opcode::MOV, {m_dst, m_lhs}});
+    emit({X8664Opcode::ADD, {m_dst, m_rhs}});
 }
 
 void X8664SSALowerer::lower_sub(ssa::Instruction &instr) {
@@ -254,11 +240,10 @@ void X8664SSALowerer::lower_sub(ssa::Instruction &instr) {
 
     mcode::Operand m_lhs = lower_value(*lhs, OperandKind::REG);
     mcode::Operand m_rhs = lower_value(*rhs, OperandKind::REG_ADDR_IMM);
-    mcode::Operand m_dst = map_vreg_as_operand(dst, size == 8 ? 8 : 4);
-    optimize_encoding(m_lhs, m_rhs, size);
+    mcode::Operand m_dst = map_vreg_as_operand(dst, size);
 
-    emit({X8664Opcode::SUB, {m_lhs, m_rhs}});
     emit({X8664Opcode::MOV, {m_dst, m_lhs}});
+    emit({X8664Opcode::SUB, {m_dst, m_rhs}});
 }
 
 void X8664SSALowerer::lower_mul(ssa::Instruction &instr) {
@@ -907,6 +892,13 @@ void X8664SSALowerer::copy_block_using_movs(ssa::Instruction &instr, unsigned si
     ASSERT(size == 0);
 }
 
+void X8664SSALowerer::emit_mov_op_32(
+    mcode::Opcode m_opcode,
+    mcode::Operand &m_dst,
+    mcode::Operand &m_lhs,
+    mcode::Operand &m_rhs
+) {}
+
 void X8664SSALowerer::emit_mov_zero_ext(mcode::Operand dst, mcode::Operand src) {
     // FIXME
 
@@ -1014,11 +1006,10 @@ void X8664SSALowerer::lower_bitwise(mcode::Opcode opcode, ssa::Instruction &inst
 
     mcode::Operand m_lhs = lower_value(*lhs, OperandKind::REG);
     mcode::Operand m_rhs = lower_value(*rhs, OperandKind::REG_ADDR_IMM);
-    mcode::Operand m_dst = map_vreg_as_operand(dst, size == 8 ? 8 : 4);
-    optimize_encoding(m_lhs, m_rhs, size);
+    mcode::Operand m_dst = map_vreg_as_operand(dst, size);
 
-    emit({opcode, {m_lhs, m_rhs}});
     emit({X8664Opcode::MOV, {m_dst, m_lhs}});
+    emit({opcode, {m_dst, m_rhs}});
 }
 
 void X8664SSALowerer::lower_shift(mcode::Opcode opcode, ssa::Instruction &instr) {
