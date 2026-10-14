@@ -14,7 +14,9 @@ static bool is_float_instr(mcode::Instruction &instr) {
         case X8664Opcode::MOVSS:
         case X8664Opcode::MOVSD:
         case X8664Opcode::MOVAPS:
+        case X8664Opcode::MOVAPD:
         case X8664Opcode::MOVUPS:
+        case X8664Opcode::MOVUPD:
         case X8664Opcode::ADDSS:
         case X8664Opcode::ADDSD:
         case X8664Opcode::SUBSS:
@@ -161,7 +163,9 @@ std::vector<mcode::RegOp> X8664RegAnalyzer::get_operands(codegen::InstrContext &
         case MOVSS:
         case MOVSD:
         case MOVAPS:
+        case MOVAPD:
         case MOVUPS:
+        case MOVUPD:
         case MOVD:
         case MOVQ: {
             mcode::Operand &dst = instr.get_operand(0);
@@ -378,15 +382,20 @@ void X8664RegAnalyzer::assign_reg_classes(mcode::Instruction &instr, codegen::Re
 }
 
 bool X8664RegAnalyzer::is_move_from(mcode::Instruction &instr, ssa::VirtualRegister src_reg) {
-    using namespace X8664Opcode;
+    switch (instr.get_opcode()) {
+        case X8664Opcode::MOV:
+        case X8664Opcode::MOVSS:
+        case X8664Opcode::MOVSD:
+        case X8664Opcode::MOVAPS:
+        case X8664Opcode::MOVAPD:
+        case X8664Opcode::MOVUPS:
+        case X8664Opcode::MOVUPD: {
+            mcode::Operand &src = instr.get_operand(1);
+            return src.is_virtual_reg() && src.get_virtual_reg() == src_reg;
+        }
 
-    mcode::Opcode opcode = instr.get_opcode();
-    if (opcode != MOV && opcode != MOVSS && opcode != MOVSD && opcode != MOVAPS && opcode != MOVUPS) {
-        return false;
+        default: return false;
     }
-
-    const mcode::Operand &src = instr.get_operand(1);
-    return src.is_virtual_reg() && src.get_virtual_reg() == src_reg;
 }
 
 void X8664RegAnalyzer::insert_load(SpilledRegUse use) {

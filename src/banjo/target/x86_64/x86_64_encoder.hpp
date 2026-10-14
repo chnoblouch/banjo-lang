@@ -182,7 +182,9 @@ private:
     void encode_movss(mcode::Instruction &instr);
     void encode_movsd(mcode::Instruction &instr);
     void encode_movaps(mcode::Instruction &instr);
+    void encode_movapd(mcode::Instruction &instr);
     void encode_movups(mcode::Instruction &instr);
+    void encode_movupd(mcode::Instruction &instr);
     void encode_movd(mcode::Instruction &instr);
     void encode_movq(mcode::Instruction &instr);
     void encode_addss(mcode::Instruction &instr);
@@ -217,6 +219,8 @@ private:
     void encode_setcc_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
     void encode_cmovcc_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
     void encode_movss_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
+    void encode_movaps_family(mcode::Instruction &instr, std::array<std::uint32_t, 2> params);
+    void encode_movapd_family(mcode::Instruction &instr, std::array<std::uint32_t, 2> params);
     void encode_addss_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
     void encode_addsd_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
     void encode_xorps_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);

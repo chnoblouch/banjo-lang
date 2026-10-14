@@ -31,6 +31,7 @@ void X8664PeepholeOptPass::run(mcode::Instruction &instr) {
         case X8664Opcode::OR: optimize_or(instr); break;
         case X8664Opcode::XOR: optimize_xor(instr); break;
         case X8664Opcode::MOVSS: optimize_movss(instr); break;
+        case X8664Opcode::MOVSD: optimize_movsd(instr); break;
     }
 }
 
@@ -61,6 +62,12 @@ void X8664PeepholeOptPass::optimize_xor(mcode::Instruction &instr) {
 void X8664PeepholeOptPass::optimize_movss(mcode::Instruction &instr) {
     if (instr.get_operand(0).is_register() && instr.get_operand(1).is_register()) {
         instr.set_opcode(X8664Opcode::MOVAPS);
+    }
+}
+
+void X8664PeepholeOptPass::optimize_movsd(mcode::Instruction &instr) {
+    if (instr.get_operand(0).is_register() && instr.get_operand(1).is_register()) {
+        instr.set_opcode(X8664Opcode::MOVAPD);
     }
 }
 

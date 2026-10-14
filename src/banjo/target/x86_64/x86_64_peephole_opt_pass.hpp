@@ -22,6 +22,7 @@ private:
     void optimize_or(mcode::Instruction &instr);
     void optimize_xor(mcode::Instruction &instr);
     void optimize_movss(mcode::Instruction &instr);
+    void optimize_movsd(mcode::Instruction &instr);
 
     void optimize_encoding(mcode::Instruction &instr);
 };

@@ -115,7 +115,9 @@ void X8664Encoder::encode_instr(mcode::Instruction &instr, mcode::Function *func
         case X8664Opcode::MOVSS: encode_movss(instr); break;
         case X8664Opcode::MOVSD: encode_movsd(instr); break;
         case X8664Opcode::MOVAPS: encode_movaps(instr); break;
+        case X8664Opcode::MOVAPD: encode_movapd(instr); break;
         case X8664Opcode::MOVUPS: encode_movups(instr); break;
+        case X8664Opcode::MOVUPD: encode_movupd(instr); break;
         case X8664Opcode::MOVD: encode_movd(instr); break;
         case X8664Opcode::MOVQ: encode_movq(instr); break;
         case X8664Opcode::ADDSS: encode_addss(instr); break;
@@ -808,53 +810,19 @@ void X8664Encoder::encode_movsd(mcode::Instruction &instr) {
 }
 
 void X8664Encoder::encode_movaps(mcode::Instruction &instr) {
-    mcode::Operand &m_dst = instr.get_operand(0);
-    mcode::Operand &m_src = instr.get_operand(1);
+    encode_movaps_family(instr, {0x28, 0x29});
+}
 
-    if (is_reg(m_dst)) {
-        RegCode dst = reg(m_dst);
-        RegOrAddr src = roa(m_src);
-
-        emit_rex_rroa(0, dst, src);
-        emit_opcode(0x0F);
-        emit_opcode(0x28);
-        emit_modrm_sib(dst, src);
-    } else if (is_addr(m_dst)) {
-        RegOrAddr dst = roa(m_dst);
-        RegCode src = reg(m_src);
-
-        emit_rex_rroa(0, src, dst);
-        emit_opcode(0x0F);
-        emit_opcode(0x29);
-        emit_modrm_sib(src, dst);
-    } else {
-        ASSERT_UNREACHABLE;
-    }
+void X8664Encoder::encode_movapd(mcode::Instruction &instr) {
+    encode_movapd_family(instr, {0x28, 0x29});
 }
 
 void X8664Encoder::encode_movups(mcode::Instruction &instr) {
-    mcode::Operand &m_dst = instr.get_operand(0);
-    mcode::Operand &m_src = instr.get_operand(1);
+    encode_movaps_family(instr, {0x10, 0x11});
+}
 
-    if (is_reg(m_dst)) {
-        RegCode dst = reg(m_dst);
-        RegOrAddr src = roa(m_src);
-
-        emit_rex_rroa(0, dst, src);
-        emit_opcode(0x0F);
-        emit_opcode(0x10);
-        emit_modrm_sib(dst, src);
-    } else if (is_addr(m_dst)) {
-        RegOrAddr dst = roa(m_dst);
-        RegCode src = reg(m_src);
-
-        emit_rex_rroa(0, src, dst);
-        emit_opcode(0x0F);
-        emit_opcode(0x11);
-        emit_modrm_sib(src, dst);
-    } else {
-        ASSERT_UNREACHABLE;
-    }
+void X8664Encoder::encode_movupd(mcode::Instruction &instr) {
+    encode_movapd_family(instr, {0x10, 0x11});
 }
 
 void X8664Encoder::encode_movd(mcode::Instruction &instr) {
@@ -1198,6 +1166,58 @@ void X8664Encoder::encode_movss_family(mcode::Instruction &instr, std::array<std
         emit_opcode(0x0F);
         emit_opcode(0x11);
         emit_mem_reg(dst, src);
+    } else {
+        ASSERT_UNREACHABLE;
+    }
+}
+
+void X8664Encoder::encode_movaps_family(mcode::Instruction &instr, std::array<std::uint32_t, 2> params) {
+    mcode::Operand &m_dst = instr.get_operand(0);
+    mcode::Operand &m_src = instr.get_operand(1);
+
+    if (is_reg(m_dst)) {
+        RegCode dst = reg(m_dst);
+        RegOrAddr src = roa(m_src);
+
+        emit_rex_rroa(0, dst, src);
+        emit_opcode(0x0F);
+        emit_opcode(params[0]);
+        emit_modrm_sib(dst, src);
+    } else if (is_addr(m_dst)) {
+        RegOrAddr dst = roa(m_dst);
+        RegCode src = reg(m_src);
+
+        emit_rex_rroa(0, src, dst);
+        emit_opcode(0x0F);
+        emit_opcode(params[1]);
+        emit_modrm_sib(src, dst);
+    } else {
+        ASSERT_UNREACHABLE;
+    }
+}
+
+void X8664Encoder::encode_movapd_family(mcode::Instruction &instr, std::array<std::uint32_t, 2> params) {
+    mcode::Operand &m_dst = instr.get_operand(0);
+    mcode::Operand &m_src = instr.get_operand(1);
+
+    if (is_reg(m_dst)) {
+        RegCode dst = reg(m_dst);
+        RegOrAddr src = roa(m_src);
+
+        emit_opcode(0x66);
+        emit_rex_rroa(0, dst, src);
+        emit_opcode(0x0F);
+        emit_opcode(params[0]);
+        emit_modrm_sib(dst, src);
+    } else if (is_addr(m_dst)) {
+        RegOrAddr dst = roa(m_dst);
+        RegCode src = reg(m_src);
+
+        emit_opcode(0x66);
+        emit_rex_rroa(0, src, dst);
+        emit_opcode(0x0F);
+        emit_opcode(params[1]);
+        emit_modrm_sib(src, dst);
     } else {
         ASSERT_UNREACHABLE;
     }

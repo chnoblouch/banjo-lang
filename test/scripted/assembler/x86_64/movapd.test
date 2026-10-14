@@ -1,0 +1,44 @@
+# test:subtest
+# test:encoding "660F28DA"
+
+movapd xmm3, xmm2
+
+# test:subtest
+# test:encoding "66440F28C2"
+
+movapd xmm8, xmm2
+
+# test:subtest
+# test:encoding "66410F28DF"
+
+movapd xmm3, xmm15
+
+# test:subtest
+# test:encoding "660F2819"
+
+movapd xmm3, [rcx]
+
+# test:subtest
+# test:encoding "66440F2801"
+
+movapd xmm8, [rcx]
+
+# test:subtest
+# test:encoding "66410F285D00"
+
+movapd xmm3, [r13]
+
+# test:subtest
+# test:encoding "660F2919"
+
+movapd [rcx], xmm3
+
+# test:subtest
+# test:encoding "66440F2901"
+
+movapd [rcx], xmm8
+
+# test:subtest
+# test:encoding "66410F295D00"
+
+movapd [r13], xmm3
