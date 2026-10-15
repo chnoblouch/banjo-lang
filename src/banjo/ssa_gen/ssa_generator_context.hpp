@@ -4,16 +4,19 @@
 #include "banjo/sir/sir.hpp"
 #include "banjo/ssa/basic_block.hpp"
 #include "banjo/ssa/function.hpp"
+#include "banjo/ssa/global.hpp"
 #include "banjo/ssa/instruction.hpp"
 #include "banjo/ssa/module.hpp"
 #include "banjo/ssa/structure.hpp"
 #include "banjo/ssa/virtual_register.hpp"
 #include "banjo/ssa_gen/specialization_collector.hpp"
 #include "banjo/target/target.hpp"
+#include "banjo/utils/hash_map.hpp"
 
 #include <deque>
 #include <map>
 #include <stack>
+#include <string_view>
 #include <unordered_map>
 
 namespace banjo {
@@ -121,6 +124,7 @@ public:
     std::unordered_map<const sir::NativeVarDecl *, unsigned> ssa_extern_globals;
     std::unordered_map<const sir::StructDef *, std::vector<unsigned>> ssa_vtables;
     std::vector<ssa::Structure *> tuple_structs;
+    HashMap<std::string_view, ssa::Global *> strings;
 
     std::stack<SpecializationCollector::Entry *> specialization_stack;
     std::unordered_map<const sir::GenericParam *, sir::Expr> sir_generic_args;

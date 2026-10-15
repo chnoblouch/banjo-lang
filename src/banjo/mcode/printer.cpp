@@ -26,7 +26,7 @@ void Printer::print(mcode::Module &mod) {
         emit('\n');
     }
 
-    if (!mod.external_symbols.empty()) {
+    if (!mod.external_symbols.empty() && !mod.global_symbols.empty()) {
         emit('\n');
     }
 
@@ -35,7 +35,7 @@ void Printer::print(mcode::Module &mod) {
         emit('\n');
     }
 
-    if (!mod.global_symbols.empty()) {
+    if (!mod.global_symbols.empty() && !mod.globals.empty()) {
         emit('\n');
     }
 
@@ -44,11 +44,11 @@ void Printer::print(mcode::Module &mod) {
         emit('\n');
     }
 
-    if (!mod.global_symbols.empty()) {
+    if (!mod.globals.empty() && !mod.functions.empty()) {
         emit('\n');
     }
 
-    bool first = mod.external_symbols.empty() && mod.global_symbols.empty() && mod.globals.empty();
+    bool first = true;
 
     for (mcode::Function *func : mod.functions) {
         if (first) {

@@ -233,18 +233,23 @@ StoredValue ExprSSAGenerator::generate_array_literal(
 }
 
 StoredValue ExprSSAGenerator::generate_string_literal(const sir::StringLiteral &string_literal) {
-    std::string ssa_name = ctx.next_string_name();
-    ssa::Type ssa_type = ssa::Primitive::ADDR;
+    ssa::Global *ssa_global;
 
-    ssa::Global *ssa_global = new ssa::Global{
-        .name = ssa_name,
-        .type = ssa_type,
-        .initial_value = std::string{string_literal.value} + '\0',
-        .external = false,
-    };
+    if (ssa::Global **existing_global = ctx.strings.try_find(string_literal.value)) {
+        ssa_global = *existing_global;
+    } else {
+        ssa_global = new ssa::Global{
+            .name = ctx.next_string_name(),
+            .type = ssa::Primitive::ADDR,
+            .initial_value = std::string{string_literal.value} + '\0',
+            .external = false,
+        };
 
-    ctx.ssa_mod->add(ssa_global);
-    ssa::Value ssa_global_val = ssa::Operand::from_global(ssa_global, ssa_type);
+        ctx.ssa_mod->add(ssa_global);
+        ctx.strings.insert(string_literal.value, ssa_global);
+    }
+
+    ssa::Value ssa_global_val = ssa::Operand::from_global(ssa_global, ssa::Primitive::ADDR);
     return StoredValue::create_value(ssa_global_val);
 }
 
