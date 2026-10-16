@@ -1,8 +1,7 @@
 # test:subtest
 # test:section ssa
 
-# TODO: This should be `mov eax, edi`, but the register allocator is currently
-# unable to fold this.
+# TODO: This should be `mov eax, edi`, but regalloc can't fold it.
 
 func i64 @f(i32 %0) {
     %1 = uextend i32 %0, i64

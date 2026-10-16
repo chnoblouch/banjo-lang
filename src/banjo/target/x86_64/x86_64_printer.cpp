@@ -149,7 +149,11 @@ void X8664Printer::print_operand(mcode::Function &func, mcode::Instruction &inst
 
         mcode::Opcode opcode = instr.get_opcode();
 
-        if (opcode == X8664Opcode::SHL || opcode == X8664Opcode::SHR || opcode == X8664Opcode::SAR) {
+        if (opcode == X8664Opcode::MOVZX || opcode == X8664Opcode::MOVSX || opcode == X8664Opcode::MOVSXD) {
+            if (!instr.get_operand(1).is_register()) {
+                requires_size = true;
+            }
+        } else if (opcode == X8664Opcode::SHL || opcode == X8664Opcode::SHR || opcode == X8664Opcode::SAR) {
             if (!instr.get_operand(0).is_register()) {
                 requires_size = true;
             }

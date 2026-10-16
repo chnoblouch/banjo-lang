@@ -400,12 +400,12 @@ void X8664SSALowerer::lower_ret(ssa::Instruction &instr) {
 
 void X8664SSALowerer::lower_uextend(ssa::Instruction &instr) {
     ssa::Operand &value = instr.get_operand(0);
-    unsigned value_size = get_size(value.get_type());
+    unsigned src_size = get_size(value.get_type());
 
     mcode::Operand m_dst = map_vreg_dst(instr, 4);
-    mcode::Operand m_src = lower_as_operand(value);
+    mcode::Operand m_src = lower_value(value, OperandKind::REG_ADDR).with_size(src_size);
 
-    if (value_size == 4) {
+    if (src_size == 4) {
         emit({X8664Opcode::MOV, {m_dst, m_src}, mcode::Instruction::FLAG_DONT_REMOVE});
     } else {
         emit({X8664Opcode::MOVZX, {m_dst, m_src}});
@@ -416,24 +416,36 @@ void X8664SSALowerer::lower_sextend(ssa::Instruction &instr) {
     ssa::Operand &value = instr.get_operand(0);
     ssa::Type type = instr.get_operand(1).get_type();
 
-    unsigned value_size = get_size(value.get_type());
-    unsigned type_size = get_size(type);
+    unsigned src_size = get_size(value.get_type());
+    unsigned dst_size = get_size(type);
 
-    mcode::Opcode m_opcode = value_size == 4 ? X8664Opcode::MOVSXD : X8664Opcode::MOVSX;
-    mcode::Operand m_dst = map_vreg_dst(instr, type_size == 8 ? 8 : 4);
-    mcode::Operand m_src = lower_as_operand(value);
+    mcode::Opcode m_opcode = src_size == 4 ? X8664Opcode::MOVSXD : X8664Opcode::MOVSX;
+    mcode::Operand m_dst = map_vreg_dst(instr, dst_size == 8 ? 8 : 4);
+    mcode::Operand m_src = lower_value(value, OperandKind::REG_ADDR).with_size(src_size);
     emit({m_opcode, {m_dst, m_src}});
 }
 
 void X8664SSALowerer::lower_truncate(ssa::Instruction &instr) {
     ssa::Operand &value = instr.get_operand(0);
+    ssa::Type type = instr.get_operand(1).get_type();
 
-    mcode::Operand m_dst = map_vreg_dst(instr, 4);
-    mcode::Operand m_src = lower_as_operand(value).with_size(4);
+    unsigned dst_size = get_size(type);
+
+    mcode::Operand m_dst = map_vreg_dst(instr, dst_size);
+    mcode::Operand m_src = lower_value(value, OperandKind::REG_ADDR);
+
+    if (m_src.is_register()) {
+        m_src.set_size(4);
+    } else {
+        // If we're loading from an address, we can actually set the load size
+        // to the destination size because on x86-64, data is stored in
+        // little-endian.
+        m_src.set_size(dst_size);
+    }
 
     // This `mov` instruction is removable because if the source and destination
-    // are equal, the truncated value is already stored in the lower bits of the
-    // register.
+    // are identical, the truncated value is already stored in the lower bits of
+    // the register.
     emit({X8664Opcode::MOV, {m_dst, m_src}});
 }
 
@@ -1091,7 +1103,7 @@ void X8664SSALowerer::lower_shift(mcode::Opcode opcode, ssa::Instruction &instr)
     emit({X8664Opcode::MOV, {m_dst, m_lhs}});
 
     if (m_rhs.is_int_immediate()) {
-        emit({opcode, {m_dst, m_rhs}});
+        emit({opcode, {m_dst, m_rhs.with_size(1)}});
     } else {
         mcode::Register rcx = mcode::Register::from_physical(X8664Register::RCX);
         mcode::Operand m_rcx = mcode::Operand::from_register(rcx, 1);

@@ -226,6 +226,22 @@ void X8664Encoder::encode_mov(mcode::Instruction &instr) {
     }
 }
 
+void X8664Encoder::encode_movzx(mcode::Instruction &instr) {
+    mcode::Operand &m_dst = instr.get_operand(0);
+    mcode::Operand &m_src = instr.get_operand(1);
+    unsigned src_size = m_src.get_size();
+    unsigned dst_size = m_dst.get_size();
+
+    RegCode dst = reg(m_dst);
+    RegOrAddr src = roa(m_src);
+
+    emit_16bit_prefix_if_required(dst_size);
+    emit_rex_rroa(dst_size, dst, src);
+    emit_opcode(0x0F);
+    emit_opcode(src_size == 1 ? 0xB6 : 0xB7);
+    emit_modrm_sib(dst, src);
+}
+
 void X8664Encoder::encode_movsx(mcode::Instruction &instr) {
     mcode::Operand &m_dst = instr.get_operand(0);
     mcode::Operand &m_src = instr.get_operand(1);
@@ -253,32 +269,17 @@ void X8664Encoder::encode_movsx(mcode::Instruction &instr) {
     emit_modrm_sib(dst, src);
 }
 
-void X8664Encoder::encode_movzx(mcode::Instruction &instr) {
-    mcode::Operand &m_dst = instr.get_operand(0);
-    mcode::Operand &m_src = instr.get_operand(1);
-    unsigned src_size = m_src.get_size();
-    unsigned dst_size = m_dst.get_size();
-
-    RegCode dst = reg(m_dst);
-    RegOrAddr src = roa(m_src);
-
-    emit_16bit_prefix_if_required(dst_size);
-    emit_rex_rroa(dst_size, dst, src);
-    emit_opcode(0x0F);
-    emit_opcode(src_size == 1 ? 0xB6 : 0xB7);
-    emit_modrm_sib(dst, src);
-}
-
 void X8664Encoder::encode_movsxd(mcode::Instruction &instr) {
     mcode::Operand &m_dst = instr.get_operand(0);
     mcode::Operand &m_src = instr.get_operand(1);
     unsigned dst_size = m_dst.get_size();
     [[maybe_unused]] unsigned src_size = m_src.get_size();
 
-    // Technically, `movsd <dword>, <dword` and `movsd <word>, <word>` are valid
-    // instructions, but there is no point to them because they are equivalent
-    // to a `mov` instruction. LLVM's assembler returns an error when trying to
-    // assemble these instructions, so we don't bother supporting them.
+    // Technically, `movsxd <dword>, <dword` and `movsxd <word>, <word>` are
+    // valid instructions, but there is no point to them because they are
+    // equivalent to a `mov` instruction. LLVM's assembler returns an error when
+    // trying to assemble these instructions, so we don't bother supporting
+    // them.
     ASSERT(dst_size == 8 && src_size == 4);
 
     RegCode dst = reg(m_dst);

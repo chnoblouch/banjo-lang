@@ -1,0 +1,89 @@
+# test:subtest
+# test:section ssa
+
+func i32 @f(addr %0) {
+    %1 = load i64, addr %0
+    %2 = truncate i64 %1, i32
+    ret i32 %2
+}
+
+# test:section mcode
+
+func f:
+    mov eax, [rdi]
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i16 @f(addr %0) {
+    %1 = load i64, addr %0
+    %2 = truncate i64 %1, i16
+    ret i16 %2
+}
+
+# test:section mcode
+
+func f:
+    mov ax, [rdi]
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i8 @f(addr %0) {
+    %1 = load i64, addr %0
+    %2 = truncate i64 %1, i8
+    ret i8 %2
+}
+
+# test:section mcode
+
+func f:
+    mov al, [rdi]
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i16 @f(addr %0) {
+    %1 = load i32, addr %0
+    %2 = truncate i32 %1, i16
+    ret i16 %2
+}
+
+# test:section mcode
+
+func f:
+    mov ax, [rdi]
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i8 @f(addr %0) {
+    %1 = load i32, addr %0
+    %2 = truncate i32 %1, i8
+    ret i8 %2
+}
+
+# test:section mcode
+
+func f:
+    mov al, [rdi]
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i8 @f(addr %0) {
+    %1 = load i16, addr %0
+    %2 = truncate i16 %1, i8
+    ret i8 %2
+}
+
+# test:section mcode
+
+func f:
+    mov al, [rdi]
+    ret
