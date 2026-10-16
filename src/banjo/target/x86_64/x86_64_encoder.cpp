@@ -1697,7 +1697,7 @@ void X8664Encoder::apply_relaxation() {
             if (opcode == 0xEB) {
                 continue_ = true;
                 relax_jmp(i);
-            } else if (opcode >= 0x72 && opcode <= 0x7E) {
+            } else if (opcode >= 0x72 && opcode <= 0x7F) {
                 continue_ = true;
                 relax_jcc(slice.uses[0], i);
             }
