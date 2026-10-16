@@ -1,0 +1,59 @@
+# test:subtest
+# test:section ssa
+
+func void @f(i64 %0) {
+    %1 = lshr i64 %0, i64 3
+    ret i64 %1
+}
+
+# test:section mcode
+
+func f:
+    shr rdi, 3
+    mov rax, rdi
+    ret
+
+# test:subtest
+# test:section ssa
+
+func void @f(i32 %0) {
+    %1 = lshr i32 %0, i32 3
+    ret i32 %1
+}
+
+# test:section mcode
+
+func f:
+    shr edi, 3
+    mov eax, edi
+    ret
+
+# test:subtest
+# test:section ssa
+
+func void @f(i16 %0) {
+    %1 = lshr i16 %0, i16 3
+    ret i16 %1
+}
+
+# test:section mcode
+
+func f:
+    shr di, 3
+    mov eax, edi
+    ret
+
+# test:subtest
+# test:section ssa
+
+func void @f(i8 %0) {
+    %1 = lshr i8 %0, i8 3
+    ret i8 %1
+}
+
+# test:section mcode
+
+func f:
+    shr dil, 3
+    mov eax, edi
+    ret

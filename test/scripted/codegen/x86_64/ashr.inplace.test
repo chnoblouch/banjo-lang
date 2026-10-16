@@ -1,0 +1,67 @@
+# test:subtest
+# test:section ssa
+
+func void @f(addr %0, i64 %1) {
+    %2 = load i64, addr %0
+    %3 = ashr i64 %2, i64 %1
+    store i64 %3, addr %0
+    ret
+}
+
+# test:section mcode
+
+func f:
+    mov ecx, esi
+    sar qword [rdi], cl
+    ret
+
+# test:subtest
+# test:section ssa
+
+func void @f(addr %0, i32 %1) {
+    %2 = load i32, addr %0
+    %3 = ashr i32 %2, i32 %1
+    store i32 %3, addr %0
+    ret
+}
+
+# test:section mcode
+
+func f:
+    mov ecx, esi
+    sar dword [rdi], cl
+    ret
+
+# test:subtest
+# test:section ssa
+
+func void @f(addr %0, i16 %1) {
+    %2 = load i16, addr %0
+    %3 = ashr i16 %2, i16 %1
+    store i16 %3, addr %0
+    ret
+}
+
+# test:section mcode
+
+func f:
+    mov ecx, esi
+    sar word [rdi], cl
+    ret
+
+# test:subtest
+# test:section ssa
+
+func void @f(addr %0, i8 %1) {
+    %2 = load i8, addr %0
+    %3 = ashr i8 %2, i8 %1
+    store i8 %3, addr %0
+    ret
+}
+
+# test:section mcode
+
+func f:
+    mov ecx, esi
+    sar byte [rdi], cl
+    ret

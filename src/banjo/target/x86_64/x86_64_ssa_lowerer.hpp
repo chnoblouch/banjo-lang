@@ -106,6 +106,9 @@ public:
     void emit_mov_sign_ext(mcode::Operand dst, mcode::Operand src);
 
     bool lower_stored_operation(ssa::Instruction &store);
+    void lower_in_place_operation(mcode::Opcode m_opcode, ssa::Operand &addr, ssa::Value &rhs);
+    void lower_in_place_shift(mcode::Opcode m_opcode, ssa::Operand &addr, ssa::Value &rhs);
+
     void lower_into_div(mcode::PhysicalReg result, ssa::Instruction &instr);
     void lower_into_idiv(mcode::PhysicalReg result, ssa::Instruction &instr);
     void lower_bitwise(mcode::Opcode opcode, ssa::Instruction &instr);

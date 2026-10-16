@@ -1,0 +1,63 @@
+# test:subtest
+# test:section ssa
+
+func void @f(i64 %0, i64 %1) {
+    %2 = lshl i64 %0, i64 %1
+    ret i64 %2
+}
+
+# test:section mcode
+
+func f:
+    mov ecx, esi
+    shl rdi, cl
+    mov rax, rdi
+    ret
+
+# test:subtest
+# test:section ssa
+
+func void @f(i32 %0, i32 %1) {
+    %2 = lshl i32 %0, i32 %1
+    ret i32 %2
+}
+
+# test:section mcode
+
+func f:
+    mov ecx, esi
+    shl edi, cl
+    mov eax, edi
+    ret
+
+# test:subtest
+# test:section ssa
+
+func void @f(i16 %0, i16 %1) {
+    %2 = lshl i16 %0, i16 %1
+    ret i16 %2
+}
+
+# test:section mcode
+
+func f:
+    mov ecx, esi
+    shl di, cl
+    mov eax, edi
+    ret
+
+# test:subtest
+# test:section ssa
+
+func void @f(i8 %0, i8 %1) {
+    %2 = lshl i8 %0, i8 %1
+    ret i8 %2
+}
+
+# test:section mcode
+
+func f:
+    mov ecx, esi
+    shl dil, cl
+    mov eax, edi
+    ret

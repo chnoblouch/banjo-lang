@@ -854,6 +854,12 @@ void X8664SSALowerer::emit_mov_sign_ext(mcode::Operand dst, mcode::Operand src) 
 }
 
 bool X8664SSALowerer::lower_stored_operation(ssa::Instruction &store) {
+    enum class OpCategory {
+        NORMAL,
+        COMMUTATIVE,
+        SHIFT,
+    };
+
     if (!store.get_operand(0).is_register()) {
         return false;
     }
@@ -867,28 +873,40 @@ bool X8664SSALowerer::lower_stored_operation(ssa::Instruction &store) {
     }
 
     mcode::Opcode m_opcode;
-    bool commutative = false;
+    OpCategory category;
 
     switch (operation->get_opcode()) {
         case ssa::Opcode::ADD:
             m_opcode = X8664Opcode::ADD;
-            commutative = true;
+            category = OpCategory::COMMUTATIVE;
             break;
         case ssa::Opcode::SUB:
             m_opcode = X8664Opcode::SUB;
-            commutative = false;
+            category = OpCategory::NORMAL;
             break;
         case ssa::Opcode::AND:
             m_opcode = X8664Opcode::AND;
-            commutative = true;
+            category = OpCategory::COMMUTATIVE;
             break;
         case ssa::Opcode::OR:
             m_opcode = X8664Opcode::OR;
-            commutative = true;
+            category = OpCategory::COMMUTATIVE;
             break;
         case ssa::Opcode::XOR:
             m_opcode = X8664Opcode::XOR;
-            commutative = true;
+            category = OpCategory::COMMUTATIVE;
+            break;
+        case ssa::Opcode::LSHL:
+            m_opcode = X8664Opcode::SHL;
+            category = OpCategory::SHIFT;
+            break;
+        case ssa::Opcode::LSHR:
+            m_opcode = X8664Opcode::SHR;
+            category = OpCategory::SHIFT;
+            break;
+        case ssa::Opcode::ASHR:
+            m_opcode = X8664Opcode::SAR;
+            category = OpCategory::SHIFT;
             break;
         default: return false;
     }
@@ -896,7 +914,7 @@ bool X8664SSALowerer::lower_stored_operation(ssa::Instruction &store) {
     FixedVector<std::pair<ssa::Operand *, ssa::Operand *>, 2> candidates;
     candidates.append({&operation->get_operand(0), &operation->get_operand(1)});
 
-    if (commutative) {
+    if (category == OpCategory::COMMUTATIVE) {
         candidates.append({&operation->get_operand(1), &operation->get_operand(0)});
     }
 
@@ -919,15 +937,44 @@ bool X8664SSALowerer::lower_stored_operation(ssa::Instruction &store) {
                 discard_use(store_addr.get_register());
             }
 
-            AddrComponents addr = collect_addr(store_addr);
-            unsigned size = get_size(lhs_def->get_type());
-            emit({m_opcode, {lower_addr_mem_access(addr).with_size(size), lower_as_operand(*rhs)}});
+            if (category == OpCategory::SHIFT) {
+                lower_in_place_shift(m_opcode, store_addr, *rhs);
+            } else {
+                lower_in_place_operation(m_opcode, store_addr, *rhs);
+            }
 
             return true;
         }
     }
 
     return false;
+}
+
+void X8664SSALowerer::lower_in_place_operation(mcode::Opcode m_opcode, ssa::Operand &addr, ssa::Value &rhs) {
+    AddrComponents addr_components = collect_addr(addr);
+    unsigned size = get_size(rhs.get_type());
+
+    mcode::Operand m_lhs = lower_addr_mem_access(addr_components).with_size(size);
+    mcode::Operand m_rhs = lower_value(rhs, OperandKind::REG_ADDR_IMM);
+    emit({m_opcode, {m_lhs, m_rhs}});
+}
+
+void X8664SSALowerer::lower_in_place_shift(mcode::Opcode m_opcode, ssa::Operand &addr, ssa::Value &rhs) {
+    AddrComponents addr_components = collect_addr(addr);
+    unsigned size = get_size(rhs.get_type());
+
+    mcode::Operand m_lhs = lower_addr_mem_access(addr_components).with_size(size);
+    mcode::Operand m_rhs = lower_value(rhs, OperandKind::REG_ADDR_IMM);
+
+    if (m_rhs.is_int_immediate()) {
+        emit({m_opcode, {m_lhs, m_rhs}});
+    } else {
+        mcode::Register rcx = mcode::Register::from_physical(X8664Register::RCX);
+        mcode::Operand m_rcx = mcode::Operand::from_register(rcx, 1);
+
+        emit({X8664Opcode::MOV, {m_rcx, m_rhs}});
+        emit({m_opcode, {m_lhs, m_rcx}});
+    }
 }
 
 void X8664SSALowerer::lower_into_div(mcode::PhysicalReg result, ssa::Instruction &instr) {
@@ -1019,36 +1066,35 @@ void X8664SSALowerer::lower_bitwise(mcode::Opcode opcode, ssa::Instruction &inst
         std::swap(lhs, rhs);
     }
 
+    mcode::Operand m_dst = map_vreg_as_operand(dst, size);
     mcode::Operand m_lhs = lower_value(*lhs, OperandKind::REG);
     mcode::Operand m_rhs = lower_value(*rhs, OperandKind::REG_ADDR_IMM);
-    mcode::Operand m_dst = map_vreg_as_operand(dst, size);
 
     emit({X8664Opcode::MOV, {m_dst, m_lhs}});
     emit({opcode, {m_dst, m_rhs}});
 }
 
 void X8664SSALowerer::lower_shift(mcode::Opcode opcode, ssa::Instruction &instr) {
-    unsigned size = get_size(instr.get_operand(0).get_type());
+    ssa::Operand *lhs = &instr.get_operand(0);
+    ssa::Operand *rhs = &instr.get_operand(1);
+    ssa::VirtualRegister dst = *instr.get_dest();
+    unsigned size = get_size(lhs->get_type());
 
-    mcode::Register tmp_reg = create_reg();
-    mcode::Operand op0 = mcode::Operand::from_register(tmp_reg, size);
-    emit({X8664Opcode::MOV, {op0, lower_as_operand(instr.get_operand(0))}});
+    mcode::Operand m_dst = map_vreg_as_operand(dst, size);
+    mcode::Operand m_lhs = lower_value(*lhs, OperandKind::REG_ADDR_IMM);
+    mcode::Operand m_rhs = lower_value(*rhs, OperandKind::REG_ADDR_IMM);
 
-    mcode::Operand op1;
+    emit({X8664Opcode::MOV, {m_dst, m_lhs}});
 
-    if (instr.get_operand(1).is_int_immediate()) {
-        op1 = mcode::Operand::from_int_immediate(instr.get_operand(1).get_int_immediate(), 1);
+    if (m_rhs.is_int_immediate()) {
+        emit({opcode, {m_dst, m_rhs}});
     } else {
         mcode::Register rcx = mcode::Register::from_physical(X8664Register::RCX);
-        mcode::Operand rcx8 = mcode::Operand::from_register(rcx, 8);
-        emit({X8664Opcode::MOV, {rcx8, lower_as_operand(instr.get_operand(1)).with_size(8)}});
-        op1 = mcode::Operand::from_register(rcx, 1);
+        mcode::Operand m_rcx = mcode::Operand::from_register(rcx, 1);
+
+        emit({X8664Opcode::MOV, {m_rcx, m_rhs}});
+        emit({opcode, {m_dst, m_rcx}});
     }
-
-    emit({opcode, {op0, op1}});
-
-    mcode::Operand dst = map_vreg_dst(instr, size);
-    emit({X8664Opcode::MOV, {dst, op0}});
 }
 
 void X8664SSALowerer::lower_cond_branch(ssa::Instruction &instr) {

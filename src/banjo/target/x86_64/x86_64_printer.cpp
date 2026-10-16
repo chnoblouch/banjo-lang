@@ -146,6 +146,14 @@ void X8664Printer::print_operand(mcode::Function &func, mcode::Instruction &inst
         } else if (index == 1 && instr.get_operand(0).is_int_immediate()) {
             requires_size = true;
         }
+
+        mcode::Opcode opcode = instr.get_opcode();
+
+        if (opcode == X8664Opcode::SHL || opcode == X8664Opcode::SHR || opcode == X8664Opcode::SAR) {
+            if (!instr.get_operand(0).is_register()) {
+                requires_size = true;
+            }
+        }
     }
 
     if (requires_size) {
