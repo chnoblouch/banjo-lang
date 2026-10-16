@@ -438,15 +438,19 @@ void X8664SSALowerer::lower_truncate(ssa::Instruction &instr) {
 }
 
 void X8664SSALowerer::lower_fpromote(ssa::Instruction &instr) {
+    ssa::Operand &value = instr.get_operand(0);
+
     mcode::Operand m_dst = map_vreg_dst(instr, 8);
-    mcode::Operand m_src = lower_as_operand(instr.get_operand(0));
-    emit(mcode::Instruction(X8664Opcode::CVTSS2SD, {m_dst, m_src}));
+    mcode::Operand m_src = lower_value(value, OperandKind::REG_ADDR);
+    emit({X8664Opcode::CVTSS2SD, {m_dst, m_src}});
 }
 
 void X8664SSALowerer::lower_fdemote(ssa::Instruction &instr) {
+    ssa::Operand &value = instr.get_operand(0);
+
     mcode::Operand m_dst = map_vreg_dst(instr, 4);
-    mcode::Operand m_src = lower_as_operand(instr.get_operand(0));
-    emit(mcode::Instruction(X8664Opcode::CVTSD2SS, {m_dst, m_src}));
+    mcode::Operand m_src = lower_value(value, OperandKind::REG_ADDR);
+    emit({X8664Opcode::CVTSD2SS, {m_dst, m_src}});
 }
 
 void X8664SSALowerer::lower_utof(ssa::Instruction &instr) {
