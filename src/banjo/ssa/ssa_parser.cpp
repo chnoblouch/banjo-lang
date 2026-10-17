@@ -127,7 +127,6 @@ Parser::Parser(utils::TokenStream &tokens, CallingConv calling_conv) : tokens{to
 
 Module Parser::parse() {
     Module mod;
-    mod.block_id = 1000; // FIXME
 
     while (true) {
         utils::Token &token = tokens.get();

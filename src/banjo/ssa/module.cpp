@@ -54,7 +54,7 @@ void Module::forget_pointers() {
 }
 
 std::string Module::next_block_label() {
-    std::string label = "b." + std::to_string(block_id);
+    std::string label = "b" + std::to_string(block_id);
     block_id += 1;
     return label;
 }

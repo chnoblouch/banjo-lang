@@ -1,0 +1,123 @@
+# test:subtest
+# test:section ssa
+
+func f64 @f(i64 %0) {
+    %1 = stof i64 %0, f64
+    ret f64 %1
+}
+
+# test:section mcode
+
+func f:
+    xorpd xmm0, xmm0
+    cvtsi2sd xmm0, rdi
+    ret
+
+# test:subtest
+# test:section ssa
+
+func f64 @f(i32 %0) {
+    %1 = stof i32 %0, f64
+    ret f64 %1
+}
+
+# test:section mcode
+
+func f:
+    xorpd xmm0, xmm0
+    cvtsi2sd xmm0, edi
+    ret
+
+# test:subtest
+# test:section ssa
+
+func f64 @f(i16 %0) {
+    %1 = stof i16 %0, f64
+    ret f64 %1
+}
+
+# test:section mcode
+
+func f:
+    movsx eax, di
+    xorpd xmm0, xmm0
+    cvtsi2sd xmm0, eax
+    ret
+
+# test:subtest
+# test:section ssa
+
+func f64 @f(i8 %0) {
+    %1 = stof i8 %0, f64
+    ret f64 %1
+}
+
+# test:section mcode
+
+func f:
+    movsx eax, dil
+    xorpd xmm0, xmm0
+    cvtsi2sd xmm0, eax
+    ret
+
+# test:subtest
+# test:section ssa
+
+func f32 @f(i64 %0) {
+    %1 = stof i64 %0, f32
+    ret f32 %1
+}
+
+# test:section mcode
+
+func f:
+    xorps xmm0, xmm0
+    cvtsi2ss xmm0, rdi
+    ret
+
+# test:subtest
+# test:section ssa
+
+func f32 @f(i32 %0) {
+    %1 = stof i32 %0, f32
+    ret f32 %1
+}
+
+# test:section mcode
+
+func f:
+    xorps xmm0, xmm0
+    cvtsi2ss xmm0, edi
+    ret
+
+# test:subtest
+# test:section ssa
+
+func f32 @f(i16 %0) {
+    %1 = stof i16 %0, f32
+    ret f32 %1
+}
+
+# test:section mcode
+
+func f:
+    movsx eax, di
+    xorps xmm0, xmm0
+    cvtsi2ss xmm0, eax
+    ret
+
+# test:subtest
+# test:section ssa
+
+func f32 @f(i8 %0) {
+    %1 = stof i8 %0, f32
+    ret f32 %1
+}
+
+# test:section mcode
+
+func f:
+    movsx eax, dil
+    xorps xmm0, xmm0
+    cvtsi2ss xmm0, eax
+    ret

@@ -289,11 +289,11 @@ void Printer::emit(unsigned long long value) {
 }
 
 void Printer::emit(float value) {
-    *buffer += std::format("{:g}", value);
+    *buffer += std::format("{}", value);
 }
 
 void Printer::emit(double value) {
-    *buffer += std::format("{:g}", value);
+    *buffer += std::format("{}", value);
 }
 
 } // namespace banjo::mcode

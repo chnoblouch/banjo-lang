@@ -147,16 +147,24 @@ void X8664Printer::print_operand(mcode::Function &func, mcode::Instruction &inst
             requires_size = true;
         }
 
-        mcode::Opcode opcode = instr.get_opcode();
+        switch (instr.get_opcode()) {
+            case X8664Opcode::SHL:
+            case X8664Opcode::SHR:
+            case X8664Opcode::SAR:
+                if (!instr.get_operand(0).is_register()) {
+                    requires_size = true;
+                }
+                break;
 
-        if (opcode == X8664Opcode::MOVZX || opcode == X8664Opcode::MOVSX || opcode == X8664Opcode::MOVSXD) {
-            if (!instr.get_operand(1).is_register()) {
-                requires_size = true;
-            }
-        } else if (opcode == X8664Opcode::SHL || opcode == X8664Opcode::SHR || opcode == X8664Opcode::SAR) {
-            if (!instr.get_operand(0).is_register()) {
-                requires_size = true;
-            }
+            case X8664Opcode::MOVZX:
+            case X8664Opcode::MOVSX:
+            case X8664Opcode::MOVSXD:
+            case X8664Opcode::CVTSI2SS:
+            case X8664Opcode::CVTSI2SD:
+                if (!instr.get_operand(1).is_register()) {
+                    requires_size = true;
+                }
+                break;
         }
     }
 

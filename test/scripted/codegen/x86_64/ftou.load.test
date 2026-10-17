@@ -1,0 +1,143 @@
+# test:subtest
+# test:section ssa
+
+func i64 @f(addr %0) {
+    %1 = load f64, addr %0
+    %2 = ftou f64 %1, i64
+    ret i64 %2
+}
+
+# test:section mcode
+
+data float.0: f64(9223372036854775808)
+
+func f:
+    movsd xmm0, [rdi]
+    ucomisd xmm0, [float.0]
+    jae b0
+    cvtsd2si rax, xmm0
+    jmp b1
+b0:
+    subsd xmm0, [float.0]
+    cvtsd2si rax, xmm0
+    mov rcx, 9223372036854775808
+    or rax, rcx
+b1:
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i32 @f(addr %0) {
+    %1 = load f64, addr %0
+    %2 = ftou f64 %1, i32
+    ret i32 %2
+}
+
+# test:section mcode
+
+func f:
+    cvtsd2si rax, [rdi]
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i16 @f(addr %0) {
+    %1 = load f64, addr %0
+    %2 = ftou f64 %1, i16
+    ret i16 %2
+}
+
+# test:section mcode
+
+func f:
+    cvtsd2si eax, [rdi]
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i8 @f(addr %0) {
+    %1 = load f64, addr %0
+    %2 = ftou f64 %1, i8
+    ret i8 %2
+}
+
+# test:section mcode
+
+func f:
+    cvtsd2si eax, [rdi]
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i64 @f(addr %0) {
+    %1 = load f32, addr %0
+    %2 = ftou f32 %1, i64
+    ret i64 %2
+}
+
+# test:section mcode
+
+data float.0: f32(9223372036854775808)
+
+func f:
+    movss xmm0, [rdi]
+    ucomiss xmm0, [float.0]
+    jae b0
+    cvtss2si rax, xmm0
+    jmp b1
+b0:
+    subss xmm0, [float.0]
+    cvtss2si rax, xmm0
+    mov rcx, 9223372036854775808
+    or rax, rcx
+b1:
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i32 @f(addr %0) {
+    %1 = load f32, addr %0
+    %2 = ftou f32 %1, i32
+    ret i32 %2
+}
+
+# test:section mcode
+
+func f:
+    cvtss2si rax, [rdi]
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i16 @f(addr %0) {
+    %1 = load f32, addr %0
+    %2 = ftou f32 %1, i16
+    ret i16 %2
+}
+
+# test:section mcode
+
+func f:
+    cvtss2si eax, [rdi]
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i8 @f(addr %0) {
+    %1 = load f32, addr %0
+    %2 = ftou f32 %1, i8
+    ret i8 %2
+}
+
+# test:section mcode
+
+func f:
+    cvtss2si eax, [rdi]
+    ret

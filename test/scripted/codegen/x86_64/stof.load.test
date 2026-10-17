@@ -1,0 +1,131 @@
+# test:subtest
+# test:section ssa
+
+func f64 @f(addr %0) {
+    %1 = load i64, addr %0
+    %2 = stof i64 %1, f64
+    ret f64 %2
+}
+
+# test:section mcode
+
+func f:
+    xorpd xmm0, xmm0
+    cvtsi2sd xmm0, qword [rdi]
+    ret
+
+# test:subtest
+# test:section ssa
+
+func f64 @f(addr %0) {
+    %1 = load i32, addr %0
+    %2 = stof i32 %1, f64
+    ret f64 %2
+}
+
+# test:section mcode
+
+func f:
+    xorpd xmm0, xmm0
+    cvtsi2sd xmm0, dword [rdi]
+    ret
+
+# test:subtest
+# test:section ssa
+
+func f64 @f(addr %0) {
+    %1 = load i16, addr %0
+    %2 = stof i16 %1, f64
+    ret f64 %2
+}
+
+# test:section mcode
+
+func f:
+    movsx eax, word [rdi]
+    xorpd xmm0, xmm0
+    cvtsi2sd xmm0, eax
+    ret
+
+# test:subtest
+# test:section ssa
+
+func f64 @f(addr %0) {
+    %1 = load i8, addr %0
+    %2 = stof i8 %1, f64
+    ret f64 %2
+}
+
+# test:section mcode
+
+func f:
+    movsx eax, byte [rdi]
+    xorpd xmm0, xmm0
+    cvtsi2sd xmm0, eax
+    ret
+
+# test:subtest
+# test:section ssa
+
+func f32 @f(addr %0) {
+    %1 = load i64, addr %0
+    %2 = stof i64 %1, f32
+    ret f32 %2
+}
+
+# test:section mcode
+
+func f:
+    xorps xmm0, xmm0
+    cvtsi2ss xmm0, qword [rdi]
+    ret
+
+# test:subtest
+# test:section ssa
+
+func f32 @f(addr %0) {
+    %1 = load i32, addr %0
+    %2 = stof i32 %1, f32
+    ret f32 %2
+}
+
+# test:section mcode
+
+func f:
+    xorps xmm0, xmm0
+    cvtsi2ss xmm0, dword [rdi]
+    ret
+
+# test:subtest
+# test:section ssa
+
+func f32 @f(addr %0) {
+    %1 = load i16, addr %0
+    %2 = stof i16 %1, f32
+    ret f32 %2
+}
+
+# test:section mcode
+
+func f:
+    movsx eax, word [rdi]
+    xorps xmm0, xmm0
+    cvtsi2ss xmm0, eax
+    ret
+
+# test:subtest
+# test:section ssa
+
+func f32 @f(addr %0) {
+    %1 = load i8, addr %0
+    %2 = stof i8 %1, f32
+    ret f32 %2
+}
+
+# test:section mcode
+
+func f:
+    movsx eax, byte [rdi]
+    xorps xmm0, xmm0
+    cvtsi2ss xmm0, eax
+    ret

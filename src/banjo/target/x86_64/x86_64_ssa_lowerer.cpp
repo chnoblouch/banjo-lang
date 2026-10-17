@@ -111,7 +111,7 @@ void X8664SSALowerer::lower_store(ssa::Instruction &instr) {
         dst.set_size(src.get_size());
         m_instr = mcode::Instruction(X8664Opcode::MOV, {dst, src});
     } else {
-        mcode::Operand src = lower_as_operand(instr.get_operand(0));
+        mcode::Operand src = lower_value(instr.get_operand(0), OperandKind::REG_IMM);
         mcode::Opcode opcode = get_move_opcode(type);
         dst.set_size(src.get_size());
         m_instr = mcode::Instruction(opcode, {dst, src});
@@ -466,13 +466,14 @@ void X8664SSALowerer::lower_fdemote(ssa::Instruction &instr) {
 }
 
 void X8664SSALowerer::lower_utof(ssa::Instruction &instr) {
-    ssa::Primitive src_type = instr.get_operand(0).get_type().get_primitive();
-    ssa::Primitive dst_type = instr.get_operand(1).get_type().get_primitive();
+    ssa::Operand &value = instr.get_operand(0);
+    ssa::Type type = instr.get_operand(1).get_type();
 
-    unsigned src_size = get_size(src_type);
-    unsigned dst_size = get_size(dst_type);
+    unsigned src_size = get_size(value.get_type());
+    unsigned dst_size = get_size(type);
 
-    mcode::Opcode cvt_opcode = dst_type == ssa::Primitive::F64 ? X8664Opcode::CVTSI2SD : X8664Opcode::CVTSI2SS;
+    bool is_f64 = type == ssa::Primitive::F64;
+    mcode::Opcode cvt_opcode = is_f64 ? X8664Opcode::CVTSI2SD : X8664Opcode::CVTSI2SS;
 
     if (src_size == 8) {
         // x86-64 does not provide an unsigned integer to float conversion
@@ -497,33 +498,33 @@ void X8664SSALowerer::lower_utof(ssa::Instruction &instr) {
         mcode::BasicBlockIter end_block = create_block();
 
         mcode::Operand m_dst = map_vreg_dst(instr, dst_size);
-        mcode::Operand m_src = lower_as_move_into_reg(create_tmp_reg(), instr.get_operand(0));
+        mcode::Operand m_src = lower_value(value, OperandKind::REG);
 
         mcode::Operand m_tmp1 = mcode::Operand::from_register(create_tmp_reg(), 8);
         mcode::Operand m_tmp2 = mcode::Operand::from_register(create_tmp_reg(), 4);
 
-        mcode::Opcode add_opcode = dst_type == ssa::Primitive::F64 ? X8664Opcode::ADDSD : X8664Opcode::ADDSS;
+        mcode::Opcode add_opcode = is_f64 ? X8664Opcode::ADDSD : X8664Opcode::ADDSS;
 
         emit({X8664Opcode::TEST, {m_src, m_src}});
         emit({X8664Opcode::JS, {mcode::Operand::from_basic_block(*signed_block)}});
-        emit({X8664Opcode::XORPS, {m_dst, m_dst}});
+        emit({is_f64 ? X8664Opcode::XORPD : X8664Opcode::XORPS, {m_dst, m_dst}});
         emit({cvt_opcode, {m_dst, m_src}});
         emit({X8664Opcode::JMP, {mcode::Operand::from_basic_block(*end_block)}});
 
         start_block(signed_block);
 
         emit({X8664Opcode::MOV, {m_tmp2, m_src.with_size(4)}});
-        emit({X8664Opcode::AND, {m_tmp2, mcode::Operand::from_int_immediate(1, 8)}});
+        emit({X8664Opcode::AND, {m_tmp2, mcode::Operand::from_int_immediate(1, 4)}});
         emit({X8664Opcode::SHR, {m_src, mcode::Operand::from_int_immediate(1, 1)}});
         emit({X8664Opcode::OR, {m_src, m_tmp2.with_size(8)}});
-        emit({X8664Opcode::XORPS, {m_dst, m_dst}});
+        emit({is_f64 ? X8664Opcode::XORPD : X8664Opcode::XORPS, {m_dst, m_dst}});
         emit({cvt_opcode, {m_dst, m_src}});
         emit({add_opcode, {m_dst, m_dst}});
 
         start_block(end_block);
     } else {
         mcode::Operand m_dst = map_vreg_dst(instr, dst_size);
-        mcode::Operand m_src = lower_as_operand(instr.get_operand(0));
+        mcode::Operand m_src = lower_value(value, OperandKind::REG_ADDR);
 
         if (src_size == 1 || src_size == 2) {
             mcode::Operand m_ext = mcode::Operand::from_register(create_tmp_reg(), 4);
@@ -532,26 +533,24 @@ void X8664SSALowerer::lower_utof(ssa::Instruction &instr) {
         } else if (src_size == 4) {
             mcode::Operand m_ext = mcode::Operand::from_register(create_tmp_reg(), 4);
             emit({X8664Opcode::MOV, {m_ext, m_src}, mcode::Instruction::FLAG_DONT_REMOVE});
-            m_src = m_ext;
-        } else {
-            ASSERT(src_size == 8);
+            m_src = m_ext.with_size(8);
         }
 
-        emit({X8664Opcode::XORPS, {m_dst, m_dst}});
+        emit({is_f64 ? X8664Opcode::XORPD : X8664Opcode::XORPS, {m_dst, m_dst}});
         emit({cvt_opcode, {m_dst, m_src}});
     }
 }
 
 void X8664SSALowerer::lower_stof(ssa::Instruction &instr) {
-    ssa::Primitive src_type = instr.get_operand(0).get_type().get_primitive();
-    ssa::Primitive dst_type = instr.get_operand(1).get_type().get_primitive();
+    ssa::Operand &value = instr.get_operand(0);
+    ssa::Type type = instr.get_operand(1).get_type();
 
-    unsigned src_size = get_size(src_type);
-    unsigned dst_size = get_size(dst_type);
+    unsigned src_size = get_size(value.get_type());
+    unsigned dst_size = get_size(type);
 
-    mcode::Opcode cvt_opcode = dst_type == ssa::Primitive::F64 ? X8664Opcode::CVTSI2SD : X8664Opcode::CVTSI2SS;
+    mcode::Opcode cvt_opcode = type == ssa::Primitive::F64 ? X8664Opcode::CVTSI2SD : X8664Opcode::CVTSI2SS;
     mcode::Operand m_dst = map_vreg_dst(instr, dst_size);
-    mcode::Operand m_src = lower_as_operand(instr.get_operand(0));
+    mcode::Operand m_src = lower_value(value, OperandKind::REG_ADDR).with_size(src_size);
 
     if (src_size == 1 || src_size == 2) {
         mcode::Operand m_ext = mcode::Operand::from_register(create_tmp_reg(), 4);
@@ -559,23 +558,25 @@ void X8664SSALowerer::lower_stof(ssa::Instruction &instr) {
         m_src = m_ext;
     }
 
-    emit({X8664Opcode::XORPS, {m_dst, m_dst}});
+    emit({dst_size == 8 ? X8664Opcode::XORPD : X8664Opcode::XORPS, {m_dst, m_dst}});
     emit({cvt_opcode, {m_dst, m_src}});
 }
 
 void X8664SSALowerer::lower_ftou(ssa::Instruction &instr) {
-    ssa::Primitive src_type = instr.get_operand(0).get_type().get_primitive();
-    ssa::Primitive dst_type = instr.get_operand(1).get_type().get_primitive();
+    ssa::Operand &value = instr.get_operand(0);
+    ssa::Type type = instr.get_operand(1).get_type();
 
-    unsigned dst_size = get_size(dst_type);
-    mcode::Opcode cvt_opcode = src_type == ssa::Primitive::F64 ? X8664Opcode::CVTSD2SI : X8664Opcode::CVTSS2SI;
+    bool is_f64 = value.get_type() == ssa::Primitive::F64;
+    unsigned dst_size = get_size(type);
+
+    mcode::Opcode cvt_opcode = is_f64 ? X8664Opcode::CVTSD2SI : X8664Opcode::CVTSS2SI;
 
     if (dst_size == 8) {
         mcode::BasicBlockIter signed_block = create_block();
         mcode::BasicBlockIter end_block = create_block();
 
         mcode::Operand m_dst = map_vreg_dst(instr, dst_size);
-        mcode::Operand m_src = lower_as_move_into_reg(create_tmp_reg(), instr.get_operand(0));
+        mcode::Operand m_src = lower_value(value, OperandKind::REG);
 
         mcode::Operand m_tmp = mcode::Operand::from_register(create_tmp_reg(), 8);
 
@@ -583,7 +584,7 @@ void X8664SSALowerer::lower_ftou(ssa::Instruction &instr) {
         mcode::Opcode sub_opcode;
         mcode::Operand m_limit;
 
-        if (src_type == ssa::Primitive::F64) {
+        if (is_f64) {
             cmp_opcode = X8664Opcode::UCOMISD;
             sub_opcode = X8664Opcode::SUBSD;
             m_limit = const_lowering.load_f64_from_memory(static_cast<double>(0x8000000000000000ull));
@@ -607,21 +608,22 @@ void X8664SSALowerer::lower_ftou(ssa::Instruction &instr) {
 
         start_block(end_block);
     } else {
-        mcode::Operand m_dst = map_vreg_dst(instr, dst_size == 8 ? 8 : 4);
-        mcode::Operand m_src = lower_as_operand(instr.get_operand(0));
+        mcode::Operand m_dst = map_vreg_dst(instr, dst_size >= 4 ? 8 : 4);
+        mcode::Operand m_src = lower_value(value, OperandKind::REG_ADDR);
         emit({cvt_opcode, {m_dst, m_src}});
     }
 }
 
 void X8664SSALowerer::lower_ftos(ssa::Instruction &instr) {
-    ssa::Primitive src_type = instr.get_operand(0).get_type().get_primitive();
-    ssa::Primitive dst_type = instr.get_operand(1).get_type().get_primitive();
+    ssa::Operand &value = instr.get_operand(0);
+    ssa::Type type = instr.get_operand(1).get_type();
 
-    unsigned dst_size = get_size(dst_type);
+    bool is_f64 = value.get_type() == ssa::Primitive::F64;
+    unsigned dst_size = get_size(type);
 
-    mcode::Opcode cvt_opcode = src_type == ssa::Primitive::F64 ? X8664Opcode::CVTSD2SI : X8664Opcode::CVTSS2SI;
+    mcode::Opcode cvt_opcode = is_f64 ? X8664Opcode::CVTSD2SI : X8664Opcode::CVTSS2SI;
     mcode::Operand m_dst = map_vreg_dst(instr, dst_size == 8 ? 8 : 4);
-    mcode::Operand m_src = lower_as_operand(instr.get_operand(0));
+    mcode::Operand m_src = lower_value(value, OperandKind::REG_ADDR);
     emit({cvt_opcode, {m_dst, m_src}});
 }
 
@@ -1436,6 +1438,8 @@ mcode::Operand X8664SSALowerer::lower_value(ssa::Value &value, OperandKind kind)
         return lower_int_imm(value.get_int_immediate(), size, kind);
     } else if (value.is_fp_immediate()) {
         return lower_fp_imm(value.get_fp_immediate(), size, kind);
+    } else if (value.is_symbol()) {
+        return lower_symbol_as_operand(value, size, {});
     } else {
         ASSERT_UNREACHABLE;
     }
@@ -1459,7 +1463,7 @@ mcode::Operand X8664SSALowerer::lower_reg(ssa::VirtualRegister reg, unsigned siz
             AddrComponents addr = collect_addr(def->get_operand(1));
             mcode::Operand m_load_dst = lower_addr_mem_access(addr);
             discard_use(*def->get_dest());
-            return m_load_dst;
+            return m_load_dst.with_size(size);
         }
     }
 

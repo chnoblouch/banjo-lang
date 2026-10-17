@@ -1,0 +1,157 @@
+# test:subtest
+# test:section ssa
+
+func f64 @f(i64 %0) {
+    %1 = utof i64 %0, f64
+    ret f64 %1
+}
+
+# test:section mcode
+
+func f:
+    test rdi, rdi
+    js b0
+    xorpd xmm0, xmm0
+    cvtsi2sd xmm0, rdi
+    jmp b1
+b0:
+    mov eax, edi
+    and eax, 1
+    shr rdi, 1
+    or rdi, rax
+    xorpd xmm0, xmm0
+    cvtsi2sd xmm0, rdi
+    addsd xmm0, xmm0
+b1:
+    ret
+
+# test:subtest
+# test:section ssa
+
+func f64 @f(i32 %0) {
+    %1 = utof i32 %0, f64
+    ret f64 %1
+}
+
+# test:section mcode
+
+func f:
+    mov edi, edi
+    xorpd xmm0, xmm0
+    cvtsi2sd xmm0, rdi
+    ret
+
+# test:subtest
+# test:section ssa
+
+# TODO: Why does regalloc assign eax instead of edi?
+
+func f64 @f(i16 %0) {
+    %1 = utof i16 %0, f64
+    ret f64 %1
+}
+
+# test:section mcode
+
+func f:
+    movzx eax, di
+    xorpd xmm0, xmm0
+    cvtsi2sd xmm0, eax
+    ret
+
+# test:subtest
+# test:section ssa
+
+# TODO: Why does regalloc assign eax instead of edi?
+
+func f64 @f(i8 %0) {
+    %1 = utof i8 %0, f64
+    ret f64 %1
+}
+
+# test:section mcode
+
+func f:
+    movzx eax, dil
+    xorpd xmm0, xmm0
+    cvtsi2sd xmm0, eax
+    ret
+
+# test:subtest
+# test:section ssa
+
+func f32 @f(i64 %0) {
+    %1 = utof i64 %0, f32
+    ret f32 %1
+}
+
+# test:section mcode
+
+func f:
+    test rdi, rdi
+    js b0
+    xorps xmm0, xmm0
+    cvtsi2ss xmm0, rdi
+    jmp b1
+b0:
+    mov eax, edi
+    and eax, 1
+    shr rdi, 1
+    or rdi, rax
+    xorps xmm0, xmm0
+    cvtsi2ss xmm0, rdi
+    addss xmm0, xmm0
+b1:
+    ret
+
+# test:subtest
+# test:section ssa
+
+func f32 @f(i32 %0) {
+    %1 = utof i32 %0, f32
+    ret f32 %1
+}
+
+# test:section mcode
+
+func f:
+    mov edi, edi
+    xorps xmm0, xmm0
+    cvtsi2ss xmm0, rdi
+    ret
+
+# test:subtest
+# test:section ssa
+
+# TODO: Why does regalloc assign eax instead of edi?
+
+func f32 @f(i16 %0) {
+    %1 = utof i16 %0, f32
+    ret f32 %1
+}
+
+# test:section mcode
+
+func f:
+    movzx eax, di
+    xorps xmm0, xmm0
+    cvtsi2ss xmm0, eax
+    ret
+
+# test:subtest
+# test:section ssa
+
+# TODO: Why does regalloc assign eax instead of edi?
+
+func f32 @f(i8 %0) {
+    %1 = utof i8 %0, f32
+    ret f32 %1
+}
+
+# test:section mcode
+
+func f:
+    movzx eax, dil
+    xorps xmm0, xmm0
+    cvtsi2ss xmm0, eax
+    ret
