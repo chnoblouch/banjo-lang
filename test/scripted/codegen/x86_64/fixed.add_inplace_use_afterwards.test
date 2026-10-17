@@ -1,0 +1,16 @@
+# test:section ssa
+
+func i32 @f(addr %0, i32 %1) {
+    %2 = load i32, addr %0
+    %3 = add i32 %2, i32 %1 
+    store i32 %3, addr %0
+    ret i32 %3
+}
+
+# test:section mcode
+
+func f:
+    add esi, [rdi]
+    mov [rdi], esi
+    mov eax, esi
+    ret

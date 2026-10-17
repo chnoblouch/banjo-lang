@@ -357,7 +357,7 @@ void X8664SSALowerer::lower_select(ssa::Instruction &instr) {
             }
         }
 
-        bool is_f64 = value_type == ssa::Primitive::F64;
+        bool is_f64 = cmp_type == ssa::Primitive::F64;
 
         mcode::Operand m_lhs = lower_as_operand(cmp_lhs);
         mcode::Operand m_rhs = lower_as_operand(cmp_rhs, {.allow_addrs = true});
@@ -947,7 +947,7 @@ bool X8664SSALowerer::lower_stored_operation(ssa::Instruction &store) {
             continue;
         }
 
-        if (lhs_def->get_operand(1) == store_addr) {
+        if (lhs_def->get_operand(1) == store_addr && get_num_uses(store_value) == 1) {
             discard_use(lhs->get_register());
             discard_use(store_value);
 
@@ -1459,10 +1459,10 @@ mcode::Operand X8664SSALowerer::lower_reg(ssa::VirtualRegister reg, unsigned siz
 
         // If this register was produced by a load, use the loaded value
         // directly instead of first loading it into a register.
-        if (def && def->get_opcode() == ssa::Opcode::LOAD && get_num_uses(*def->get_dest()) == 1) {
+        if (def && def->get_opcode() == ssa::Opcode::LOAD && get_num_uses(reg) == 1) {
             AddrComponents addr = collect_addr(def->get_operand(1));
             mcode::Operand m_load_dst = lower_addr_mem_access(addr);
-            discard_use(*def->get_dest());
+            discard_use(reg);
             return m_load_dst.with_size(size);
         }
     }
