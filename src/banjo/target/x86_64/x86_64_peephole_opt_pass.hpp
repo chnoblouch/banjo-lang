@@ -18,6 +18,7 @@ private:
     void optimize_mov(mcode::Instruction &instr);
     void optimize_add(mcode::Instruction &instr);
     void optimize_sub(mcode::Instruction &instr);
+    void optimize_imul(mcode::Instruction &instr);
     void optimize_and(mcode::Instruction &instr);
     void optimize_or(mcode::Instruction &instr);
     void optimize_xor(mcode::Instruction &instr);

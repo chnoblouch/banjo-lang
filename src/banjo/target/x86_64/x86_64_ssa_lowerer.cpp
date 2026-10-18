@@ -157,35 +157,54 @@ void X8664SSALowerer::lower_sub(ssa::Instruction &instr) {
 }
 
 void X8664SSALowerer::lower_mul(ssa::Instruction &instr) {
-    ssa::Operand &lhs = instr.get_operand(0);
-    ssa::Operand &rhs = instr.get_operand(1);
+    ssa::Operand *lhs = &instr.get_operand(0);
+    ssa::Operand *rhs = &instr.get_operand(1);
+    ssa::VirtualRegister dst = *instr.get_dest();
+    unsigned size = get_size(lhs->get_type());
 
-    if (lhs.is_register() && rhs.is_immediate()) {
-        unsigned size = get_size(lhs.get_type());
-
-        if ((size == 4 || size == 8) && rhs.get_int_immediate() == 3) {
-            mcode::Register lhs_reg = map_vreg_as_reg(lhs.get_register());
-
-            X8664Address addr{
-                .base = lhs_reg,
-                .offset_const = 0,
-                .offset_reg = X8664Address::RegOffset{lhs_reg, 2},
-            };
-
-            mcode::Operand m_dst = map_vreg_dst(instr, size);
-            mcode::Operand m_src = mcode::Operand::from_x86_64_addr(addr, size);
-            emit(mcode::Instruction(X8664Opcode::LEA, {m_dst, m_src}));
-
-            return;
-        }
+    if (should_swap(*lhs, *rhs)) {
+        std::swap(lhs, rhs);
     }
 
-    unsigned size = get_size(lhs.get_type()) == 8 ? 8 : 4;
-    mcode::Operand m_dst = map_vreg_as_operand(*instr.get_dest(), size);
+    mcode::Operand m_dst = map_vreg_as_operand(dst, size);
 
-    lower_as_move(m_dst, lhs);
-    mcode::Operand m_rhs = lower_as_operand(rhs).with_size(size);
-    emit({X8664Opcode::IMUL, {m_dst, m_rhs}});
+    if (rhs->is_int_immediate()) {
+        mcode::Operand m_lhs = lower_value(*lhs, OperandKind::REG_ADDR);
+        mcode::Operand m_rhs = lower_value(*rhs, OperandKind::REG_ADDR_IMM);
+
+        if (size == 1) {
+            mcode::Operand m_tmp = mcode::Operand::from_register(create_tmp_reg(), 1);
+
+            emit({X8664Opcode::MOV, {m_tmp, m_lhs}});
+            emit({X8664Opcode::IMUL, {m_dst, m_tmp, m_rhs}});
+        } else {
+            emit({X8664Opcode::IMUL, {m_dst, m_lhs, m_rhs}});
+        }
+    } else {
+        mcode::Operand m_lhs = lower_value(*lhs, OperandKind::REG);
+        mcode::Operand m_rhs = lower_value(*rhs, OperandKind::REG_ADDR);
+
+        if (size == 1) {
+            if (m_lhs.is_register() && m_rhs.is_register()) {
+                m_dst.set_size(4);
+                m_lhs.set_size(4);
+                m_rhs.set_size(4);
+
+                emit({X8664Opcode::MOV, {m_dst, m_lhs}});
+                emit({X8664Opcode::IMUL, {m_dst, m_rhs}});
+            } else {
+                mcode::Register r_al = mcode::Register::from_physical(X8664Register::RAX);
+                mcode::Operand m_al = mcode::Operand::from_register(r_al, 1);
+
+                emit({X8664Opcode::MOV, {m_al, m_lhs}});
+                emit({X8664Opcode::IMUL, {m_rhs}});
+                emit({X8664Opcode::MOV, {m_dst, m_al}});
+            }
+        } else {
+            emit({X8664Opcode::MOV, {m_dst, m_lhs}});
+            emit({X8664Opcode::IMUL, {m_dst, m_rhs}});
+        }
+    }
 }
 
 void X8664SSALowerer::lower_sdiv(ssa::Instruction &instr) {
@@ -1669,11 +1688,11 @@ mcode::Symbol &X8664SSALowerer::create_const_neg_zero_32() {
 }
 
 bool X8664SSALowerer::should_swap(ssa::Value &lhs, ssa::Value &rhs) {
-    if (lhs.is_int_immediate() && !rhs.is_int_immediate()) {
-        return true;
+    if (rhs.is_int_immediate() || rhs.is_fp_immediate()) {
+        return false;
     }
 
-    if (lhs.is_fp_immediate() && !rhs.is_fp_immediate()) {
+    if (lhs.is_int_immediate() || lhs.is_fp_immediate()) {
         return true;
     }
 

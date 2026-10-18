@@ -1,0 +1,121 @@
+# test:subtest
+# test:section ssa
+
+func i64 @f(addr %0) {
+    %1 = load i64, addr %0
+    %2 = mul i64 %1, i64 42
+    ret i64 %2
+}
+
+# test:section mcode
+
+func f:
+    imul rax, [rdi], 42
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i64 @f(addr %0) {
+    %1 = load i64, addr %0
+    %2 = mul i64 42, i64 %1
+    ret i64 %2
+}
+
+# test:section mcode
+
+func f:
+    imul rax, [rdi], 42
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i32 @f(addr %0) {
+    %1 = load i32, addr %0
+    %2 = mul i32 %1, i32 42
+    ret i32 %2
+}
+
+# test:section mcode
+
+func f:
+    imul eax, [rdi], 42
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i32 @f(addr %0) {
+    %1 = load i32, addr %0
+    %2 = mul i32 42, i32 %1
+    ret i32 %2
+}
+
+# test:section mcode
+
+func f:
+    imul eax, [rdi], 42
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i16 @f(addr %0) {
+    %1 = load i16, addr %0
+    %2 = mul i16 %1, i16 42
+    ret i16 %2
+}
+
+# test:section mcode
+
+func f:
+    imul ax, [rdi], 42
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i16 @f(addr %0) {
+    %1 = load i16, addr %0
+    %2 = mul i16 42, i16 %1
+    ret i16 %2
+}
+
+# test:section mcode
+
+func f:
+    imul ax, [rdi], 42
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i8 @f(addr %0) {
+    %1 = load i8, addr %0
+    %2 = mul i8 %1, i8 42
+    ret i8 %2
+}
+
+# test:section mcode
+
+func f:
+    mov al, [rdi]
+    imul eax, eax, 42
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i8 @f(addr %0) {
+    %1 = load i8, addr %0
+    %2 = mul i8 42, i8 %1
+    ret i8 %2
+}
+
+# test:section mcode
+
+func f:
+    mov al, [rdi]
+    imul eax, eax, 42
+    ret

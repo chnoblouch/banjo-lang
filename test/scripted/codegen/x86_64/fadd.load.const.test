@@ -1,5 +1,3 @@
-# TODO: Try to keep the order of generated operands even if the SSA operands are swapped.
-
 # test:subtest
 # test:section ssa
 
@@ -14,8 +12,8 @@ func f64 @f(addr %0) {
 data float.0: f64(2.5)
 
 func f:
-    movsd xmm0, [float.0]
-    addsd xmm0, [rdi]
+    movsd xmm0, [rdi]
+    addsd xmm0, [float.0]
     ret
 
 # test:subtest
@@ -50,8 +48,8 @@ func f32 @f(addr %0) {
 data float.0: f32(2.5)
 
 func f:
-    movss xmm0, [float.0]
-    addss xmm0, [rdi]
+    movss xmm0, [rdi]
+    addss xmm0, [float.0]
     ret
 
 # test:subtest

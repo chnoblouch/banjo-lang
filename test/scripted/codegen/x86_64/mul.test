@@ -1,9 +1,24 @@
 # test:subtest
 # test:section ssa
 
-func void @f(i8 %0, i8 %1) {
-    %2 = mul i8 %0, i8 %1
-    ret i8 %2
+func void @f(i64 %0, i64 %1) {
+    %2 = mul i64 %0, i64 %1
+    ret i64 %2
+}
+
+# test:section mcode
+
+func f:
+    imul rdi, rsi
+    mov rax, rdi
+    ret
+
+# test:subtest
+# test:section ssa
+
+func void @f(i32 %0, i32 %1) {
+    %2 = mul i32 %0, i32 %1
+    ret i32 %2
 }
 
 # test:section mcode
@@ -31,9 +46,9 @@ func f:
 # test:subtest
 # test:section ssa
 
-func void @f(i32 %0, i32 %1) {
-    %2 = mul i32 %0, i32 %1
-    ret i32 %2
+func void @f(i8 %0, i8 %1) {
+    %2 = mul i8 %0, i8 %1
+    ret i8 %2
 }
 
 # test:section mcode
@@ -41,19 +56,4 @@ func void @f(i32 %0, i32 %1) {
 func f:
     imul edi, esi
     mov eax, edi
-    ret
-
-# test:subtest
-# test:section ssa
-
-func void @f(i64 %0, i64 %1) {
-    %2 = mul i64 %0, i64 %1
-    ret i64 %2
-}
-
-# test:section mcode
-
-func f:
-    imul rdi, rsi
-    mov rax, rdi
     ret

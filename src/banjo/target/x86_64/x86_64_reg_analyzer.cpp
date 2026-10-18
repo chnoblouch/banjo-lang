@@ -207,7 +207,6 @@ std::vector<mcode::RegOp> X8664RegAnalyzer::get_operands(codegen::InstrContext &
 
         case ADD:
         case SUB:
-        case IMUL:
         case AND:
         case OR:
         case SHL:
@@ -250,6 +249,22 @@ std::vector<mcode::RegOp> X8664RegAnalyzer::get_operands(codegen::InstrContext &
         case CQO:
             operands.push_back({mcode::Register::from_physical(X8664Register::RAX), mcode::RegUsage::USE});
             operands.push_back({mcode::Register::from_physical(X8664Register::RDX), mcode::RegUsage::DEF});
+            break;
+
+        case IMUL:
+            if (instr.get_operands().size() == 1) {
+                operands.push_back({mcode::Register::from_physical(X8664Register::RAX), mcode::RegUsage::USE_DEF});
+                collect_regs(instr.get_operand(0), mcode::RegUsage::USE, operands);
+            } else if (instr.get_operands().size() == 2) {
+                collect_regs(instr.get_operand(0), mcode::RegUsage::USE_DEF, operands);
+                collect_regs(instr.get_operand(1), mcode::RegUsage::USE, operands);
+            } else if (instr.get_operands().size() == 3) {
+                collect_regs(instr.get_operand(0), mcode::RegUsage::DEF, operands);
+                collect_regs(instr.get_operand(1), mcode::RegUsage::USE, operands);
+            } else {
+                ASSERT_UNREACHABLE;
+            }
+
             break;
 
         case DIV:
