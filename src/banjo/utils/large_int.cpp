@@ -115,7 +115,7 @@ std::int64_t LargeInt::to_s64() const {
 }
 
 std::int64_t LargeInt::to_u64() const {
-    ASSERT(!negative);
+    ASSERT(!negative || magnitude == 0);
     return magnitude;
 }
 
