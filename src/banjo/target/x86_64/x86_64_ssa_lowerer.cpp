@@ -52,6 +52,10 @@ void X8664SSALowerer::emit_block_prologue(ssa::BasicBlock &block) {
             ssa::Type type = block.get_param_types()[i];
             unsigned size = get_size(type);
 
+            if (size == 0) {
+                continue;
+            }
+
             mcode::Opcode opcode = get_move_opcode(type);
             mcode::Operand m_dst = map_vreg_as_operand(arg_reg, size);
 
@@ -252,7 +256,7 @@ void X8664SSALowerer::lower_fsub(ssa::Instruction &instr) {
         mcode::Symbol symbol = is_64_bit ? create_const_neg_zero_64() : create_const_neg_zero_32();
 
         mcode::Operand m_dst = map_vreg_dst(instr, is_64_bit ? 8 : 4);
-        mcode::Operand m_src = lower_as_operand(*rhs);
+        mcode::Operand m_src = lower_value(*rhs, OperandKind::REG_ADDR);
         mcode::Operand m_const_addr = mcode::Operand::from_x86_64_addr(X8664Address{symbol});
 
         emit({is_64_bit ? X8664Opcode::MOVSD : X8664Opcode::MOVSS, {m_dst, m_src}});
@@ -788,7 +792,7 @@ void X8664SSALowerer::lower_sqrt(ssa::Instruction &instr) {
 void X8664SSALowerer::lower_frame_address(ssa::Instruction &instr) {
     mcode::Operand m_dst = map_vreg_as_operand(*instr.get_dest(), 8);
     mcode::Register rbp = mcode::Register::from_physical(X8664Register::RBP);
-    emit({X8664Opcode::MOV, {m_dst, mcode::Operand::from_register(rbp)}});
+    emit({X8664Opcode::MOV, {m_dst, mcode::Operand::from_register(rbp, 8)}});
 }
 
 mcode::Operand X8664SSALowerer::into_reg_or_addr(ssa::Operand &operand) {
@@ -1598,7 +1602,6 @@ mcode::Operand X8664SSALowerer::lower_addr_mem_access(AddrComponents addr) {
         if (addr.const_offset != 0) {
             mcode::Register tmp_reg = create_tmp_reg();
             mcode::Operand m_tmp = mcode::Operand::from_register(tmp_reg, 8);
-
             emit({X8664Opcode::LEA, {m_tmp, mcode::Operand::from_x86_64_addr(m_addr)}});
 
             m_addr.base = tmp_reg;
@@ -1609,6 +1612,20 @@ mcode::Operand X8664SSALowerer::lower_addr_mem_access(AddrComponents addr) {
     }
 
     if (addr.reg_offset) {
+        // If the base is a symbol, a RIP-relative address is generated, which
+        // means the base will be `rip` and the displacement will be the symbol
+        // address relative to `rip`. To add a register offset to this, we have
+        // to generate a `lea` instruction that stores the symbol address into a
+        // temporary register. TODO: Write some tests for this.
+        if (std::holds_alternative<mcode::Symbol>(m_addr.base)) {
+            mcode::Register tmp_reg = create_tmp_reg();
+            mcode::Operand m_tmp = mcode::Operand::from_register(tmp_reg, 8);
+            emit({X8664Opcode::LEA, {m_tmp, mcode::Operand::from_x86_64_addr(m_addr)}});
+
+            m_addr.base = tmp_reg;
+            m_addr.offset_const = 0;
+        }
+
         if (utils::is_one_of(addr.reg_offset->scale, {1, 2, 4, 8})) {
             m_addr.offset_reg = X8664Address::RegOffset{addr.reg_offset->reg, addr.reg_offset->scale};
         } else {

@@ -4,6 +4,7 @@
 #include "banjo/codegen/ssa_lowerer.hpp"
 #include "banjo/mcode/function.hpp"
 #include "banjo/mcode/register.hpp"
+#include "banjo/ssa/primitive.hpp"
 #include "banjo/ssa/utils.hpp"
 #include "banjo/target/x86_64/x86_64_opcode.hpp"
 #include "banjo/target/x86_64/x86_64_register.hpp"
@@ -90,7 +91,12 @@ void SysVCallingConv::lower_call(codegen::SSALowerer &lowerer, ssa::Instruction 
 
     for (unsigned i = 1; i < instr.get_operands().size(); i++) {
         ssa::Operand &operand = instr.get_operands()[i];
-        unsigned size = x86_64_lowerer.get_size(operand.get_type());
+        ssa::Type type = operand.get_type();
+        unsigned size = x86_64_lowerer.get_size(type);
+
+        if (size == 0) {
+            continue;
+        }
 
         mcode::Operand dst = get_arg_dst(arg_storage[i - 1], lowerer).with_size(size);
         x86_64_lowerer.lower_as_move(dst, operand);
@@ -160,34 +166,27 @@ void SysVCallingConv::append_call(ssa::Operand func_operand, codegen::SSALowerer
 }
 
 void SysVCallingConv::append_ret_val_move(codegen::SSALowerer &lowerer, ssa::Instruction &call_instr) {
-    bool is_floating_point = call_instr.get_operand(0).get_type().is_floating_point();
-    int return_size = lowerer.get_size(call_instr.get_operand(0).get_type());
+    ssa::Type type = call_instr.get_operand(0).get_type();
+    unsigned size = lowerer.get_size(type);
 
-    mcode::Opcode opcode;
-    mcode::PhysicalReg src_reg;
-
-    if (!is_floating_point) {
-        opcode = X8664Opcode::MOV;
-        src_reg = X8664Register::RAX;
-    } else {
-        if (return_size == 4) {
-            opcode = X8664Opcode::MOVSS;
-        } else if (return_size == 8) {
-            opcode = X8664Opcode::MOVSD;
-        } else {
-            ASSERT_UNREACHABLE;
-        }
-
-        src_reg = X8664Register::XMM0;
+    if (size == 0) {
+        return;
     }
 
-    lowerer.emit(
-        mcode::Instruction(
-            opcode,
-            {mcode::Operand::from_register(mcode::Register::from_virtual(*call_instr.get_dest()), return_size),
-             mcode::Operand::from_register(mcode::Register::from_physical(src_reg), return_size)}
-        )
-    );
+    mcode::Opcode m_opcode;
+    mcode::PhysicalReg src_reg;
+
+    if (type.is_floating_point()) {
+        m_opcode = type == ssa::Primitive::F64 ? X8664Opcode::MOVSD : X8664Opcode::MOVSS;
+        src_reg = X8664Register::XMM0;
+    } else {
+        m_opcode = X8664Opcode::MOV;
+        src_reg = X8664Register::RAX;
+    }
+
+    mcode::Operand m_dst = lowerer.map_vreg_as_operand(*call_instr.get_dest(), size);
+    mcode::Operand m_src = mcode::Operand::from_register(mcode::Register::from_physical(src_reg), size);
+    lowerer.emit({m_opcode, {m_dst, m_src}});
 }
 
 void SysVCallingConv::create_arg_store_region(mcode::StackFrame &frame, mcode::StackRegions &regions) {
