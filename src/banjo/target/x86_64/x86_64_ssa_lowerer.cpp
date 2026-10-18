@@ -973,7 +973,7 @@ void X8664SSALowerer::lower_in_place_operation(mcode::Opcode m_opcode, ssa::Oper
     unsigned size = get_size(rhs.get_type());
 
     mcode::Operand m_lhs = lower_addr_mem_access(addr_components).with_size(size);
-    mcode::Operand m_rhs = lower_value(rhs, OperandKind::REG_ADDR_IMM);
+    mcode::Operand m_rhs = lower_value(rhs, OperandKind::REG_IMM);
     emit({m_opcode, {m_lhs, m_rhs}});
 }
 
@@ -982,7 +982,7 @@ void X8664SSALowerer::lower_in_place_shift(mcode::Opcode m_opcode, ssa::Operand 
     unsigned size = get_size(rhs.get_type());
 
     mcode::Operand m_lhs = lower_addr_mem_access(addr_components).with_size(size);
-    mcode::Operand m_rhs = lower_value(rhs, OperandKind::REG_ADDR_IMM);
+    mcode::Operand m_rhs = lower_value(rhs, OperandKind::REG_IMM);
 
     if (m_rhs.is_int_immediate()) {
         emit({m_opcode, {m_lhs, m_rhs}});
