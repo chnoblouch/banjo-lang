@@ -103,7 +103,7 @@ def run_test(test, conditions):
         elif condition in ("error", "warning"):
             result = check_reports(test, conditions)
             break
-    
+
     if uses_fs:
         os.chdir(os.pardir)
         shutil.rmtree(working_dir)
@@ -120,7 +120,7 @@ def check_output(test, conditions):
     result = run_executable(test)
 
     if result.exit_code != 0:
-        return TestResult(False, "unexpected exit code", 0, result.exit_code) 
+        return TestResult(False, "unexpected exit code", 0, result.exit_code)
     elif result.stdout == expected_output:
         return TestResult(True)
     else:
@@ -148,7 +148,7 @@ def check_compiles(test, conditions):
         return TestResult(True)
     else:
         return TestResult(False, "unexpected exit code", 0, result.exit_code)
-    
+
 
 def check_no_reports(test, conditions):
     result = compile_source(test)
@@ -173,7 +173,7 @@ def check_file(test, conditions):
 
     if not path.exists():
         return TestResult(False, "file does not exist")
-    
+
     with open(path, "rb") as f:
         content = f.read().decode("utf-8")
 
@@ -190,7 +190,7 @@ def check_reports(test, conditions):
     stderr_lines = result.stderr.splitlines()
 
     expected_reports = []
-    
+
     for condition, args in conditions:
         if condition == "error":
             expected_reports.append(("error", args[1], args[0]))
@@ -215,7 +215,7 @@ def check_reports(test, conditions):
             add_report("note", line)
 
     if len(reports) != len(expected_reports):
-        return TestResult(False, "unexpected number of reports", len(expected_reports), len(reports)) 
+        return TestResult(False, "unexpected number of reports", len(expected_reports), len(reports))
 
     for i in range(0, len(reports)):
         type, message, location = reports[i]
@@ -243,7 +243,18 @@ def compile_source(test):
     elif machine in ("aarch64", "arm64"):
         arch = "aarch64"
 
-    if framework.test_wasm:
+    if framework.test_wine:
+        result = run_process([
+            compiler_path,
+            "--type", "executable",
+            "--arch", arch,
+            "--os", "windows",
+            "--env", "gnu",
+            "--opt-level", str(framework.opt_level),
+            "--path", ".",
+            "--no-color",
+        ])
+    elif framework.test_wasm:
         result = run_process([
             compiler_path,
             "--type", "executable",
@@ -297,7 +308,30 @@ def compile_source(test):
 def run_executable(test):
     compile_source(test)
 
-    if framework.test_wasm:
+    if framework.test_wine:
+        if not os.path.exists("output.o"):
+            return ProcessResult("", "", 1)
+
+        subprocess.run(["x86_64-w64-mingw32-gcc", "-otest.exe", "output.o"])
+
+        try:
+            os.remove("output.o")
+        except OSError:
+            pass
+
+        if not os.path.exists("test.exe"):
+            return ProcessResult("", "", 1)
+
+        try:
+            result = run_process(["wine", "./test.exe"], 10)
+        except subprocess.TimeoutExpired:
+            result = ProcessResult("", "<<timeout>>", 1)
+
+        try:
+            os.remove("test.exe")
+        except OSError:
+            pass
+    elif framework.test_wasm:
         if not os.path.exists("output.o"):
             return ProcessResult("", "", 1)
 
@@ -323,7 +357,7 @@ def run_executable(test):
             return ProcessResult("", "", 1)
 
         result = run_process(["node", "./test.js"], 5)
-        
+
         try:
             os.remove("test.js")
         except OSError:
@@ -331,7 +365,7 @@ def run_executable(test):
     elif is_windows:
         if not os.path.exists("output.obj"):
             return ProcessResult("", "", 1)
-    
+
         subprocess.run([
             "lld-link.exe",
             "output.obj",
@@ -354,7 +388,7 @@ def run_executable(test):
             return ProcessResult("", "", 1)
 
         result = run_process(["./test.exe"], 5)
-        
+
         try:
             os.remove("test.exe")
         except OSError:
@@ -380,7 +414,7 @@ def run_executable(test):
             result = run_process(["./test"], 5)
         except subprocess.TimeoutExpired:
             result = ProcessResult("", "<<timeout>>", 1)
-        
+
         try:
             os.remove("test")
         except OSError:
@@ -395,7 +429,7 @@ def filter_test(test: Test):
 
     if framework.test_wasm and test.name in SKIPPED_TESTS_WASM:
         return False
-    
+
     return True
 
 
