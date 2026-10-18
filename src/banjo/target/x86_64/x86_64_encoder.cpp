@@ -742,15 +742,12 @@ void X8664Encoder::encode_call(mcode::Instruction &instr) {
         emit_opcode(0xE8);
         text.add_symbol_use(m_target.get_symbol().name, use_kind(m_target.get_symbol()), 0);
         text.write_u32(0);
-    } else if (is_reg(m_target)) {
-        ASSERT(m_target.get_size() == 8);
+    } else if (is_roa(m_target)) {
+        RegOrAddr target = roa(m_target);
+
+        emit_rex_rroa(0, 0, target);
         emit_opcode(0xFF);
-        emit_modrm_rr(2, reg(m_target));
-    } else if (is_addr(m_target)) {
-        Address target = addr(m_target);
-        emit_rex_rm(0, 0, target);
-        emit_opcode(0xFF);
-        emit_mem_digit(target, 2);
+        emit_modrm_sib(2, target);
     } else {
         ASSERT_UNREACHABLE;
     }

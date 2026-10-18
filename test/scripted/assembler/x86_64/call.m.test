@@ -1,0 +1,9 @@
+# test:subtest
+# test:encoding "FF12"
+
+call [rdx]
+
+# test:subtest
+# test:encoding "41FF5500"
+
+call [r13]
