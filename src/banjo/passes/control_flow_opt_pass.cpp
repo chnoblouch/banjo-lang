@@ -8,6 +8,7 @@
 #include "banjo/ssa/instruction.hpp"
 #include "banjo/ssa/operand.hpp"
 #include "banjo/ssa/virtual_register.hpp"
+#include "banjo/utils/macros.hpp"
 
 #include <utility>
 #include <vector>
@@ -104,12 +105,18 @@ void ControlFlowOptPass::run_iteration(ssa::Function &func) {
             continue;
         }
 
-        ssa::BasicBlock &pred = *cfg.block(node.predecessors[0]);
-        ssa::InstrIter branch_instr = pred.get_exit_iter();
+        ssa::BasicBlockIter pred = cfg.block(node.predecessors[0]);
+        ssa::InstrIter branch_instr = pred->get_exit_iter();
 
         // Only inline the block if the jump is unconditional.
         if (branch_instr->get_opcode() != ssa::Opcode::JMP) {
             continue;
+        }
+
+        // If the block had arguments that escape, then the new merged block
+        // does as well.
+        if (blocks_with_escaping_args.contains(block)) {
+            blocks_with_escaping_args.insert(pred);
         }
 
         const std::vector<ssa::Operand> &args = branch_instr->get_operand(0).get_branch_target().args;
@@ -120,10 +127,10 @@ void ControlFlowOptPass::run_iteration(ssa::Function &func) {
             PassUtils::replace_in_func(func, reg, args[i].with_type(type));
         }
 
-        pred.remove(branch_instr);
+        pred->remove(branch_instr);
 
         for (ssa::Instruction &instr : block->get_instrs()) {
-            pred.append(instr);
+            pred->append(instr);
         }
     }
 
@@ -277,31 +284,24 @@ bool ControlFlowOptPass::try_replace_regs_with_block_args(
     ssa::BranchTarget &target,
     ssa::BasicBlockIter block
 ) {
-    if (value.is_register()) {
-        ssa::VirtualRegister reg = value.get_register();
+    if (!value.is_register()) {
+        return true;
+    }
 
-        for (unsigned i = 0; i < target.block->get_param_regs().size(); i++) {
-            if (target.block->get_param_regs()[i] == reg) {
-                value = target.args[i];
-                return true;
-            }
-        }
+    ssa::VirtualRegister reg = value.get_register();
 
-        return is_reg_always_defined(reg, block);
-    } else if (value.is_branch_target()) {
-        for (ssa::Value &arg : value.get_branch_target().args) {
-            if (!try_replace_regs_with_block_args(arg, target, block)) {
-                return false;
-            }
+    for (unsigned i = 0; i < target.block->get_param_regs().size(); i++) {
+        if (target.block->get_param_regs()[i] == reg) {
+            value = target.args[i];
+            return true;
         }
     }
 
-    return true;
+    return is_reg_always_defined(reg, block);
 }
 
 bool ControlFlowOptPass::is_reg_always_defined(ssa::VirtualRegister reg, ssa::BasicBlockIter block) {
     ssa::BasicBlockIter def_block = PassUtils::find_def_block(*func, reg);
-
     if (!def_block) {
         return false;
     }
