@@ -46,7 +46,6 @@ void DeadFuncEliminationPass::run(ssa::Module &mod) {
     std::vector<ssa::FunctionDecl *> new_extern_funcs;
 
     used_extern_funcs.insert({"memcpy"});
-    used_extern_funcs.insert({"sqrt"});
 
     for (ssa::FunctionDecl *extern_func : mod.get_external_functions()) {
         if (used_extern_funcs.contains(extern_func->name)) {

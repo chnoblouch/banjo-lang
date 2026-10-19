@@ -49,7 +49,6 @@ public:
     InstrContext instr_ctx;
 
     ssa::FunctionDecl *memcpy_func;
-    ssa::FunctionDecl *sqrt_func;
 
 protected:
     ssa::Module *ssa_mod;
@@ -159,7 +158,6 @@ protected:
     virtual void lower_offsetptr(ssa::Instruction &instr) = 0;
     virtual void lower_memberptr(ssa::Instruction &instr) = 0;
     virtual void lower_copy(ssa::Instruction &instr);
-    virtual void lower_sqrt(ssa::Instruction &instr);
     virtual void lower_frame_address(ssa::Instruction &instr) = 0;
 };
 

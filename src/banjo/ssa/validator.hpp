@@ -71,7 +71,6 @@ private:
     bool validate_memberptr(Instruction &instr);
     bool validate_offsetptr(Instruction &instr);
     bool validate_copy(Instruction &instr);
-    bool validate_sqrt(Instruction &instr);
     bool validate_frame_address(Instruction &instr);
 
     bool validate_binary_int(Instruction &instr, const std::string &name);

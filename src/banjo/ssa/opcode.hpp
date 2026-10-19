@@ -52,7 +52,6 @@ enum class Opcode {
     MEMBERPTR,
     OFFSETPTR,
     COPY,
-    SQRT,
     FRAME_ADDRESS,
 };
 

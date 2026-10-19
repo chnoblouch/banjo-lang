@@ -75,7 +75,6 @@ static const HashMap<std::string_view, Opcode> OPCODES{
     {"memberptr", Opcode::MEMBERPTR},
     {"offsetptr", Opcode::OFFSETPTR},
     {"copy", Opcode::COPY},
-    {"sqrt", Opcode::SQRT},
     {"frame_address", Opcode::FRAME_ADDRESS},
 };
 

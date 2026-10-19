@@ -147,7 +147,6 @@ bool Validator::validate(Module &mod, Function &func) {
                 case Opcode::MEMBERPTR: instr_valid = validate_memberptr(instr); break;
                 case Opcode::OFFSETPTR: instr_valid = validate_offsetptr(instr); break;
                 case Opcode::COPY: instr_valid = validate_copy(instr); break;
-                case Opcode::SQRT: instr_valid = validate_sqrt(instr); break;
                 case Opcode::FRAME_ADDRESS: instr_valid = validate_frame_address(instr); break;
             }
 
@@ -404,11 +403,6 @@ bool Validator::validate_offsetptr(Instruction &instr) {
 }
 
 bool Validator::validate_copy(Instruction &instr) {
-    // TODO
-    return true;
-}
-
-bool Validator::validate_sqrt(Instruction &instr) {
     // TODO
     return true;
 }

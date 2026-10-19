@@ -29,8 +29,6 @@ mcode::Module SSALowerer::lower_module(ssa::Module &mod) {
     for (ssa::FunctionDecl *external_func : mod.get_external_functions()) {
         if (external_func->name == "memcpy") {
             memcpy_func = external_func;
-        } else if (external_func->name == "sqrt") {
-            sqrt_func = external_func;
         }
     }
 
@@ -221,7 +219,6 @@ void SSALowerer::lower_instr(ssa::InstrIter instr) {
         case ssa::Opcode::OFFSETPTR: lower_offsetptr(*instr); break;
         case ssa::Opcode::MEMBERPTR: lower_memberptr(*instr); break;
         case ssa::Opcode::COPY: lower_copy(*instr); break;
-        case ssa::Opcode::SQRT: lower_sqrt(*instr); break;
         case ssa::Opcode::FRAME_ADDRESS: lower_frame_address(*instr); break;
     }
 }
@@ -361,17 +358,6 @@ void SSALowerer::lower_copy(ssa::Instruction &instr) {
     ssa::Operand size_operand = ssa::Operand::from_int_immediate(size, target->get_data_layout().get_usize_type());
 
     ssa::Instruction call_instr(ssa::Opcode::CALL, {func_operand, dst_operand, src_operand, size_operand});
-    lower_call(call_instr);
-}
-
-void SSALowerer::lower_sqrt(ssa::Instruction &instr) {
-    ASSERT(sqrt_func);
-
-    ssa::Operand func_operand = ssa::Operand::from_extern_func(sqrt_func, ssa::Primitive::F32);
-    ssa::Operand input_operand = instr.get_operand(0);
-    ssa::VirtualRegister output_reg = *instr.get_dest();
-
-    ssa::Instruction call_instr(ssa::Opcode::CALL, output_reg, {func_operand, input_operand});
     lower_call(call_instr);
 }
 

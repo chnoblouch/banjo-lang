@@ -798,47 +798,10 @@ void X8664SSALowerer::lower_copy(ssa::Instruction &instr) {
     lower_call(call_instr);
 }
 
-void X8664SSALowerer::lower_sqrt(ssa::Instruction &instr) {
-    mcode::Operand m_src = lower_as_operand(instr.get_operand(0));
-    mcode::Operand m_dst = map_vreg_dst(instr, m_src.get_size());
-    mcode::Opcode opcode = m_src.get_size() == 4 ? X8664Opcode::SQRTSS : X8664Opcode::SQRTSD;
-
-    emit(mcode::Instruction(X8664Opcode::XORPS, {m_dst, m_dst}));
-    emit(mcode::Instruction(opcode, {m_dst, m_src}));
-}
-
 void X8664SSALowerer::lower_frame_address(ssa::Instruction &instr) {
     mcode::Operand m_dst = map_vreg_as_operand(*instr.get_dest(), 8);
     mcode::Register rbp = mcode::Register::from_physical(X8664Register::RBP);
     emit({X8664Opcode::MOV, {m_dst, mcode::Operand::from_register(rbp, 8)}});
-}
-
-mcode::Operand X8664SSALowerer::into_reg_or_addr(ssa::Operand &operand) {
-    if (operand.is_register()) {
-        ssa::InstrIter def = find_def(operand.get_register(), codegen::DefSearchScope::BLOCK_NO_SIDE_EFFECTS);
-
-        if (def && def->get_opcode() == ssa::Opcode::LOAD && get_num_uses(*def->get_dest()) == 1) {
-            discard_use(*def->get_dest());
-            AddrComponents addr = collect_addr(def->get_operand(1));
-            return lower_addr_mem_access(addr);
-        }
-    }
-
-    return lower_as_operand(operand);
-}
-
-mcode::Operand X8664SSALowerer::read_symbol_addr(const mcode::Symbol &symbol) {
-    if (target->get_code_model() == CodeModel::SMALL) {
-        return mcode::Operand::from_symbol(symbol, 8);
-    } else if (target->get_code_model() == CodeModel::LARGE) {
-        mcode::Register addr_reg = create_reg();
-        mcode::Operand dst = mcode::Operand::from_register(addr_reg, 8);
-        mcode::Operand src = mcode::Operand::from_symbol(symbol, 8);
-        emit(mcode::Instruction(X8664Opcode::MOV, {dst, src}));
-        return dst;
-    } else {
-        ASSERT_UNREACHABLE;
-    }
 }
 
 mcode::Opcode X8664SSALowerer::get_move_opcode(ssa::Type type) {
@@ -1443,7 +1406,17 @@ mcode::Operand X8664SSALowerer::lower_symbol_as_operand(const ssa::Value &value,
     }
 
     if (flags.is_callee) {
-        return read_symbol_addr(symbol);
+        if (target->get_code_model() == CodeModel::SMALL) {
+            return mcode::Operand::from_symbol(symbol, 8);
+        } else if (target->get_code_model() == CodeModel::LARGE) {
+            mcode::Register addr_reg = create_reg();
+            mcode::Operand dst = mcode::Operand::from_register(addr_reg, 8);
+            mcode::Operand src = mcode::Operand::from_symbol(symbol, 8);
+            emit(mcode::Instruction(X8664Opcode::MOV, {dst, src}));
+            return dst;
+        } else {
+            ASSERT_UNREACHABLE;
+        }
     }
 
     if (target->get_code_model() == CodeModel::SMALL) {

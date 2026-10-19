@@ -39,9 +39,6 @@ private:
 public:
     X8664SSALowerer(Target *target);
 
-    mcode::Operand into_reg_or_addr(ssa::Operand &operand);
-    mcode::Operand read_symbol_addr(const mcode::Symbol &symbol);
-
     mcode::CallingConvention *get_calling_convention(ssa::CallingConv calling_conv) override;
 
 public:
@@ -95,7 +92,6 @@ public:
     void lower_offsetptr(ssa::Instruction &instr) override;
     void lower_memberptr(ssa::Instruction &instr) override;
     void lower_copy(ssa::Instruction &instr) override;
-    void lower_sqrt(ssa::Instruction &instr) override;
     void lower_frame_address(ssa::Instruction &instr) override;
 
     mcode::Opcode get_move_opcode(ssa::Type type);

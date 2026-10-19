@@ -55,7 +55,6 @@ bool Instruction::might_access_memory() const {
         case Opcode::BITCAST:
         case Opcode::MEMBERPTR:
         case Opcode::OFFSETPTR:
-        case Opcode::SQRT:
         case Opcode::FRAME_ADDRESS: return false;
     }
 }
@@ -111,7 +110,6 @@ bool Instruction::has_side_effects() const {
         case Opcode::BITCAST:
         case Opcode::MEMBERPTR:
         case Opcode::OFFSETPTR:
-        case Opcode::SQRT:
         case Opcode::FRAME_ADDRESS: return false;
     }
 }
@@ -154,8 +152,7 @@ Type Instruction::get_type() const {
         case Opcode::LSHL:
         case Opcode::LSHR:
         case Opcode::ASHR:
-        case Opcode::ATOMIC_LOAD:
-        case Opcode::SQRT: return operands[0].get_type();
+        case Opcode::ATOMIC_LOAD: return operands[0].get_type();
         case Opcode::UEXTEND:
         case Opcode::SEXTEND:
         case Opcode::TRUNCATE:
