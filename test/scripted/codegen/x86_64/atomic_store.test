@@ -1,0 +1,55 @@
+# test:subtest
+# test:section ssa
+
+func void @f(i64 %0, addr %1) {
+    atomic_store i64 %0, addr %1
+    ret
+}
+
+# test:section mcode
+
+func f:
+    xchg [rsi], rdi
+    ret
+
+# test:subtest
+# test:section ssa
+
+func void @f(i32 %0, addr %1) {
+    atomic_store i32 %0, addr %1
+    ret
+}
+
+# test:section mcode
+
+func f:
+    xchg [rsi], edi
+    ret
+
+# test:subtest
+# test:section ssa
+
+func void @f(i16 %0, addr %1) {
+    atomic_store i16 %0, addr %1
+    ret
+}
+
+# test:section mcode
+
+func f:
+    xchg [rsi], di
+    ret
+
+# test:subtest
+# test:section ssa
+
+func void @f(i8 %0, addr %1) {
+    atomic_store i8 %0, addr %1
+    ret
+}
+
+# test:section mcode
+
+func f:
+    xchg [rsi], dil
+    ret

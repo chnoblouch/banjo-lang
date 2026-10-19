@@ -1,0 +1,59 @@
+# test:subtest
+# test:section ssa
+
+func i64 @f(addr %0, i64 %1) {
+    %2 = atomic_swap addr %0, i64 %1
+    ret i64 %2
+}
+
+# test:section mcode
+
+func f:
+    xchg [rdi], rsi
+    mov rax, rsi
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i32 @f(addr %0, i32 %1) {
+    %2 = atomic_swap addr %0, i32 %1
+    ret i32 %2
+}
+
+# test:section mcode
+
+func f:
+    xchg [rdi], esi
+    mov eax, esi
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i16 @f(addr %0, i16 %1) {
+    %2 = atomic_swap addr %0, i16 %1
+    ret i16 %2
+}
+
+# test:section mcode
+
+func f:
+    xchg [rdi], si
+    mov eax, esi
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i8 @f(addr %0, i8 %1) {
+    %2 = atomic_swap addr %0, i8 %1
+    ret i8 %2
+}
+
+# test:section mcode
+
+func f:
+    xchg [rdi], sil
+    mov eax, esi
+    ret

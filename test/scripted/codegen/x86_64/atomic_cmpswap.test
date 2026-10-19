@@ -1,0 +1,63 @@
+# test:subtest
+# test:section ssa
+
+func i64 @f(addr %0, i64 %1, i64 %2, addr %3) {
+    %4 = atomic_cmpswap addr %0, i64 %1, i64 %2, addr %3
+    ret i64 %4
+}
+
+# test:section mcode
+
+func f:
+    mov rax, rsi
+    lock cmpxchg [rdi], rdx
+    sete [rcx]
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i32 @f(addr %0, i32 %1, i32 %2, addr %3) {
+    %4 = atomic_cmpswap addr %0, i32 %1, i32 %2, addr %3
+    ret i32 %4
+}
+
+# test:section mcode
+
+func f:
+    mov eax, esi
+    lock cmpxchg [rdi], edx
+    sete [rcx]
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i16 @f(addr %0, i16 %1, i16 %2, addr %3) {
+    %4 = atomic_cmpswap addr %0, i16 %1, i16 %2, addr %3
+    ret i16 %4
+}
+
+# test:section mcode
+
+func f:
+    mov eax, esi
+    lock cmpxchg [rdi], dx
+    sete [rcx]
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i8 @f(addr %0, i8 %1, i8 %2, addr %3) {
+    %4 = atomic_cmpswap addr %0, i8 %1, i8 %2, addr %3
+    ret i8 %4
+}
+
+# test:section mcode
+
+func f:
+    mov eax, esi
+    lock cmpxchg [rdi], dl
+    sete [rcx]
+    ret

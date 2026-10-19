@@ -1,5 +1,6 @@
 #include "x86_64_printer.hpp"
 
+#include "banjo/target/x86_64/x86_64_opcode.hpp"
 #include "banjo/target/x86_64/x86_64_opcode_names.hpp"
 #include "banjo/target/x86_64/x86_64_register.hpp"
 #include "banjo/utils/hash_map.hpp"
@@ -139,7 +140,7 @@ void X8664Printer::print_operand(mcode::Function &func, mcode::Instruction &inst
     bool requires_size = false;
 
     if (instr.get_operands().size() == 1) {
-        requires_size = true;
+        requires_size = instr.get_opcode() == X8664Opcode::IMUL;
     } else if (instr.get_operands().size() == 2) {
         if (index == 0 && instr.get_operand(1).is_int_immediate()) {
             requires_size = true;

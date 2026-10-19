@@ -655,13 +655,26 @@ void X8664SSALowerer::lower_bitcast(ssa::Instruction &instr) {
     ssa::Type type = instr.get_operand(1).get_type();
     unsigned size = get_size(type);
 
-    mcode::Opcode m_opcode = size == 8 ? X8664Opcode::MOVQ : X8664Opcode::MOVD;
-    mcode::Operand m_value = lower_as_operand(value);
+    mcode::Operand m_value = lower_value(value, OperandKind::REG_ADDR);
     mcode::Operand m_dst = map_vreg_dst(instr, size);
 
-    if (type.is_floating_point()) {
-        emit({m_opcode, {m_dst, m_value}, mcode::Instruction::FLAG_FLOAT});
+    if (m_value.is_register()) {
+        mcode::Opcode m_opcode = size == 8 ? X8664Opcode::MOVQ : X8664Opcode::MOVD;
+
+        if (type.is_floating_point()) {
+            emit({m_opcode, {m_dst, m_value}, mcode::Instruction::FLAG_FLOAT});
+        } else {
+            emit({m_opcode, {m_dst, m_value}});
+        }
     } else {
+        mcode::Opcode m_opcode;
+
+        if (type.is_floating_point()) {
+            m_opcode = type == ssa::Primitive::F64 ? X8664Opcode::MOVSD : X8664Opcode::MOVSS;
+        } else {
+            m_opcode = X8664Opcode::MOV;
+        }
+
         emit({m_opcode, {m_dst, m_value}});
     }
 }
@@ -677,9 +690,10 @@ void X8664SSALowerer::lower_atomic_load(ssa::Instruction &instr) {
 }
 
 void X8664SSALowerer::lower_atomic_store(ssa::Instruction &instr) {
+    ssa::Operand &value = instr.get_operand(0);
     AddrComponents addr = collect_addr(instr.get_operand(1));
 
-    mcode::Operand m_src = lower_as_operand(instr.get_operand(0));
+    mcode::Operand m_src = lower_value(value, OperandKind::REG);
     mcode::Operand m_addr = lower_addr_mem_access(addr).with_size(m_src.get_size());
     mcode::Operand m_tmp = mcode::Operand::from_register(create_tmp_reg(), m_src.get_size());
 
@@ -689,10 +703,11 @@ void X8664SSALowerer::lower_atomic_store(ssa::Instruction &instr) {
 
 void X8664SSALowerer::lower_atomic_swap(ssa::Instruction &instr) {
     AddrComponents addr = collect_addr(instr.get_operand(0));
-    unsigned size = get_size(instr.get_operand(1).get_type());
+    ssa::Operand &value = instr.get_operand(1);
+    unsigned size = get_size(value.get_type());
 
     mcode::Operand m_addr = lower_addr_mem_access(addr);
-    mcode::Operand m_value = lower_as_operand(instr.get_operand(1));
+    mcode::Operand m_value = lower_value(value, OperandKind::REG);
     mcode::Operand m_dst = map_vreg_dst(instr, size);
     mcode::Operand m_tmp = mcode::Operand::from_register(create_tmp_reg(), size);
 
@@ -703,11 +718,14 @@ void X8664SSALowerer::lower_atomic_swap(ssa::Instruction &instr) {
 
 void X8664SSALowerer::lower_atomic_cmpswap(ssa::Instruction &instr) {
     AddrComponents addr = collect_addr(instr.get_operand(0));
-    unsigned size = get_size(instr.get_operand(1).get_type());
+    ssa::Operand &current_value = instr.get_operand(1);
+    ssa::Operand &new_value = instr.get_operand(2);
+    AddrComponents success_addr = collect_addr(instr.get_operand(3));
+    unsigned size = get_size(current_value.get_type());
 
     mcode::Operand m_addr = lower_addr_mem_access(addr);
-    mcode::Operand m_current = lower_as_operand(instr.get_operand(1));
-    mcode::Operand m_new = lower_as_operand(instr.get_operand(2));
+    mcode::Operand m_current = lower_value(current_value, OperandKind::REG);
+    mcode::Operand m_new = lower_value(new_value, OperandKind::REG);
     mcode::Operand m_dst = map_vreg_dst(instr, size);
 
     mcode::Operand m_rax = mcode::Operand::from_register(mcode::Register::from_physical(X8664Register::RAX), size);
@@ -718,7 +736,7 @@ void X8664SSALowerer::lower_atomic_cmpswap(ssa::Instruction &instr) {
     emit({X8664Opcode::LOCK_CMPXCHG, {m_addr, m_tmp}});
     emit({X8664Opcode::MOV, {m_dst, m_rax}});
 
-    mcode::Operand m_success = lower_addr_mem_access(collect_addr(instr.get_operand(3)));
+    mcode::Operand m_success = lower_addr_mem_access(success_addr);
     emit({X8664Opcode::SETE, {m_success.with_size(1)}});
 }
 
@@ -1168,10 +1186,11 @@ void X8664SSALowerer::lower_cond_branch(ssa::Instruction &instr) {
 
 void X8664SSALowerer::lower_atomic_cas_loop(mcode::Opcode opcode, ssa::Instruction &instr) {
     AddrComponents addr = collect_addr(instr.get_operand(0));
-    unsigned size = get_size(instr.get_operand(1).get_type());
+    ssa::Operand &value = instr.get_operand(1);
+    unsigned size = get_size(value.get_type());
 
     mcode::Operand m_addr = lower_addr_mem_access(addr);
-    mcode::Operand m_src = lower_as_operand(instr.get_operand(1));
+    mcode::Operand m_src = lower_value(value, OperandKind::REG);
     mcode::Operand m_dst = map_vreg_dst(instr, size);
 
     mcode::Operand m_rax = mcode::Operand::from_register(mcode::Register::from_physical(X8664Register::RAX), size);
