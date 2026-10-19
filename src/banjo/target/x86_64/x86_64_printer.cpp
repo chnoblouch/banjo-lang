@@ -140,7 +140,13 @@ void X8664Printer::print_operand(mcode::Function &func, mcode::Instruction &inst
     bool requires_size = false;
 
     if (instr.get_operands().size() == 1) {
-        requires_size = instr.get_opcode() == X8664Opcode::IMUL;
+        switch (instr.get_opcode()) {
+            case X8664Opcode::IMUL:
+            case X8664Opcode::DIV:
+            case X8664Opcode::IDIV: requires_size = true; break;
+
+            default: break;
+        }
     } else if (instr.get_operands().size() == 2) {
         if (index == 0 && instr.get_operand(1).is_int_immediate()) {
             requires_size = true;
@@ -166,6 +172,8 @@ void X8664Printer::print_operand(mcode::Function &func, mcode::Instruction &inst
                     requires_size = true;
                 }
                 break;
+
+            default: break;
         }
     }
 

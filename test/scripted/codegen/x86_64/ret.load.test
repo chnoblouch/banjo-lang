@@ -1,0 +1,83 @@
+# test:subtest
+# test:section ssa
+
+func i64 @f(addr %0) {
+    %1 = load i64, addr %0
+    ret i64 %1
+}
+
+# test:section mcode
+
+func f:
+    mov rax, [rdi]
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i32 @f(addr %0) {
+    %1 = load i32, addr %0
+    ret i32 %1
+}
+
+# test:section mcode
+
+func f:
+    mov eax, [rdi]
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i16 @f(addr %0) {
+    %1 = load i16, addr %0
+    ret i16 %1
+}
+
+# test:section mcode
+
+func f:
+    mov ax, [rdi]
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i8 @f(addr %0) {
+    %1 = load i8, addr %0
+    ret i8 %1
+}
+
+# test:section mcode
+
+func f:
+    mov al, [rdi]
+    ret
+
+# test:subtest
+# test:section ssa
+
+func f64 @f(addr %0) {
+    %1 = load f64, addr %0
+    ret f64 %1
+}
+
+# test:section mcode
+
+func f:
+    movsd xmm0, [rdi]
+    ret
+
+# test:subtest
+# test:section ssa
+
+func f32 @f(addr %0) {
+    %1 = load f32, addr %0
+    ret f32 %1
+}
+
+# test:section mcode
+
+func f:
+    movss xmm0, [rdi]
+    ret

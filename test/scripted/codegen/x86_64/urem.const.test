@@ -1,0 +1,137 @@
+# test:subtest
+# test:section ssa
+
+func i64 @f(i64 %0) {
+    %1 = urem i64 %0, i64 42
+    ret i64 %1
+}
+
+# test:section mcode
+
+func f:
+    mov rcx, 42
+    mov rax, rdi
+    xor edx, edx
+    div rcx
+    mov rax, rdx
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i64 @f(i64 %0) {
+    %1 = urem i64 42, i64 %0
+    ret i64 %1
+}
+
+# test:section mcode
+
+func f:
+    mov rax, 42
+    xor edx, edx
+    div rdi
+    mov rax, rdx
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i32 @f(i32 %0) {
+    %1 = urem i32 %0, i32 42
+    ret i32 %1
+}
+
+# test:section mcode
+
+func f:
+    mov ecx, 42
+    mov eax, edi
+    xor edx, edx
+    div ecx
+    mov eax, edx
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i32 @f(i32 %0) {
+    %1 = urem i32 42, i32 %0
+    ret i32 %1
+}
+
+# test:section mcode
+
+func f:
+    mov eax, 42
+    xor edx, edx
+    div edi
+    mov eax, edx
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i16 @f(i16 %0) {
+    %1 = urem i16 %0, i16 42
+    ret i16 %1
+}
+
+# test:section mcode
+
+func f:
+    mov ecx, 42
+    mov eax, edi
+    xor edx, edx
+    div cx
+    mov eax, edx
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i16 @f(i16 %0) {
+    %1 = urem i16 42, i16 %0
+    ret i16 %1
+}
+
+# test:section mcode
+
+func f:
+    mov eax, 42
+    xor edx, edx
+    div di
+    mov eax, edx
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i8 @f(i8 %0) {
+    %1 = urem i8 %0, i8 42
+    ret i8 %1
+}
+
+# test:section mcode
+
+func f:
+    mov ecx, 42
+    movzx eax, dil
+    div cl
+    mov eax, edx
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i8 @f(i8 %0) {
+    %1 = urem i8 42, i8 %0
+    ret i8 %1
+}
+
+# test:section mcode
+
+func f:
+    mov eax, 42
+    div dil
+    mov eax, edx
+    ret

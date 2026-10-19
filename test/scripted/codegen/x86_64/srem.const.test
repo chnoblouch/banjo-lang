@@ -1,0 +1,137 @@
+# test:subtest
+# test:section ssa
+
+func i64 @f(i64 %0) {
+    %1 = srem i64 %0, i64 42
+    ret i64 %1
+}
+
+# test:section mcode
+
+func f:
+    mov rcx, 42
+    mov rax, rdi
+    cqo
+    idiv rcx
+    mov rax, rdx
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i64 @f(i64 %0) {
+    %1 = srem i64 42, i64 %0
+    ret i64 %1
+}
+
+# test:section mcode
+
+func f:
+    mov rax, 42
+    cqo
+    idiv rdi
+    mov rax, rdx
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i32 @f(i32 %0) {
+    %1 = srem i32 %0, i32 42
+    ret i32 %1
+}
+
+# test:section mcode
+
+func f:
+    mov ecx, 42
+    mov eax, edi
+    cdq
+    idiv ecx
+    mov eax, edx
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i32 @f(i32 %0) {
+    %1 = srem i32 42, i32 %0
+    ret i32 %1
+}
+
+# test:section mcode
+
+func f:
+    mov eax, 42
+    cdq
+    idiv edi
+    mov eax, edx
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i16 @f(i16 %0) {
+    %1 = srem i16 %0, i16 42
+    ret i16 %1
+}
+
+# test:section mcode
+
+func f:
+    mov ecx, 42
+    mov eax, edi
+    cwd
+    idiv cx
+    mov eax, edx
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i16 @f(i16 %0) {
+    %1 = srem i16 42, i16 %0
+    ret i16 %1
+}
+
+# test:section mcode
+
+func f:
+    mov eax, 42
+    cwd
+    idiv di
+    mov eax, edx
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i8 @f(i8 %0) {
+    %1 = srem i8 %0, i8 42
+    ret i8 %1
+}
+
+# test:section mcode
+
+func f:
+    mov ecx, 42
+    movsx eax, dil
+    idiv cl
+    mov eax, edx
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i8 @f(i8 %0) {
+    %1 = srem i8 42, i8 %0
+    ret i8 %1
+}
+
+# test:section mcode
+
+func f:
+    mov eax, 42
+    idiv dil
+    mov eax, edx
+    ret

@@ -1,0 +1,66 @@
+# test:subtest
+# test:section ssa
+
+func i64 @f(i64 %0, i64 %1) {
+    %2 = urem i64 %0, i64 %1
+    ret i64 %2
+}
+
+# test:section mcode
+
+func f:
+    mov rax, rdi
+    xor edx, edx
+    div rsi
+    mov rax, rdx
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i32 @f(i32 %0, i32 %1) {
+    %2 = urem i32 %0, i32 %1
+    ret i32 %2
+}
+
+# test:section mcode
+
+func f:
+    mov eax, edi
+    xor edx, edx
+    div esi
+    mov eax, edx
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i16 @f(i16 %0, i16 %1) {
+    %2 = urem i16 %0, i16 %1
+    ret i16 %2
+}
+
+# test:section mcode
+
+func f:
+    mov eax, edi
+    xor edx, edx
+    div si
+    mov eax, edx
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i8 @f(i8 %0, i8 %1) {
+    %2 = urem i8 %0, i8 %1
+    ret i8 %2
+}
+
+# test:section mcode
+
+func f:
+    movzx eax, dil
+    div sil
+    mov eax, edx
+    ret

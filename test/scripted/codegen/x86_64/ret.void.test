@@ -1,0 +1,11 @@
+# test:subtest
+# test:section ssa
+
+func void @f() {
+    ret
+}
+
+# test:section mcode
+
+func f:
+    ret

@@ -1,0 +1,77 @@
+# test:subtest
+# test:section ssa
+
+func i64 @f(i64 %0) {
+    ret i64 %0
+}
+
+# test:section mcode
+
+func f:
+    mov rax, rdi
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i32 @f(i32 %0) {
+    ret i32 %0
+}
+
+# test:section mcode
+
+func f:
+    mov eax, edi
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i16 @f(i16 %0) {
+    ret i16 %0
+}
+
+# test:section mcode
+
+func f:
+    mov eax, edi
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i8 @f(i8 %0) {
+    ret i8 %0
+}
+
+# test:section mcode
+
+func f:
+    mov eax, edi
+    ret
+
+# test:subtest
+# test:section ssa
+
+func f64 @f(f64 %0, f64 %1) {
+    ret f64 %1
+}
+
+# test:section mcode
+
+func f:
+    movapd xmm0, xmm1
+    ret
+
+# test:subtest
+# test:section ssa
+
+func f32 @f(f32 %0, f32 %1) {
+    ret f32 %1
+}
+
+# test:section mcode
+
+func f:
+    movaps xmm0, xmm1
+    ret

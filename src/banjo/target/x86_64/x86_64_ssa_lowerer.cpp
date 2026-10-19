@@ -408,14 +408,22 @@ void X8664SSALowerer::lower_ret(ssa::Instruction &instr) {
     if (!instr.get_operands().empty()) {
         ssa::Operand &value = instr.get_operand(0);
         ssa::Type type = value.get_type();
-        unsigned size = get_size(value.get_type()) == 8 ? 8 : 4;
+        unsigned size = get_size(value.get_type());
 
-        mcode::PhysicalReg dst_reg = type.is_floating_point() ? X8664Register::XMM0 : X8664Register::RAX;
+        if (type.is_floating_point()) {
+            mcode::PhysicalReg dst_reg = X8664Register::XMM0;
 
-        mcode::Opcode m_opcode = get_move_opcode(type);
-        mcode::Operand m_dst = mcode::Operand::from_register(mcode::Register::from_physical(dst_reg), size);
-        mcode::Operand m_src = lower_as_operand(value);
-        emit({m_opcode, {m_dst, m_src.with_size(size)}});
+            mcode::Opcode m_opcode = type == ssa::Primitive::F64 ? X8664Opcode::MOVSD : X8664Opcode::MOVSS;
+            mcode::Operand m_dst = mcode::Operand::from_register(mcode::Register::from_physical(dst_reg), size);
+            mcode::Operand m_src = lower_value(value, OperandKind::REG_ADDR);
+            emit({m_opcode, {m_dst, m_src.with_size(size)}});
+        } else {
+            mcode::PhysicalReg dst_reg = X8664Register::RAX;
+
+            mcode::Operand m_dst = mcode::Operand::from_register(mcode::Register::from_physical(dst_reg), size);
+            mcode::Operand m_src = lower_value(value, OperandKind::REG_ADDR_IMM);
+            emit({X8664Opcode::MOV, {m_dst, m_src.with_size(size)}});
+        }
     }
 
     emit({X8664Opcode::RET});
@@ -1000,6 +1008,9 @@ void X8664SSALowerer::lower_in_place_shift(mcode::Opcode m_opcode, ssa::Operand 
 }
 
 void X8664SSALowerer::lower_into_div(mcode::PhysicalReg result, ssa::Instruction &instr) {
+    // TODO: Instead of using `CQO`, `CDQ`, and `CWD`, we could set `RDX`
+    // directly if the left-hand side is an immediate value.
+
     ssa::Operand &lhs = instr.get_operand(0);
     ssa::Operand &rhs = instr.get_operand(1);
     unsigned size = get_size(lhs.get_type());
@@ -1007,25 +1018,36 @@ void X8664SSALowerer::lower_into_div(mcode::PhysicalReg result, ssa::Instruction
     mcode::Register rax = mcode::Register::from_physical(X8664Register::RAX);
     mcode::Register rdx = mcode::Register::from_physical(X8664Register::RDX);
 
-    mcode::Operand m_rax = mcode::Operand::from_register(rax, size);
-    mcode::Operand m_rdx = mcode::Operand::from_register(rdx, size);
-    mcode::Operand m_tmp = mcode::Operand::from_register(create_tmp_reg(), size);
+    if (size == 1) {
+        mcode::Operand m_lhs = lower_value(lhs, OperandKind::REG_ADDR_IMM);
+        mcode::Operand m_rhs = lower_value(rhs, OperandKind::REG_ADDR);
+        mcode::Operand m_eax = mcode::Operand::from_register(rax, 4);
 
-    if (size == 1 || size == 2) {
-        // Size 1: Dividend and result are stored in `ax`.
-        // Size 2: Dividend and result are stored in `dx` and `ax`.
+        if (m_lhs.is_int_immediate()) {
+            emit({X8664Opcode::MOV, {m_eax, m_lhs}});
+        } else {
+            emit({X8664Opcode::MOVZX, {m_eax, m_lhs}});
+        }
 
-        emit_mov_zero_ext(m_rax.with_size(4), lower_as_operand(lhs).with_size(size));
-        emit_mov_zero_ext(m_tmp.with_size(4), lower_as_operand(rhs).with_size(size));
-        emit({X8664Opcode::XOR, {m_rdx.with_size(4), m_rdx.with_size(4)}});
-        emit({X8664Opcode::DIV, {m_tmp.with_size(4)}});
+        emit({X8664Opcode::DIV, {m_rhs}});
+    } else if (size == 2) {
+        mcode::Operand m_lhs = lower_value(lhs, OperandKind::REG_ADDR_IMM);
+        mcode::Operand m_rhs = lower_value(rhs, OperandKind::REG_ADDR);
+        mcode::Operand m_ax = mcode::Operand::from_register(rax, 2);
+        mcode::Operand m_edx = mcode::Operand::from_register(rdx, 4);
+
+        emit({X8664Opcode::MOV, {m_ax, m_lhs}});
+        emit({X8664Opcode::XOR, {m_edx, m_edx}});
+        emit({X8664Opcode::DIV, {m_rhs}});
     } else if (size == 4 || size == 8) {
-        // Size 4: Dividend and result are stored in `edx` and `eax`.
+        mcode::Operand m_lhs = lower_value(lhs, OperandKind::REG_ADDR_IMM);
+        mcode::Operand m_rhs = lower_value(rhs, OperandKind::REG_ADDR);
+        mcode::Operand m_rax = mcode::Operand::from_register(rax, size);
+        mcode::Operand m_edx = mcode::Operand::from_register(rdx, 4);
 
-        emit({X8664Opcode::MOV, {m_rax, lower_as_operand(lhs)}});
-        emit({X8664Opcode::MOV, {m_tmp, lower_as_operand(rhs)}});
-        emit({X8664Opcode::XOR, {m_rdx, m_rdx}});
-        emit({X8664Opcode::DIV, {m_tmp}});
+        emit({X8664Opcode::MOV, {m_rax, m_lhs}});
+        emit({X8664Opcode::XOR, {m_edx, m_edx}});
+        emit({X8664Opcode::DIV, {m_rhs}});
     } else {
         ASSERT_UNREACHABLE;
     }
@@ -1036,39 +1058,51 @@ void X8664SSALowerer::lower_into_div(mcode::PhysicalReg result, ssa::Instruction
 }
 
 void X8664SSALowerer::lower_into_idiv(mcode::PhysicalReg result, ssa::Instruction &instr) {
+    // TODO: GCC generates sign extensions and a 32-bit `IDIV` for 8-bit and
+    // 16-bit divisions, is their encoding actually smaller?
+
     ssa::Operand &lhs = instr.get_operand(0);
     ssa::Operand &rhs = instr.get_operand(1);
     unsigned size = get_size(lhs.get_type());
 
     mcode::Register rax = mcode::Register::from_physical(X8664Register::RAX);
-    mcode::Register rdx = mcode::Register::from_physical(X8664Register::RDX);
 
-    mcode::Operand m_rax = mcode::Operand::from_register(rax, size);
-    mcode::Operand m_rdx = mcode::Operand::from_register(rdx, size);
-    mcode::Operand m_tmp = mcode::Operand::from_register(create_tmp_reg(), size);
+    if (size == 1) {
+        mcode::Operand m_lhs = lower_value(lhs, OperandKind::REG_ADDR_IMM);
+        mcode::Operand m_rhs = lower_value(rhs, OperandKind::REG_ADDR);
+        mcode::Operand m_eax = mcode::Operand::from_register(rax, 4);
 
-    if (size == 1 || size == 2) {
-        // Size 1: Dividend and result are stored in `ax`.
-        // Size 2: Dividend and result are stored in `dx` and `ax`.
+        if (m_lhs.is_int_immediate()) {
+            emit({X8664Opcode::MOV, {m_eax, m_lhs}});
+        } else {
+            emit({X8664Opcode::MOVSX, {m_eax, m_lhs}});
+        }
 
-        emit_mov_sign_ext(m_rax.with_size(4), lower_as_operand(lhs).with_size(size));
-        emit_mov_sign_ext(m_tmp.with_size(4), lower_as_operand(rhs).with_size(size));
-        emit({X8664Opcode::CDQ});
-        emit({X8664Opcode::IDIV, {m_tmp.with_size(4)}});
+        emit({X8664Opcode::IDIV, {m_rhs}});
+    } else if (size == 2) {
+        mcode::Operand m_lhs = lower_value(lhs, OperandKind::REG_ADDR_IMM);
+        mcode::Operand m_rhs = lower_value(rhs, OperandKind::REG_ADDR);
+        mcode::Operand m_ax = mcode::Operand::from_register(rax, 2);
+
+        emit({X8664Opcode::MOV, {m_ax, m_lhs}});
+        emit({X8664Opcode::CWD});
+        emit({X8664Opcode::IDIV, {m_rhs}});
     } else if (size == 4) {
-        // Size 4: Dividend and result are stored in `edx` and `eax`.
+        mcode::Operand m_lhs = lower_value(lhs, OperandKind::REG_ADDR_IMM);
+        mcode::Operand m_rhs = lower_value(rhs, OperandKind::REG_ADDR);
+        mcode::Operand m_eax = mcode::Operand::from_register(rax, 4);
 
-        emit({X8664Opcode::MOV, {m_rax, lower_as_operand(lhs)}});
-        emit({X8664Opcode::MOV, {m_tmp, lower_as_operand(rhs)}});
+        emit({X8664Opcode::MOV, {m_eax, m_lhs}});
         emit({X8664Opcode::CDQ});
-        emit({X8664Opcode::IDIV, {m_tmp}});
+        emit({X8664Opcode::IDIV, {m_rhs}});
     } else if (size == 8) {
-        // Size 8: Dividend and result are stored in `rdx` and `rax`.
+        mcode::Operand m_lhs = lower_value(lhs, OperandKind::REG_ADDR_IMM);
+        mcode::Operand m_rhs = lower_value(rhs, OperandKind::REG_ADDR);
+        mcode::Operand m_rax = mcode::Operand::from_register(rax, 8);
 
-        emit({X8664Opcode::MOV, {m_rax, lower_as_operand(lhs)}});
-        emit({X8664Opcode::MOV, {m_tmp, lower_as_operand(rhs)}});
+        emit({X8664Opcode::MOV, {m_rax, m_lhs}});
         emit({X8664Opcode::CQO});
-        emit({X8664Opcode::IDIV, {m_tmp}});
+        emit({X8664Opcode::IDIV, {m_rhs}});
     } else {
         ASSERT_UNREACHABLE;
     }

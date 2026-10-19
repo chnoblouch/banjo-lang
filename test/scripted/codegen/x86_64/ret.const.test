@@ -1,0 +1,83 @@
+# test:subtest
+# test:section ssa
+
+# TODO: This could actually be `mov eax, 42`.
+
+func i64 @f() {
+    ret i64 42
+}
+
+# test:section mcode
+
+func f:
+    mov rax, 42
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i32 @f() {
+    ret i32 42
+}
+
+# test:section mcode
+
+func f:
+    mov eax, 42
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i16 @f() {
+    ret i16 42
+}
+
+# test:section mcode
+
+func f:
+    mov eax, 42
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i8 @f() {
+    ret i8 42
+}
+
+# test:section mcode
+
+func f:
+    mov eax, 42
+    ret
+
+# test:subtest
+# test:section ssa
+
+func f64 @f() {
+    ret f64 2.5
+}
+
+# test:section mcode
+
+data float.0: f64(2.5)
+
+func f:
+    movsd xmm0, [float.0]
+    ret
+
+# test:subtest
+# test:section ssa
+
+func f32 @f() {
+    ret f32 2.5
+}
+
+# test:section mcode
+
+data float.0: f32(2.5)
+
+func f:
+    movss xmm0, [float.0]
+    ret

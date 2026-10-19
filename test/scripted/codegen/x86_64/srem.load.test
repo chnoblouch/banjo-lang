@@ -1,0 +1,74 @@
+# test:subtest
+# test:section ssa
+
+func i64 @f(addr %0, addr %1) {
+    %2 = load i64, addr %0
+    %3 = load i64, addr %1
+    %4 = srem i64 %2, i64 %3
+    ret i64 %4
+}
+
+# test:section mcode
+
+func f:
+    mov rax, [rdi]
+    cqo
+    idiv qword [rsi]
+    mov rax, rdx
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i32 @f(addr %0, addr %1) {
+    %2 = load i32, addr %0
+    %3 = load i32, addr %1
+    %4 = srem i32 %2, i32 %3
+    ret i32 %4
+}
+
+# test:section mcode
+
+func f:
+    mov eax, [rdi]
+    cdq
+    idiv dword [rsi]
+    mov eax, edx
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i16 @f(addr %0, addr %1) {
+    %2 = load i16, addr %0
+    %3 = load i16, addr %1
+    %4 = srem i16 %2, i16 %3
+    ret i16 %4
+}
+
+# test:section mcode
+
+func f:
+    mov ax, [rdi]
+    cwd
+    idiv word [rsi]
+    mov eax, edx
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i8 @f(addr %0, addr %1) {
+    %2 = load i8, addr %0
+    %3 = load i8, addr %1
+    %4 = srem i8 %2, i8 %3
+    ret i8 %4
+}
+
+# test:section mcode
+
+func f:
+    movsx eax, byte [rdi]
+    idiv byte [rsi]
+    mov eax, edx
+    ret
