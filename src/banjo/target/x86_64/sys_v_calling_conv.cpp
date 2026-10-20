@@ -148,7 +148,7 @@ void SysVCallingConv::append_call(ssa::Operand func_operand, codegen::SSALowerer
 
     mcode::Operand m_callee;
     if (func_operand.is_symbol()) {
-        m_callee = x86_64_lowerer.lower_as_operand(func_operand, {.is_callee = true});
+        m_callee = x86_64_lowerer.lower_symbol_as_operand(func_operand, 8, {.is_callee = true});
     } else if (func_operand.is_register()) {
         ssa::InstrIter producer =
             lowerer.find_def(func_operand.get_register(), codegen::DefSearchScope::BLOCK_NO_SIDE_EFFECTS);

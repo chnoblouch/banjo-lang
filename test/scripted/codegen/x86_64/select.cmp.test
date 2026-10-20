@@ -1,0 +1,63 @@
+# test:subtest
+# test:section ssa
+
+func i8 @f(i64 %0, i64 %1, i8 %2, i8 %3) {
+    %4 = select i64 %0, void eq, i64 %1, i8 %2, i8 %3
+    ret i8 %4
+}
+
+# test:section mcode
+
+func f:
+    cmp rdi, rsi
+    cmove ecx, edx
+    mov eax, ecx
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i8 @f(i32 %0, i32 %1, i8 %2, i8 %3) {
+    %4 = select i32 %0, void eq, i32 %1, i8 %2, i8 %3
+    ret i8 %4
+}
+
+# test:section mcode
+
+func f:
+    cmp edi, esi
+    cmove ecx, edx
+    mov eax, ecx
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i8 @f(i16 %0, i16 %1, i8 %2, i8 %3) {
+    %4 = select i16 %0, void eq, i16 %1, i8 %2, i8 %3
+    ret i8 %4
+}
+
+# test:section mcode
+
+func f:
+    cmp di, si
+    cmove ecx, edx
+    mov eax, ecx
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i8 @f(i8 %0, i8 %1, i8 %2, i8 %3) {
+    %4 = select i8 %0, void eq, i8 %1, i8 %2, i8 %3
+    ret i8 %4
+}
+
+# test:section mcode
+
+func f:
+    cmp dil, sil
+    cmove ecx, edx
+    mov eax, ecx
+    ret

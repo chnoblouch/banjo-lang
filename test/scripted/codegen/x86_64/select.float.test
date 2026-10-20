@@ -1,0 +1,41 @@
+# TODO: The placement of `movapd xmm0, xmm1` is odd, but technically valid.
+
+# test:subtest
+# test:section ssa
+
+func f64 @f(i32 %0, i32 %1, f64 %2, f64 %3, f64 %4) {
+    %5 = select i32 %0, void eq, i32 %1, f64 %3, f64 %4
+    ret f64 %5
+}
+
+# test:section mcode
+
+func f:
+    movapd xmm0, xmm1
+    cmp edi, esi
+    jne b0
+    jmp b1
+b0:
+    movapd xmm0, xmm2
+b1:
+    ret
+
+# test:subtest
+# test:section ssa
+
+func f32 @f(i32 %0, i32 %1, f32 %2, f32 %3, f32 %4) {
+    %5 = select i32 %0, void eq, i32 %1, f32 %3, f32 %4
+    ret f32 %5
+}
+
+# test:section mcode
+
+func f:
+    movaps xmm0, xmm1
+    cmp edi, esi
+    jne b0
+    jmp b1
+b0:
+    movaps xmm0, xmm2
+b1:
+    ret

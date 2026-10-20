@@ -348,56 +348,59 @@ void X8664SSALowerer::lower_fcjmp(ssa::Instruction &instr) {
 }
 
 void X8664SSALowerer::lower_select(ssa::Instruction &instr) {
+    // TODO: More tests.
+
     ssa::Operand &cmp_lhs = instr.get_operand(0);
     ssa::Comparison cmp = instr.get_operand(1).get_comparison();
     ssa::Operand &cmp_rhs = instr.get_operand(2);
-    ssa::Operand &val_true = instr.get_operand(3);
-    ssa::Operand &val_false = instr.get_operand(4);
+    ssa::Operand &value_true = instr.get_operand(3);
+    ssa::Operand &value_false = instr.get_operand(4);
 
     ssa::Type cmp_type = cmp_lhs.get_type();
-    ssa::Type value_type = val_true.get_type();
+    ssa::Type value_type = value_true.get_type();
     unsigned value_size = get_size(value_type) == 8 ? 8 : 4;
-
-    // TODO: Implement for floats.
-    ASSERT(value_type.is_integer());
 
     mcode::Operand m_dst = map_vreg_dst(instr, value_size);
 
-    if (cmp_type.is_floating_point()) {
-        if (cmp_lhs == val_true && cmp_rhs == val_false) {
-            mcode::Opcode mov_opcode = value_size == 4 ? X8664Opcode::MOVSS : X8664Opcode::MOVSD;
+    if (cmp_type.is_floating_point() && cmp_lhs == value_true && cmp_rhs == value_false) {
+        mcode::Opcode mov_opcode = value_size == 4 ? X8664Opcode::MOVSS : X8664Opcode::MOVSD;
 
-            if (cmp == ssa::Comparison::FGT) {
-                mcode::Opcode m_opcode = value_size == 4 ? X8664Opcode::MAXSS : X8664Opcode::MAXSD;
-                emit({mov_opcode, {m_dst, lower_as_operand(cmp_lhs)}});
-                emit({m_opcode, {m_dst, lower_as_operand(cmp_rhs)}});
-                return;
-            } else if (cmp == ssa::Comparison::FLT) {
-                mcode::Opcode m_opcode = value_size == 4 ? X8664Opcode::MINSS : X8664Opcode::MINSD;
-                emit({mov_opcode, {m_dst, lower_as_operand(cmp_lhs)}});
-                emit({m_opcode, {m_dst, lower_as_operand(cmp_rhs)}});
-                return;
-            }
+        if (cmp == ssa::Comparison::FGT) {
+            mcode::Opcode m_opcode = value_size == 4 ? X8664Opcode::MAXSS : X8664Opcode::MAXSD;
+            emit({mov_opcode, {m_dst, lower_value(cmp_lhs, OperandKind::REG_ADDR)}});
+            emit({m_opcode, {m_dst, lower_value(cmp_rhs, OperandKind::REG_ADDR)}});
+            return;
+        } else if (cmp == ssa::Comparison::FLT) {
+            mcode::Opcode m_opcode = value_size == 4 ? X8664Opcode::MINSS : X8664Opcode::MINSD;
+            emit({mov_opcode, {m_dst, lower_value(cmp_lhs, OperandKind::REG_ADDR)}});
+            emit({m_opcode, {m_dst, lower_value(cmp_rhs, OperandKind::REG_ADDR)}});
+            return;
         }
-
-        bool is_f64 = cmp_type == ssa::Primitive::F64;
-
-        mcode::Operand m_lhs = lower_as_operand(cmp_lhs);
-        mcode::Operand m_rhs = lower_as_operand(cmp_rhs, {.allow_addrs = true});
-        mcode::Opcode cmp_opcode = is_f64 ? X8664Opcode::UCOMISD : X8664Opcode::UCOMISS;
-        emit({cmp_opcode, {m_lhs, m_rhs}});
-    } else {
-        mcode::Operand m_lhs = lower_as_operand(cmp_lhs);
-        mcode::Operand m_rhs = lower_as_operand(cmp_rhs, {.allow_addrs = true});
-        emit({X8664Opcode::CMP, {m_lhs, m_rhs}});
     }
 
-    mcode::Operand m_tmp = mcode::Operand::from_register(create_reg(), value_size);
-    mcode::Opcode cmovcc_opcode = X8664Opcode::CMOVCC + static_cast<unsigned>(lower_condition(cmp));
+    if (value_type.is_floating_point()) {
+        mcode::BasicBlockIter false_block = create_block();
+        mcode::BasicBlockIter end_block = create_block();
 
-    emit({X8664Opcode::MOV, {m_tmp, lower_as_operand(val_true)}});
-    emit({X8664Opcode::MOV, {m_dst, lower_as_operand(val_false)}});
-    emit({cmovcc_opcode, {m_dst, m_tmp}});
+        X8664Condition condition = lower_comparison(&cmp_lhs, &cmp_rhs, ssa::invert_comparison(cmp));
+        mcode::Opcode jcc_opcode = X8664Opcode::JCC + static_cast<unsigned>(condition);
+        mcode::Opcode mov_opcode = value_type == ssa::Primitive::F64 ? X8664Opcode::MOVSD : X8664Opcode::MOVSS;
+
+        emit({jcc_opcode, {mcode::Operand::from_basic_block(*false_block)}});
+        emit({mov_opcode, {m_dst, lower_value(value_true, OperandKind::REG_ADDR)}});
+        emit({X8664Opcode::JMP, {mcode::Operand::from_basic_block(*end_block)}});
+        start_block(false_block);
+        emit({mov_opcode, {m_dst, lower_value(value_false, OperandKind::REG_ADDR)}});
+        start_block(end_block);
+    } else {
+        X8664Condition condition = lower_comparison(&cmp_lhs, &cmp_rhs, cmp);
+        mcode::Opcode cmovcc_opcode = X8664Opcode::CMOVCC + static_cast<unsigned>(condition);
+        mcode::Operand m_tmp = mcode::Operand::from_register(create_reg(), value_size);
+
+        emit({X8664Opcode::MOV, {m_tmp, lower_value(value_true, OperandKind::REG_ADDR_IMM)}});
+        emit({X8664Opcode::MOV, {m_dst, lower_value(value_false, OperandKind::REG_ADDR_IMM)}});
+        emit({cmovcc_opcode, {m_dst, m_tmp}});
+    }
 }
 
 void X8664SSALowerer::lower_call(ssa::Instruction &instr) {
@@ -1231,17 +1234,21 @@ void X8664SSALowerer::move_branch_args(ssa::BranchTarget &target) {
         ssa::VirtualRegister arg_reg = target.block->get_param_regs()[i];
         ssa::VirtualRegister tmp_reg = block_arg_tmps.at(arg_reg);
 
-        unsigned size = get_size(arg.get_type());
+        ssa::Type type = arg.get_type();
+        unsigned size = get_size(type);
         mcode::Operand dst = mcode::Operand::from_register(mcode::Register::from_virtual(tmp_reg), size);
 
         if (arg.is_int_immediate() && arg.get_int_immediate() == 0) {
             emit({X8664Opcode::XOR, {dst, dst}, mcode::Instruction::FLAG_CALL_ARG});
         } else if (arg.is_fp_immediate() && arg.get_fp_immediate() == 0.0) {
             emit({X8664Opcode::XORPS, {dst, dst}, mcode::Instruction::FLAG_CALL_ARG});
-        } else {
-            mcode::Opcode opcode = get_move_opcode(arg.get_type());
-            mcode::Operand src = lower_as_operand(arg);
+        } else if (type.is_floating_point()) {
+            mcode::Opcode opcode = type == ssa::Primitive::F64 ? X8664Opcode::MOVSD : X8664Opcode::MOVSS;
+            mcode::Operand src = lower_value(arg, OperandKind::REG_ADDR);
             emit({opcode, {dst, src}, mcode::Instruction::FLAG_CALL_ARG});
+        } else {
+            mcode::Operand src = lower_value(arg, OperandKind::REG_ADDR_IMM);
+            emit({X8664Opcode::MOV, {dst, src}, mcode::Instruction::FLAG_CALL_ARG});
         }
     }
 }
@@ -1260,7 +1267,7 @@ mcode::Operand X8664SSALowerer::lower_as_move(mcode::Operand m_dst, const ssa::V
     } else if (value.is_register()) {
         return lower_reg_as_move(m_dst, value.get_register(), value.get_type());
     } else if (value.is_symbol()) {
-        emit({X8664Opcode::MOV, {m_dst, lower_as_operand(value)}});
+        emit({X8664Opcode::MOV, {m_dst, lower_symbol_as_operand(value, m_dst.get_size(), {})}});
         return m_dst;
     } else {
         ASSERT_UNREACHABLE;
@@ -1335,88 +1342,6 @@ mcode::Operand X8664SSALowerer::lower_reg_as_move(mcode::Operand m_dst, ssa::Vir
     }
 
     return m_dst;
-}
-
-mcode::Operand X8664SSALowerer::lower_as_operand(const ssa::Value &value) {
-    return lower_as_operand(value, {});
-}
-
-mcode::Operand X8664SSALowerer::lower_as_operand(const ssa::Value &value, ValueLowerFlags flags) {
-    unsigned size = get_size(value.get_type());
-
-    if (value.is_int_immediate()) {
-        return lower_int_imm_as_operand(value.get_int_immediate(), size);
-    } else if (value.is_fp_immediate()) {
-        return lower_fp_imm_as_operand(value.get_fp_immediate(), size);
-    } else if (value.is_register()) {
-        return lower_reg_as_operand(value.get_register(), size, flags);
-    } else if (value.is_symbol()) {
-        return lower_symbol_as_operand(value, size, flags);
-    } else {
-        ASSERT_UNREACHABLE;
-    }
-}
-
-mcode::Operand X8664SSALowerer::lower_int_imm_as_operand(LargeInt value, unsigned size) {
-    // Integer immediates that are larger than 32 bits cannot be encoded as an operand, so move them
-    // into a register using an extra `MOV` instruction.
-    if (size == 8 && value.to_bits() >= (1ull << 32)) {
-        mcode::Register m_reg = create_reg();
-        mcode::Operand m_dst = mcode::Operand::from_register(m_reg, 8);
-        mcode::Operand m_src = mcode::Operand::from_int_immediate(value, 8);
-        emit({X8664Opcode::MOV, {m_dst, m_src}});
-        return m_dst;
-    }
-
-    return mcode::Operand::from_int_immediate(value, size);
-}
-
-mcode::Operand X8664SSALowerer::lower_fp_imm_as_operand(double value, unsigned size) {
-    mcode::Register m_reg = create_reg();
-    mcode::Operand m_dst = mcode::Operand::from_register(m_reg, size);
-
-    // Use `XORP[S,D] dst, dst` to generate a zero floating-point number so we don't have to load it
-    // from memory.
-    if (value == 0.0) {
-        mcode::Opcode m_opcode = size == 4 ? X8664Opcode::XORPS : X8664Opcode::XORPD;
-        emit({m_opcode, {m_dst, m_dst}});
-        return m_dst;
-    }
-
-    mcode::Opcode m_opcode = size == 4 ? X8664Opcode::MOVSS : X8664Opcode::MOVSD;
-    mcode::Operand m_src = create_fp_const_load(value, size);
-    emit({m_opcode, {m_dst, m_src}});
-    return m_dst;
-}
-
-mcode::Operand X8664SSALowerer::lower_reg_as_operand(
-    ssa::VirtualRegister src_reg,
-    unsigned size,
-    ValueLowerFlags flags
-) {
-    mcode::Operand m_src = map_vreg_as_operand(src_reg, size);
-
-    if (m_src.is_stack_slot()) {
-        mcode::Operand m_dst = mcode::Operand::from_register(create_reg(), size);
-
-        emit(mcode::Instruction(X8664Opcode::LEA, {m_dst, m_src}));
-        return m_dst;
-    }
-
-    if (flags.allow_addrs) {
-        ssa::InstrIter def = find_def(src_reg, codegen::DefSearchScope::BLOCK_NO_SIDE_EFFECTS);
-
-        // If this register was produced by a load, use the loaded value directly instead of first
-        // loading it into a register.
-        if (def && def->get_opcode() == ssa::Opcode::LOAD && get_num_uses(*def->get_dest()) == 1) {
-            AddrComponents addr = collect_addr(def->get_operand(1));
-            mcode::Operand m_load_dst = lower_addr_mem_access(addr);
-            discard_use(*def->get_dest());
-            return m_load_dst;
-        }
-    }
-
-    return m_src;
 }
 
 mcode::Operand X8664SSALowerer::lower_symbol_as_operand(const ssa::Value &value, unsigned size, ValueLowerFlags flags) {

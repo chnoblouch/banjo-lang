@@ -121,11 +121,6 @@ public:
     mcode::Operand lower_fp_imm_as_move(mcode::Operand m_dst, double value);
     mcode::Operand lower_reg_as_move(mcode::Operand m_dst, ssa::VirtualRegister src_reg, ssa::Type type);
 
-    mcode::Operand lower_as_operand(const ssa::Value &value);
-    mcode::Operand lower_as_operand(const ssa::Value &value, ValueLowerFlags flags);
-    mcode::Operand lower_int_imm_as_operand(LargeInt value, unsigned size);
-    mcode::Operand lower_fp_imm_as_operand(double value, unsigned size);
-    mcode::Operand lower_reg_as_operand(ssa::VirtualRegister src_reg, unsigned size, ValueLowerFlags flags);
     mcode::Operand lower_symbol_as_operand(const ssa::Value &value, unsigned size, ValueLowerFlags flags);
 
     mcode::Operand lower_value(ssa::Value &value, OperandKind kind);

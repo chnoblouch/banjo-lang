@@ -1,0 +1,31 @@
+# test:subtest
+# test:section ssa
+
+func i8 @f(f64 %0, f64 %1, i8 %2, i8 %3) {
+    %4 = select f64 %0, void eq, f64 %1, i8 %2, i8 %3
+    ret i8 %4
+}
+
+# test:section mcode
+
+func f:
+    ucomisd xmm0, xmm1
+    cmove esi, edi
+    mov eax, esi
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i8 @f(f32 %0, f32 %1, i8 %2, i8 %3) {
+    %4 = select f32 %0, void eq, f32 %1, i8 %2, i8 %3
+    ret i8 %4
+}
+
+# test:section mcode
+
+func f:
+    ucomiss xmm0, xmm1
+    cmove esi, edi
+    mov eax, esi
+    ret
