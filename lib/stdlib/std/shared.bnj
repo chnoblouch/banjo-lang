@@ -30,7 +30,6 @@ struct Shared[T] {
 
     pub func __deinit__(mut self) {
         self.data.ref_count -= 1;
-        println(self.data.ref_count);
 
         if self.data.ref_count == 0 {
             builtin.deinit(self.data.value);
