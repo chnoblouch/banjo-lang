@@ -1,0 +1,21 @@
+use std.platform;
+
+struct Library {
+    var handle: platform.DynLib;
+
+    pub func load(path: StringSlice) -> ?Library {
+        try handle in platform.dynlib_open(path) {
+            return Library { handle };
+        } else {
+            return none;
+        }
+    }
+
+    pub func get(self, symbol: StringSlice) -> addr {
+        return platform.dynlib_symbol(self.handle, symbol);
+    }
+
+    pub func __deinit__(self) {
+        platform.dynlib_close(self.handle);
+    }
+}

@@ -100,4 +100,7 @@ meta if config.OS == config.EMSCRIPTEN {
     const SHUT_RD: i32 = 0;  # TODO
     const SHUT_WR: i32 = 1;  # TODO
     const SHUT_RDWR: i32 = 2;  # TODO
+
+    const RTLD_LAZY: i32 = 0x00000001;
+    const RTLD_NOW: i32 = 0x00000002;
 }

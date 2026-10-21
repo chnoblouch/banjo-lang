@@ -48,6 +48,8 @@ meta if config.OS == config.LINUX {
         SHUT_RD,
         SHUT_WR,
         SHUT_RDWR,
+        RTLD_LAZY,
+        RTLD_NOW,
     };
 } else if config.OS == config.MACOS {
     use os.posix_macos.{
@@ -95,6 +97,8 @@ meta if config.OS == config.LINUX {
         SHUT_RD,
         SHUT_WR,
         SHUT_RDWR,
+        RTLD_LAZY,
+        RTLD_NOW,
     };
 } else if config.OS == config.EMSCRIPTEN {
     use os.posix_emscripten.{
@@ -142,6 +146,8 @@ meta if config.OS == config.LINUX {
         SHUT_RD,
         SHUT_WR,
         SHUT_RDWR,
+        RTLD_LAZY,
+        RTLD_NOW,
     };
 }
 
@@ -187,4 +193,7 @@ meta if os.IS_UNIX {
     native func shutdown(sockfd: i32, how: i32) -> i32;
     native func getaddrinfo(node: *u8, service: *u8, hints: *Addrinfo, res: **Addrinfo) -> i32;
     native func freeaddrinfo(res: *Addrinfo);
+    native func dlopen(path: *u8, flags: i32) -> addr;
+    native func dlsym(handle: addr, symbol: *u8) -> addr;
+    native func dlclose(handle: addr) -> i32;
 }

@@ -18,6 +18,7 @@ meta if IS_UNIX {
     type Mutex = *posix.PthreadMutex;
     type Condition = *posix.PthreadCond;
     type Socket = i32;
+    type DynLib = addr;
 
     const SOCKET_INVALID: Socket = -1;
     const SOCKET_ADDRESS_FAMILY_IPV4: i32 = posix.AF_INET;
@@ -63,7 +64,7 @@ meta if IS_UNIX {
 
         while posix.environ[index] != null {
             var string = StringSlice.of_cstring(posix.environ[index]);
-            
+
             try separator in string.find('=') {
                 var name = string.substring(0, separator);
                 var value = string.substring(separator + 1, string.length());
@@ -122,7 +123,7 @@ meta if IS_UNIX {
         }
 
         var result = posix.open(path.to_cstring().data(), flags, 0o666);
-        
+
         if result != -1 {
             return result;
         } else {
@@ -197,7 +198,7 @@ meta if IS_UNIX {
 
     pub func path_exists(path: *String) -> bool except ErrorCode {
         var result = posix.access(path.to_cstring().data(), posix.F_OK);
-        
+
         if result != -1 {
             return result == 0;
         } else {
@@ -214,7 +215,7 @@ meta if IS_UNIX {
     pub func path_is_file(path: *String) -> bool except ErrorCode {
         var stat: posix.Stat;
         var result = posix.stat(path.to_cstring().data(), &stat);
-        
+
         if result != -1 {
             return (stat.mode & posix.S_IFMT) == posix.S_IFREG;
         } else {
@@ -225,7 +226,7 @@ meta if IS_UNIX {
     pub func path_is_dir(path: *String) -> bool except ErrorCode {
         var stat: posix.Stat;
         var result = posix.stat(path.to_cstring().data(), &stat);
-        
+
         if result != -1 {
             return (stat.mode & posix.S_IFMT) == posix.S_IFDIR;
         } else {
@@ -268,21 +269,21 @@ meta if IS_UNIX {
     pub func path_create_dir(path: *String) -> void except ErrorCode {
         var result = posix.mkdir(path.to_cstring().data(), 0o666);
         if result == -1 {
-            return error_last(); 
+            return error_last();
         }
     }
 
     pub func path_remove_file(path: *String) -> void except ErrorCode {
         var result = posix.unlink(path.to_cstring().data());
         if result == -1 {
-            return error_last(); 
+            return error_last();
         }
     }
 
     pub func path_remove_dir(path: *String) -> void except ErrorCode {
         var result = posix.rmdir(path.to_cstring().data());
         if result == -1 {
-            return error_last(); 
+            return error_last();
         }
     }
 
@@ -414,7 +415,7 @@ meta if IS_UNIX {
 
         var addr_info: *posix.Addrinfo;
         result = posix.getaddrinfo(host_cstring.data(), port_cstring.data(), &addr_hints, &addr_info);
-        
+
         if result != 0 {
             return false;
         }
@@ -447,5 +448,23 @@ meta if IS_UNIX {
     pub func socket_close(socket: Socket) {
         posix.shutdown(socket, posix.SHUT_RDWR);
         posix.close(socket);
+    }
+
+    pub func dynlib_open(path: StringSlice) -> ?DynLib {
+        var handle = posix.dlopen(path.to_cstring().data(), posix.RTLD_NOW);
+
+        if handle != null {
+            return handle;
+        } else {
+            return none;
+        }
+    }
+
+    pub func dynlib_symbol(dynlib: DynLib, symbol: StringSlice) -> addr {
+        return posix.dlsym(dynlib, symbol.to_cstring().data());
+    }
+
+    pub func dynlib_close(dynlib: DynLib) {
+        posix.dlclose(dynlib);
     }
 }

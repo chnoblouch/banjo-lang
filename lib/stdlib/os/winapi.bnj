@@ -497,4 +497,18 @@ meta if os.IS_WINDOWS {
 
     @[link_name=freeaddrinfo]
     native func freeaddrinfo(addr_info: *Addrinfo);
+
+    # --- libloaderapi.h ---
+
+    @[link_name=LoadLibraryW]
+    native func load_library(lib_file_name: *u16) -> Handle;
+
+    @[link_name=GetProcAddress]
+    native func get_proc_address(
+        module: Handle,
+        proc_name: *u8,
+    ) -> addr;
+
+    @[link_name=FreeLibrary]
+    native func free_library(lib_module: Handle) -> Bool;
 }

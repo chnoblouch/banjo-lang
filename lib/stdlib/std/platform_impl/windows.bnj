@@ -18,6 +18,7 @@ meta if IS_WINDOWS {
     type Mutex = *winapi.CriticalSection;
     type Condition = *winapi.ConditionVariable;
     type Socket = winapi.Socket;
+    type DynLib = winapi.Handle;
 
     const SOCKET_INVALID: Socket = winapi.INVALID_SOCKET;
     const SOCKET_ADDRESS_FAMILY_IPV4: i32 = winapi.AF_INET;
@@ -700,8 +701,25 @@ meta if IS_WINDOWS {
         winapi.closesocket(socket);
     }
 
-    pub func exec_debug_section() -> ?Slice[u8] {
-        return none;
+    pub func dynlib_open(path: StringSlice) -> ?DynLib {
+        var winapi_path = path.to_utf16();
+        winapi_path.append(0);
+
+        var handle = winapi.load_library(winapi_path.data());
+
+        if handle != null {
+            return handle;
+        } else {
+            return none;
+        }
+    }
+
+    pub func dynlib_symbol(dynlib: DynLib, symbol: StringSlice) -> addr {
+        return winapi.get_proc_address(dynlib, symbol.to_cstring().data());
+    }
+
+    pub func dynlib_close(dynlib: DynLib) {
+        winapi.free_library(dynlib);
     }
 
     func read_console_utf16(handle: winapi.Handle, data: Slice[u16]) -> usize except ErrorCode {
