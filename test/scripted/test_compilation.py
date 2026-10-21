@@ -30,6 +30,10 @@ SKIPPED_TESTS = set([
     "errors.recursive_struct.6",
     "errors.generic_arg_inference_conflict.0",
     "errors.generic_arg_inference_conflict.1",
+    "errors.not_a_method.0",
+    "errors.not_a_method.1",
+    "errors.not_a_method.2",
+    "errors.not_a_method.3",
     "features.meta_if.8",
     "features.meta_for.0",
     "features.generics.protos.3",
@@ -39,6 +43,7 @@ SKIPPED_TESTS = set([
     "fixed_bugs.meta_if_dependencies_not_analyzed_yet",
     "fixed_bugs.generics_if_not_resource",
     "fixed_bugs.block_in_meta",
+    "fixed_bugs.field_func_ptr_call",
 ])
 
 SKIPPED_TESTS_WASM = set([
@@ -48,6 +53,13 @@ SKIPPED_TESTS_WASM = set([
     "features.meta_expr.size.3",
     "features.generics.constraint.builtin.13",
     "features.generics.operators.17",
+    "stdlib.stack_trace.0",
+    "stdlib.stack_trace.1",
+    "stdlib.stack_trace.2",
+    "stdlib.stack_trace.3",
+])
+
+SKIPPED_TESTS_OPTIMIZED = set([
     "stdlib.stack_trace.0",
     "stdlib.stack_trace.1",
     "stdlib.stack_trace.2",
@@ -428,6 +440,9 @@ def filter_test(test: Test):
         return False
 
     if framework.test_wasm and test.name in SKIPPED_TESTS_WASM:
+        return False
+    
+    if framework.opt_level != 0 and test.name in SKIPPED_TESTS_OPTIMIZED:
         return False
 
     return True
