@@ -253,6 +253,15 @@ meta if os.IS_WINDOWS {
 
     # --- synchapi.h ---
 
+    struct CriticalSection {
+        var debug_info: addr;
+        var lock_count: Long;
+        var recursion_count: Long;
+        var owning_thread: Handle;
+        var lock_semaphore: Handle;
+        var spin_count: *Ulong;
+    }
+
     const INFINITE: Dword = 0xFFFFFFFF;
 
     const WAIT_ABANDONED: Dword = 0x00000080;
@@ -266,15 +275,25 @@ meta if os.IS_WINDOWS {
         milliseconds: u32,
     ) -> u32;
 
-    @[link_name=CreateMutexA]
-    native func create_mutex(
-        mutex_attributes: addr,
-        initial_owner: Bool,
-        name: *u8,
-    ) -> Handle;
+    @[link_name=InitializeCriticalSection]
+    native func initialize_critical_section(
+        critical_section: *CriticalSection,
+    );
 
-    @[link_name=ReleaseMutex]
-    native func release_mutex(mutex: Handle) -> Bool;
+    @[link_name=EnterCriticalSection]
+    native func enter_critical_section(
+        critical_section: *CriticalSection,
+    );
+
+    @[link_name=LeaveCriticalSection]
+    native func leave_critical_section(
+        critical_section: *CriticalSection,
+    );
+
+    @[link_name=DeleteCriticalSection]
+    native func delete_critical_section(
+        critical_section: *CriticalSection,
+    );
 
     @[link_name=Sleep]
     native func sleep(milliseconds: u32);

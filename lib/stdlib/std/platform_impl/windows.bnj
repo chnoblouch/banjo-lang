@@ -15,7 +15,7 @@ meta if IS_WINDOWS {
     }
 
     type File = winapi.Handle;
-    type Mutex = winapi.Handle;
+    type Mutex = *winapi.CriticalSection;
     type Condition = u32;
     type Socket = winapi.Socket;
 
@@ -556,25 +556,21 @@ meta if IS_WINDOWS {
     }
 
     pub func mutex_create() -> Mutex {
-        return winapi.create_mutex(null, winapi.FALSE, null);
+        var mutex = memory.alloc_box[winapi.CriticalSection]();
+        winapi.initialize_critical_section(mutex);
+        return mutex;
     }
 
     pub func mutex_lock(mutex: Mutex) {
-        var result = winapi.wait_for_single_object(mutex, winapi.INFINITE);
-        if result != winapi.WAIT_OBJECT_0 {
-            panic("failed to lock mutex");
-        }
+        winapi.enter_critical_section(mutex);
     }
 
     pub func mutex_unlock(mutex: Mutex) {
-        var result = winapi.release_mutex(mutex);
-        if result == 0 {
-            println("failed to unlock mutex");
-        }
+        winapi.leave_critical_section(mutex);
     }
 
     pub func mutex_destroy(mutex: Mutex) {
-        winapi.close_handle(mutex);
+        winapi.delete_critical_section(mutex);
     }
 
     pub func condition_create() -> Condition {
