@@ -19,11 +19,14 @@ CallSSABuilder &CallSSABuilder::set_callee(const ssa::Value &ssa_callee) {
     return_method = ctx.get_return_method(ssa_return_type);
 
     if (return_method == ReturnMethod::VIA_POINTER_ARG) {
-        ssa_operands.push_back(ssa_callee.with_type(ssa::Primitive::VOID));
         return_value_ptr = StoredValue::alloc(ssa_return_type, hints, ctx);
+
+        ssa_operands.push_back(ssa::Operand::from_type(ssa::Primitive::VOID));
+        ssa_operands.push_back(ssa_callee);
         ssa_operands.push_back(return_value_ptr.get_ptr());
     } else {
-        ssa_operands.push_back(ssa_callee.with_type(ssa_return_type));
+        ssa_operands.push_back(ssa::Operand::from_type(ssa_return_type));
+        ssa_operands.push_back(ssa_callee);
     }
 
     return *this;

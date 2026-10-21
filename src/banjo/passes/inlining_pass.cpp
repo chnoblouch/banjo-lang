@@ -1,6 +1,5 @@
 #include "inlining_pass.hpp"
 
-#include "banjo/passes/pass_utils.hpp"
 #include "banjo/passes/precomputing.hpp"
 #include "banjo/ssa/basic_block.hpp"
 #include "banjo/ssa/operand.hpp"
@@ -54,8 +53,8 @@ void InliningPass::run(ssa::Function *func) {
     // This has the effect that inlining at first happens deep in the call graph.
     for (ssa::BasicBlock &basic_block : func->get_basic_blocks()) {
         for (ssa::Instruction &instr : basic_block) {
-            if (instr.get_opcode() == ssa::Opcode::CALL && instr.get_operand(0).is_func()) {
-                run(instr.get_operand(0).get_func());
+            if (instr.get_opcode() == ssa::Opcode::CALL && instr.get_operand(1).is_func()) {
+                run(instr.get_operand(1).get_func());
             }
         }
     }
@@ -65,7 +64,7 @@ void InliningPass::run(ssa::Function *func) {
     // Now try to inline call instructions in this function.
     for (ssa::BasicBlockIter block_iter = func->begin(); block_iter != func->end(); ++block_iter) {
         for (ssa::InstrIter instr_iter = block_iter->begin(); instr_iter != block_iter->end(); ++instr_iter) {
-            if (instr_iter->get_opcode() == ssa::Opcode::CALL && instr_iter->get_operand(0).is_func()) {
+            if (instr_iter->get_opcode() == ssa::Opcode::CALL && instr_iter->get_operand(1).is_func()) {
                 try_inline(func, block_iter, instr_iter);
             }
         }
@@ -77,7 +76,7 @@ void InliningPass::run(ssa::Function *func) {
 void InliningPass::try_inline(ssa::Function *func, ssa::BasicBlockIter &block_iter, ssa::InstrIter &call_iter) {
     ssa::Instruction &call_instr = *call_iter;
     std::vector<ssa::Operand> call_operands = call_instr.get_operands();
-    ssa::Function *callee = call_instr.get_operand(0).get_func();
+    ssa::Function *callee = call_instr.get_operand(1).get_func();
 
     DEBUG_LOG << "    ";
 
@@ -100,7 +99,8 @@ void InliningPass::inline_func(ssa::Function &func, ssa::BasicBlockIter &block_i
     ssa::Instruction &call_instr = *call_iter;
 
     std::vector<ssa::Operand> call_operands = call_instr.get_operands();
-    ssa::Function &callee = *call_instr.get_operand(0).get_func();
+    ssa::Type return_type = call_instr.get_operand(0).get_type();
+    ssa::Function &callee = *call_instr.get_operand(1).get_func();
 
     Context ctx{
         .caller = func,
@@ -110,7 +110,7 @@ void InliningPass::inline_func(ssa::Function &func, ssa::BasicBlockIter &block_i
 
     if (call_instr.get_dest()) {
         ctx.end_block->param_regs.push_back(*call_instr.get_dest());
-        ctx.end_block->param_types.push_back(call_instr.get_operand(0).get_type());
+        ctx.end_block->param_types.push_back(return_type);
     }
 
     for (ssa::BasicBlock &callee_block : callee) {
@@ -146,7 +146,7 @@ void InliningPass::inline_func(ssa::Function &func, ssa::BasicBlockIter &block_i
 
     ssa::BranchTarget target{.block = block_iter.get_next(), .args{}};
 
-    for (unsigned i = 1; i < call_iter->get_operands().size(); i++) {
+    for (unsigned i = 2; i < call_iter->get_operands().size(); i++) {
         target.args.push_back(call_iter->get_operand(i));
     }
 

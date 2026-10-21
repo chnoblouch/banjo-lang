@@ -460,11 +460,11 @@ void WasmSSALowerer::lower_select(ssa::Instruction &instr) {
 }
 
 void WasmSSALowerer::lower_call(ssa::Instruction &instr) {
-    ssa::Operand &callee = instr.get_operand(0);
+    ssa::Operand &callee = instr.get_operand(1);
     ssa::FunctionType func_type = ssa::get_call_func_type(instr);
 
     if (!func_type.variadic) {
-        for (unsigned i = 1; i < instr.get_operands().size(); i++) {
+        for (unsigned i = 2; i < instr.get_operands().size(); i++) {
             push_operand(instr.get_operand(i));
         }
     } else {
@@ -479,7 +479,7 @@ void WasmSSALowerer::lower_call(ssa::Instruction &instr) {
 
         unsigned offset = 0;
 
-        for (unsigned i = 1 + func_type.first_variadic_index; i < instr.get_operands().size(); i++) {
+        for (unsigned i = 2 + func_type.first_variadic_index; i < instr.get_operands().size(); i++) {
             ssa::Type type = instr.get_operand(i).get_type();
             unsigned size = get_size(type);
             unsigned alignment = get_alignment(type);
@@ -506,7 +506,7 @@ void WasmSSALowerer::lower_call(ssa::Instruction &instr) {
         stack_frame.get_stack_slot(buffer).size = offset;
 
         for (unsigned i = 0; i < func_type.first_variadic_index; i++) {
-            push_operand(instr.get_operand(i + 1));
+            push_operand(instr.get_operand(i + 2));
         }
 
         emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(stack_pointer_local)}});

@@ -73,12 +73,12 @@ MSABICallingConv::MSABICallingConv() {
 void MSABICallingConv::lower_call(codegen::SSALowerer &lowerer, ssa::Instruction &instr) {
     bool variadic = instr.get_attr() == ssa::Instruction::Attribute::VARIADIC;
 
-    for (unsigned i = 1; i < instr.get_operands().size(); i++) {
-        ssa::Operand &operand = instr.get_operands()[i];
-        emit_arg_move(lowerer, operand, i - 1, variadic);
+    for (unsigned i = 2; i < instr.get_operands().size(); i++) {
+        ssa::Operand &operand = instr.get_operand(i);
+        emit_arg_move(lowerer, operand, i - 2, variadic);
     }
 
-    emit_call(lowerer, instr.get_operand(0));
+    emit_call(lowerer, instr.get_operand(1));
 
     if (instr.get_dest()) {
         emit_ret_val_move(lowerer, instr);
@@ -177,23 +177,24 @@ void MSABICallingConv::emit_call(codegen::SSALowerer &lowerer, const ssa::Operan
         }
     }
 
-    lowerer.emit(mcode::Instruction(X8664Opcode::CALL, {operand}, mcode::Instruction::FLAG_CALL));
+    lowerer.emit({X8664Opcode::CALL, {operand}, mcode::Instruction::FLAG_CALL});
 }
 
 void MSABICallingConv::emit_ret_val_move(codegen::SSALowerer &lowerer, ssa::Instruction &call_instr) {
-    bool is_floating_point = call_instr.get_operand(0).get_type().is_floating_point();
-    unsigned return_size = lowerer.get_size(call_instr.get_operand(0).get_type());
+    ssa::Type type = call_instr.get_operand(0).get_type();
+    unsigned size = lowerer.get_size(type);
+    bool is_fp = type.is_floating_point();
 
     mcode::Opcode opcode;
     mcode::PhysicalReg src_reg;
 
-    if (!is_floating_point) {
+    if (!is_fp) {
         opcode = X8664Opcode::MOV;
         src_reg = X8664Register::RAX;
     } else {
-        if (return_size == 4) {
+        if (size == 4) {
             opcode = X8664Opcode::MOVSS;
-        } else if (return_size == 8) {
+        } else if (size == 8) {
             opcode = X8664Opcode::MOVSD;
         } else {
             ASSERT_UNREACHABLE;
@@ -202,13 +203,11 @@ void MSABICallingConv::emit_ret_val_move(codegen::SSALowerer &lowerer, ssa::Inst
         src_reg = X8664Register::XMM0;
     }
 
-    lowerer.emit(
-        mcode::Instruction(
-            opcode,
-            {mcode::Operand::from_register(mcode::Register::from_virtual(*call_instr.get_dest()), return_size),
-             mcode::Operand::from_register(mcode::Register::from_physical(src_reg), return_size)}
-        )
-    );
+    lowerer.emit({
+        opcode,
+        {mcode::Operand::from_register(mcode::Register::from_virtual(*call_instr.get_dest()), size),
+         mcode::Operand::from_register(mcode::Register::from_physical(src_reg), size)},
+    });
 }
 
 void MSABICallingConv::create_arg_store_region(mcode::StackFrame &frame, mcode::StackRegions &regions) {

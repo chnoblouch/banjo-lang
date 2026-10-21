@@ -3,10 +3,14 @@
 #include "banjo/mcode/basic_block.hpp"
 #include "banjo/mcode/instruction.hpp"
 #include "banjo/mcode/stack_address.hpp"
+#include "banjo/ssa/operand.hpp"
+#include "banjo/ssa/primitive.hpp"
 #include "banjo/ssa/virtual_register.hpp"
 #include "banjo/target/target_description.hpp"
 #include "banjo/utils/macros.hpp"
 #include "banjo/utils/timing.hpp"
+
+#include <vector>
 
 namespace banjo::codegen {
 
@@ -350,14 +354,16 @@ void SSALowerer::lower_alloca(ssa::Instruction &instr) {
 void SSALowerer::lower_copy(ssa::Instruction &instr) {
     ASSERT(memcpy_func);
 
-    ssa::Operand func_operand = ssa::Operand::from_extern_func(memcpy_func, ssa::Primitive::VOID);
+    ssa::Operand type_operand = ssa::Operand::from_type(ssa::Primitive::VOID);
+    ssa::Operand func_operand = ssa::Operand::from_extern_func(memcpy_func, ssa::Primitive::ADDR);
     ssa::Operand dst_operand = instr.get_operand(0);
     ssa::Operand src_operand = instr.get_operand(1);
 
     unsigned size = target->get_data_layout().get_size(instr.get_operand(2).get_type());
     ssa::Operand size_operand = ssa::Operand::from_int_immediate(size, target->get_data_layout().get_usize_type());
 
-    ssa::Instruction call_instr(ssa::Opcode::CALL, {func_operand, dst_operand, src_operand, size_operand});
+    std::vector<ssa::Operand> call_operands{type_operand, func_operand, dst_operand, src_operand, size_operand};
+    ssa::Instruction call_instr{ssa::Opcode::CALL, std::move(call_operands)};
     lower_call(call_instr);
 }
 

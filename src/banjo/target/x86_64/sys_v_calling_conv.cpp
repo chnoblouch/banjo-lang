@@ -89,8 +89,8 @@ void SysVCallingConv::lower_call(codegen::SSALowerer &lowerer, ssa::Instruction 
     ssa::FunctionType func_type = ssa::get_call_func_type(instr);
     std::vector<mcode::ArgStorage> arg_storage = get_arg_storage(func_type);
 
-    for (unsigned i = 1; i < instr.get_operands().size(); i++) {
-        ssa::Operand &operand = instr.get_operands()[i];
+    for (unsigned i = 2; i < instr.get_operands().size(); i++) {
+        ssa::Operand &operand = instr.get_operand(i);
         ssa::Type type = operand.get_type();
         unsigned size = x86_64_lowerer.get_size(type);
 
@@ -98,14 +98,14 @@ void SysVCallingConv::lower_call(codegen::SSALowerer &lowerer, ssa::Instruction 
             continue;
         }
 
-        mcode::Operand dst = get_arg_dst(arg_storage[i - 1], lowerer).with_size(size);
+        mcode::Operand dst = get_arg_dst(arg_storage[i - 2], lowerer).with_size(size);
         x86_64_lowerer.lower_as_move(dst, operand);
     }
 
     if (instr.get_attr() == ssa::Instruction::Attribute::VARIADIC) {
         unsigned num_fp_args = 0;
 
-        for (unsigned i = 1; i < instr.get_operands().size(); i++) {
+        for (unsigned i = 2; i < instr.get_operands().size(); i++) {
             if (instr.get_operand(i).get_type().is_floating_point()) {
                 num_fp_args += 1;
             }
@@ -116,9 +116,9 @@ void SysVCallingConv::lower_call(codegen::SSALowerer &lowerer, ssa::Instruction 
         lowerer.emit({X8664Opcode::MOV, {m_dst, m_imm}});
     }
 
-    append_call(instr.get_operand(0), lowerer);
+    append_call(instr.get_operand(1), lowerer);
 
-    if (instr.get_dest().has_value()) {
+    if (instr.get_dest()) {
         append_ret_val_move(lowerer, instr);
     }
 }
@@ -168,6 +168,7 @@ void SysVCallingConv::append_call(ssa::Operand func_operand, codegen::SSALowerer
 void SysVCallingConv::append_ret_val_move(codegen::SSALowerer &lowerer, ssa::Instruction &call_instr) {
     ssa::Type type = call_instr.get_operand(0).get_type();
     unsigned size = lowerer.get_size(type);
+    bool is_fp = type.is_floating_point();
 
     if (size == 0) {
         return;
@@ -176,7 +177,7 @@ void SysVCallingConv::append_ret_val_move(codegen::SSALowerer &lowerer, ssa::Ins
     mcode::Opcode m_opcode;
     mcode::PhysicalReg src_reg;
 
-    if (type.is_floating_point()) {
+    if (is_fp) {
         m_opcode = type == ssa::Primitive::F64 ? X8664Opcode::MOVSD : X8664Opcode::MOVSS;
         src_reg = X8664Register::XMM0;
     } else {

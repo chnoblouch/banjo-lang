@@ -107,8 +107,8 @@ void AAPCSCallingConv::emit_arg_moves(
     unsigned gp_reg_index = 0;
     unsigned fp_reg_index = 0;
 
-    for (unsigned i = 1; i < call_instr.get_operands().size(); i++) {
-        unsigned index = i - 1;
+    for (unsigned i = 2; i < call_instr.get_operands().size(); i++) {
+        unsigned index = i - 2;
         ssa::Operand &operand = call_instr.get_operand(i);
 
         if (variant == Variant::APPLE && func_type.variadic && index >= func_type.first_variadic_index) {
@@ -149,7 +149,7 @@ void AAPCSCallingConv::emit_stack_arg_move(AArch64SSALowerer &lowerer, ssa::Oper
 }
 
 void AAPCSCallingConv::emit_call_instr(AArch64SSALowerer &lowerer, ssa::Instruction &call_instr) {
-    ssa::Operand &func_operand = call_instr.get_operand(0);
+    ssa::Operand &func_operand = call_instr.get_operand(1);
 
     mcode::Opcode call_opcode;
     mcode::Operand call_operand;
@@ -167,22 +167,24 @@ void AAPCSCallingConv::emit_call_instr(AArch64SSALowerer &lowerer, ssa::Instruct
         ASSERT_UNREACHABLE;
     }
 
-    lowerer.emit(mcode::Instruction(call_opcode, {call_operand}, mcode::Instruction::FLAG_CALL));
+    lowerer.emit({call_opcode, {call_operand}, mcode::Instruction::FLAG_CALL});
 }
 
 void AAPCSCallingConv::emit_ret_val_move(AArch64SSALowerer &lowerer, ssa::Instruction &call_instr) {
-    bool is_fp = call_instr.get_operand(0).get_type().is_floating_point();
+    ssa::Type type = call_instr.get_operand(0).get_type();
+    unsigned size = lowerer.get_size(type);
+    bool is_fp = type.is_floating_point();
+
     mcode::Opcode opcode = is_fp ? AArch64Opcode::FMOV : AArch64Opcode::MOV;
     mcode::PhysicalReg return_reg = is_fp ? AArch64Register::V0 : AArch64Register::R0;
-    unsigned return_size = lowerer.get_size(call_instr.get_operand(0).get_type());
 
     mcode::Register m_dst_reg = mcode::Register::from_virtual(*call_instr.get_dest());
-    mcode::Operand m_dst = mcode::Operand::from_register(m_dst_reg, return_size);
+    mcode::Operand m_dst = mcode::Operand::from_register(m_dst_reg, size);
 
     mcode::Register m_src_reg = mcode::Register::from_physical(return_reg);
-    mcode::Operand m_src = mcode::Operand::from_register(m_src_reg, return_size);
+    mcode::Operand m_src = mcode::Operand::from_register(m_src_reg, size);
 
-    lowerer.emit(mcode::Instruction(opcode, {m_dst, m_src}));
+    lowerer.emit({opcode, {m_dst, m_src}});
 }
 
 void AAPCSCallingConv::create_arg_store_region(mcode::StackFrame &frame, mcode::StackRegions &regions) {

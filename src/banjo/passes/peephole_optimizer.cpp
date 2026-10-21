@@ -4,6 +4,7 @@
 #include "banjo/passes/pass_utils.hpp"
 #include "banjo/passes/precomputing.hpp"
 #include "banjo/ssa/comparison.hpp"
+#include "banjo/ssa/primitive.hpp"
 #include "banjo/ssa/virtual_register.hpp"
 #include "banjo/target/target_data_layout.hpp"
 #include "banjo/utils/utils.hpp"
@@ -235,7 +236,7 @@ void PeepholeOptimizer::process_cjmp(ssa::InstrIter &iter) {
 }
 
 void PeepholeOptimizer::process_call(ssa::InstrIter &iter, ssa::BasicBlock &block) {
-    ssa::Value &callee = iter->get_operand(0);
+    ssa::Value &callee = iter->get_operand(1);
     if (!callee.is_extern_func()) {
         return;
     }
@@ -274,13 +275,13 @@ void PeepholeOptimizer::process_memberptr(ssa::InstrIter &iter, ssa::BasicBlock 
 }
 
 void PeepholeOptimizer::process_memcpy(ssa::InstrIter &iter, ssa::BasicBlock &block) {
-    if (iter->get_operands().size() != 4 || iter->get_dest()) {
+    if (iter->get_operands().size() != 5 || iter->get_dest()) {
         return;
     }
 
-    ssa::Operand dst = iter->get_operand(1);
-    ssa::Operand src = iter->get_operand(2);
-    ssa::Operand size_operand = iter->get_operand(3);
+    ssa::Operand dst = iter->get_operand(2);
+    ssa::Operand src = iter->get_operand(3);
+    ssa::Operand size_operand = iter->get_operand(4);
 
     if (!dst.is_register() || !src.is_register()) {
         return;
@@ -311,13 +312,13 @@ void PeepholeOptimizer::process_memcpy(ssa::InstrIter &iter, ssa::BasicBlock &bl
 }
 
 void PeepholeOptimizer::process_memmove(ssa::InstrIter &iter, ssa::BasicBlock &block) {
-    if (iter->get_operands().size() != 4 || iter->get_dest()) {
+    if (iter->get_operands().size() != 5 || iter->get_dest()) {
         return;
     }
 
-    ssa::Value &dst = iter->get_operand(1);
-    ssa::Value &src = iter->get_operand(2);
-    ssa::Value &size_operand = iter->get_operand(3);
+    ssa::Value &dst = iter->get_operand(2);
+    ssa::Value &src = iter->get_operand(3);
+    ssa::Value &size_operand = iter->get_operand(4);
 
     if (!dst.is_register() || !src.is_register() || !size_operand.is_immediate()) {
         return;
@@ -338,16 +339,16 @@ void PeepholeOptimizer::process_memmove(ssa::InstrIter &iter, ssa::BasicBlock &b
         }
     }
 
-    iter->get_operand(0) = ssa::Operand::from_extern_func(memcpy_func);
+    iter->get_operand(2) = ssa::Operand::from_extern_func(memcpy_func, ssa::Primitive::ADDR);
     process_memcpy(iter, block);
 }
 
 void PeepholeOptimizer::process_strlen(ssa::InstrIter &iter, ssa::BasicBlock &block) {
-    if (iter->get_operands().size() != 2 || !iter->get_dest() || !iter->get_operand(1).is_global()) {
+    if (iter->get_operands().size() != 3 || !iter->get_dest() || !iter->get_operand(2).is_global()) {
         return;
     }
 
-    std::string string = std::get<std::string>(iter->get_operand(1).get_global()->initial_value);
+    std::string string = std::get<std::string>(iter->get_operand(2).get_global()->initial_value);
     unsigned string_length = string.size() - 1;
     ssa::Value value = ssa::Value::from_int_immediate(string_length, ssa::Primitive::U64);
     eliminate(iter, value, block);

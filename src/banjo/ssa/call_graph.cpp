@@ -17,8 +17,8 @@ CallGraph::CallGraph(Module &mod) {
     for (Function *func : mod.get_functions()) {
         for (BasicBlock &block : *func) {
             for (Instruction &instr : block) {
-                if (instr.get_opcode() == Opcode::CALL && instr.get_operand(0).is_func()) {
-                    create_edge(func, instr.get_operand(0).get_func());
+                if (instr.get_opcode() == Opcode::CALL && instr.get_operand(1).is_func()) {
+                    create_edge(func, instr.get_operand(1).get_func());
                 }
             }
         }

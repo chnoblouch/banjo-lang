@@ -27,6 +27,7 @@
 #include <string>
 #include <utility>
 #include <variant>
+#include <vector>
 
 namespace banjo::target {
 
@@ -798,14 +799,15 @@ void X8664SSALowerer::lower_copy(ssa::Instruction &instr) {
         return;
     }
 
-    ssa::Instruction call_instr(
-        ssa::Opcode::CALL,
-        {ssa::Operand::from_extern_func(memcpy_func, ssa::Primitive::VOID),
-         instr.get_operand(0),
-         instr.get_operand(1),
-         ssa::Operand::from_int_immediate(size, ssa::Primitive::U64)}
-    );
+    std::vector<ssa::Operand> call_operands{
+        ssa::Operand::from_type(ssa::Primitive::VOID),
+        ssa::Operand::from_extern_func(memcpy_func, ssa::Primitive::ADDR),
+        instr.get_operand(0),
+        instr.get_operand(1),
+        ssa::Operand::from_int_immediate(size, ssa::Primitive::U64),
+    };
 
+    ssa::Instruction call_instr{ssa::Opcode::CALL, call_operands};
     lower_call(call_instr);
 }
 

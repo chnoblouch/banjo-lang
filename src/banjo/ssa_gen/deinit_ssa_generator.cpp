@@ -1,6 +1,7 @@
 #include "deinit_ssa_generator.hpp"
 
 #include "banjo/sir/magic_methods.hpp"
+#include "banjo/ssa/primitive.hpp"
 #include "banjo/ssa_gen/expr_ssa_generator.hpp"
 #include "banjo/ssa_gen/type_ssa_generator.hpp"
 
@@ -45,9 +46,8 @@ void DeinitSSAGenerator::generate_deinit(const sir::Resource &resource, ssa::Val
 
     if (final_resource.ownership == sir::Ownership::OWNED) {
         generate_deinit_call(final_resource, std::move(ssa_ptr));
-    } else if (
-        final_resource.ownership == sir::Ownership::MOVED_COND || final_resource.ownership == sir::Ownership::INIT_COND
-    ) {
+    } else if (final_resource.ownership == sir::Ownership::MOVED_COND ||
+               final_resource.ownership == sir::Ownership::INIT_COND) {
         ssa::BasicBlockIter deinit_block = ctx.create_block();
         ssa::BasicBlockIter end_block = ctx.create_block();
 
@@ -90,8 +90,10 @@ void DeinitSSAGenerator::generate_deinit_call(const sir::Resource &resource, ssa
     }
 
     ssa::Function *ssa_func = ctx.ssa_funcs.find({&deinit_symbol.as<sir::FuncDef>(), generic_args});
-    ssa::Value ssa_callee = ssa::Operand::from_func(ssa_func, ssa::Primitive::ADDR);
-    ctx.get_ssa_block()->append({ssa::Opcode::CALL, {ssa_callee, std::move(ssa_ptr)}});
+
+    ssa::Operand ssa_return_type = ssa::Operand::from_type(ssa::Primitive::VOID);
+    ssa::Operand ssa_callee = ssa::Operand::from_func(ssa_func, ssa::Primitive::ADDR);
+    ctx.get_ssa_block()->append({ssa::Opcode::CALL, {ssa_return_type, ssa_callee, std::move(ssa_ptr)}});
 }
 
 } // namespace banjo

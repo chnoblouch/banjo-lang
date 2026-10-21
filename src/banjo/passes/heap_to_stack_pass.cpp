@@ -73,7 +73,7 @@ void HeapToStackPass::collect_heap_instrs(ssa::BasicBlockIter block) {
             continue;
         }
 
-        ssa::Operand &callee = instr.get_operand(0);
+        ssa::Operand &callee = instr.get_operand(1);
         if (!callee.is_extern_func()) {
             continue;
         }
@@ -81,7 +81,7 @@ void HeapToStackPass::collect_heap_instrs(ssa::BasicBlockIter block) {
         const std::string &name = callee.get_extern_func()->name;
 
         if (name == "malloc") {
-            ssa::Operand &arg = instr.get_operand(1);
+            ssa::Operand &arg = instr.get_operand(2);
 
             if (!instr.get_dest() || !arg.is_int_immediate()) {
                 continue;
@@ -100,7 +100,7 @@ void HeapToStackPass::collect_heap_instrs(ssa::BasicBlockIter block) {
 
             allocs.insert({reg, alloc});
         } else if (name == "free") {
-            ssa::Operand &arg = instr.get_operand(1);
+            ssa::Operand &arg = instr.get_operand(2);
             if (!arg.is_register()) {
                 continue;
             }
@@ -147,7 +147,7 @@ bool HeapToStackPass::is_always_freed(
 
 void HeapToStackPass::promote(ssa::Function &func, Allocation &alloc) {
     ssa::VirtualRegister reg = *alloc.alloc_instr.instr->get_dest();
-    unsigned size = alloc.alloc_instr.instr->get_operand(1).get_int_immediate().to_u64();
+    unsigned size = alloc.alloc_instr.instr->get_operand(2).get_int_immediate().to_u64();
 
     DEBUG_LOG << "  promoting %" << reg << "\n";
 
