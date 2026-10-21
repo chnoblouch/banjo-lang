@@ -262,6 +262,10 @@ meta if os.IS_WINDOWS {
         var spin_count: *Ulong;
     }
 
+    struct ConditionVariable {
+        var ptr: addr;
+    }
+
     const INFINITE: Dword = 0xFFFFFFFF;
 
     const WAIT_ABANDONED: Dword = 0x00000080;
@@ -294,6 +298,28 @@ meta if os.IS_WINDOWS {
     native func delete_critical_section(
         critical_section: *CriticalSection,
     );
+
+    @[link_name=InitializeConditionVariable]
+    native func initialize_condition_variable(
+        condition_variable: *ConditionVariable,
+    );
+
+    @[link_name=WakeConditionVariable]
+    native func wake_condition_variable(
+        condition_variable: *ConditionVariable,
+    );
+
+    @[link_name=WakeAllConditionVariable]
+    native func wake_all_condition_variable(
+        condition_variable: *ConditionVariable,
+    );
+
+    @[link_name=SleepConditionVariableCS]
+    native func sleep_condition_variable_cs(
+        condition_variable: *ConditionVariable,
+        crticial_section: *CriticalSection,
+        milliseconds: Dword,
+    ) -> Bool;
 
     @[link_name=Sleep]
     native func sleep(milliseconds: u32);

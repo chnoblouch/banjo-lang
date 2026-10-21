@@ -16,7 +16,7 @@ meta if IS_WINDOWS {
 
     type File = winapi.Handle;
     type Mutex = *winapi.CriticalSection;
-    type Condition = u32;
+    type Condition = *winapi.ConditionVariable;
     type Socket = winapi.Socket;
 
     const SOCKET_INVALID: Socket = winapi.INVALID_SOCKET;
@@ -571,20 +571,33 @@ meta if IS_WINDOWS {
 
     pub func mutex_destroy(mutex: Mutex) {
         winapi.delete_critical_section(mutex);
+        memory.free(mutex);
     }
 
     pub func condition_create() -> Condition {
-        panic("condition variables are currently unsupported on windows");
-        return 0;
+        var condition = memory.alloc_box[winapi.ConditionVariable]();
+        winapi.initialize_condition_variable(condition);
+        return condition;
     }
 
-    pub func condition_notify_one(condition: Condition) {}
+    pub func condition_notify_one(condition: Condition) {
+        winapi.wake_condition_variable(condition);
+    }
 
-    pub func condition_notify_all(condition: Condition) {}
+    pub func condition_notify_all(condition: Condition) {
+        winapi.wake_all_condition_variable(condition);
+    }
 
-    pub func condition_wait(condition: Condition, mutex: Mutex) {}
+    pub func condition_wait(condition: Condition, mutex: Mutex) {
+        winapi.sleep_condition_variable_cs(condition, mutex, winapi.INFINITE);
+    }
 
-    pub func condition_destroy(condition: Condition) {}
+    pub func condition_destroy(condition: Condition) {
+        # There is no `DeleteConditionVariable` function in the Windows API
+        # because there's no need to destroy the object.
+
+        memory.free(condition);
+    }
 
     pub func time_system_ticks() -> u64 {
         var time: winapi.Filetime;
