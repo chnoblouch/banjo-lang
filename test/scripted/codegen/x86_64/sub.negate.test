@@ -1,0 +1,59 @@
+# test:subtest
+# test:section ssa
+
+func i64 @f(i64 %0) {
+    %1 = sub i64 0, i64 %0
+    ret i64 %1
+}
+
+# test:section mcode
+
+func f:
+    neg rdi
+    mov rax, rdi
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i32 @f(i32 %0) {
+    %1 = sub i32 0, i32 %0
+    ret i32 %1
+}
+
+# test:section mcode
+
+func f:
+    neg edi
+    mov eax, edi
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i16 @f(i16 %0) {
+    %1 = sub i16 0, i16 %0
+    ret i16 %1
+}
+
+# test:section mcode
+
+func f:
+    neg edi
+    mov eax, edi
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i8 @f(i8 %0) {
+    %1 = sub i8 0, i8 %0
+    ret i8 %1
+}
+
+# test:section mcode
+
+func f:
+    neg edi
+    mov eax, edi
+    ret

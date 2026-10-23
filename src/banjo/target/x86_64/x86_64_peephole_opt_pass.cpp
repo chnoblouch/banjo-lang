@@ -32,26 +32,28 @@ void X8664PeepholeOptPass::run(mcode::Instruction &instr) {
         case X8664Opcode::AND: optimize_and(instr); break;
         case X8664Opcode::OR: optimize_or(instr); break;
         case X8664Opcode::XOR: optimize_xor(instr); break;
+        case X8664Opcode::NEG: optimize_neg(instr); break;
+        case X8664Opcode::NOT: optimize_not(instr); break;
         case X8664Opcode::MOVSS: optimize_movss(instr); break;
         case X8664Opcode::MOVSD: optimize_movsd(instr); break;
     }
 }
 
 void X8664PeepholeOptPass::optimize_mov(mcode::Instruction &instr) {
-    optimize_encoding(instr);
+    optimize_encoding_dst_src(instr);
 }
 
 void X8664PeepholeOptPass::optimize_add(mcode::Instruction &instr) {
-    optimize_encoding(instr);
+    optimize_encoding_dst_src(instr);
 }
 
 void X8664PeepholeOptPass::optimize_sub(mcode::Instruction &instr) {
-    optimize_encoding(instr);
+    optimize_encoding_dst_src(instr);
 }
 
 void X8664PeepholeOptPass::optimize_imul(mcode::Instruction &instr) {
     if (instr.get_operands().size() == 2) {
-        optimize_encoding(instr);
+        optimize_encoding_dst_src(instr);
 
         mcode::Operand &dst = instr.get_operand(0);
         mcode::Operand &src = instr.get_operand(1);
@@ -79,15 +81,23 @@ void X8664PeepholeOptPass::optimize_imul(mcode::Instruction &instr) {
 }
 
 void X8664PeepholeOptPass::optimize_and(mcode::Instruction &instr) {
-    optimize_encoding(instr);
+    optimize_encoding_dst_src(instr);
 }
 
 void X8664PeepholeOptPass::optimize_or(mcode::Instruction &instr) {
-    optimize_encoding(instr);
+    optimize_encoding_dst_src(instr);
 }
 
 void X8664PeepholeOptPass::optimize_xor(mcode::Instruction &instr) {
-    optimize_encoding(instr);
+    optimize_encoding_dst_src(instr);
+}
+
+void X8664PeepholeOptPass::optimize_neg(mcode::Instruction &instr) {
+    optimize_encoding_dst(instr);
+}
+
+void X8664PeepholeOptPass::optimize_not(mcode::Instruction &instr) {
+    optimize_encoding_dst(instr);
 }
 
 void X8664PeepholeOptPass::optimize_movss(mcode::Instruction &instr) {
@@ -102,7 +112,7 @@ void X8664PeepholeOptPass::optimize_movsd(mcode::Instruction &instr) {
     }
 }
 
-void X8664PeepholeOptPass::optimize_encoding(mcode::Instruction &instr) {
+void X8664PeepholeOptPass::optimize_encoding_dst_src(mcode::Instruction &instr) {
     // We generate 32-bit instructions for 8-bit and 16-bit operations because
     // they have a smaller encoding. Latency and throughput are equivalent on
     // modern processors.
@@ -116,6 +126,18 @@ void X8664PeepholeOptPass::optimize_encoding(mcode::Instruction &instr) {
         if (size == 1 || size == 2) {
             dst.set_size(4);
             src.set_size(4);
+        }
+    }
+}
+
+void X8664PeepholeOptPass::optimize_encoding_dst(mcode::Instruction &instr) {
+    mcode::Operand &dst = instr.get_operand(0);
+
+    if (dst.is_register()) {
+        unsigned size = dst.get_size();
+
+        if (size == 1 || size == 2) {
+            dst.set_size(4);
         }
     }
 }

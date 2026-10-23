@@ -59,6 +59,7 @@ public:
     void set_attr(Attribute attr) { this->attr = attr; }
     void set_attrs_data(unsigned attr_data) { this->attr_data = attr_data; }
 
+    bool is_negate() const;
     bool might_access_memory() const;
     bool has_side_effects() const;
     bool is_branching() const;

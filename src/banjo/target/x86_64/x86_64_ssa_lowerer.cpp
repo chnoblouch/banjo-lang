@@ -31,6 +31,22 @@
 
 namespace banjo::target {
 
+static bool is_neg_one(ssa::Value &value, unsigned size) {
+    if (!value.is_immediate()) {
+        return false;
+    }
+
+    std::uint64_t bits = value.get_int_immediate().to_bits();
+
+    switch (size) {
+        case 1: return bits == 0xFF;
+        case 2: return bits == 0xFFFF;
+        case 4: return bits == 0xFFFFFFFF;
+        case 8: return bits == 0xFFFFFFFFFFFFFFFF;
+        default: return false;
+    }
+}
+
 X8664SSALowerer::X8664SSALowerer(Target *target) : SSALowerer(target), const_lowering(*this) {}
 
 void X8664SSALowerer::init_func(ssa::Function &func) {
@@ -153,12 +169,20 @@ void X8664SSALowerer::lower_sub(ssa::Instruction &instr) {
     ssa::VirtualRegister dst = *instr.get_dest();
     unsigned size = get_size(lhs->get_type());
 
-    mcode::Operand m_lhs = lower_value(*lhs, OperandKind::REG);
-    mcode::Operand m_rhs = lower_value(*rhs, OperandKind::REG_ADDR_IMM);
     mcode::Operand m_dst = map_vreg_as_operand(dst, size);
 
-    emit({X8664Opcode::MOV, {m_dst, m_lhs}});
-    emit({X8664Opcode::SUB, {m_dst, m_rhs}});
+    if (instr.is_negate()) {
+        mcode::Operand m_rhs = lower_value(*rhs, OperandKind::REG_ADDR_IMM);
+
+        emit({X8664Opcode::MOV, {m_dst, m_rhs}});
+        emit({X8664Opcode::NEG, {m_dst}});
+    } else {
+        mcode::Operand m_lhs = lower_value(*lhs, OperandKind::REG);
+        mcode::Operand m_rhs = lower_value(*rhs, OperandKind::REG_ADDR_IMM);
+
+        emit({X8664Opcode::MOV, {m_dst, m_lhs}});
+        emit({X8664Opcode::SUB, {m_dst, m_rhs}});
+    }
 }
 
 void X8664SSALowerer::lower_mul(ssa::Instruction &instr) {
@@ -250,20 +274,19 @@ void X8664SSALowerer::lower_fadd(ssa::Instruction &instr) {
 void X8664SSALowerer::lower_fsub(ssa::Instruction &instr) {
     ssa::Operand *lhs = &instr.get_operand(0);
     ssa::Operand *rhs = &instr.get_operand(1);
-    ssa::VirtualRegister dst = *instr.get_dest();
     bool is_64_bit = lhs->get_type().get_primitive() == ssa::Primitive::F64;
+
+    mcode::Operand m_dst = map_vreg_dst(instr, is_64_bit ? 8 : 4);
 
     if (lhs->is_fp_immediate() && lhs->get_fp_immediate() == 0.0) {
         mcode::Symbol symbol = is_64_bit ? create_const_neg_zero_64() : create_const_neg_zero_32();
 
-        mcode::Operand m_dst = map_vreg_dst(instr, is_64_bit ? 8 : 4);
         mcode::Operand m_src = lower_value(*rhs, OperandKind::REG_ADDR);
         mcode::Operand m_const_addr = mcode::Operand::from_x86_64_addr(X8664Address{symbol});
 
         emit({is_64_bit ? X8664Opcode::MOVSD : X8664Opcode::MOVSS, {m_dst, m_src}});
         emit({is_64_bit ? X8664Opcode::XORPD : X8664Opcode::XORPS, {m_dst, m_const_addr}});
     } else {
-        mcode::Operand m_dst = map_vreg_as_operand(dst, is_64_bit ? 8 : 4);
         mcode::Operand m_lhs = lower_value(*lhs, OperandKind::REG);
         mcode::Operand m_rhs = lower_value(*rhs, OperandKind::REG_ADDR);
 
@@ -314,7 +337,29 @@ void X8664SSALowerer::lower_or(ssa::Instruction &instr) {
 }
 
 void X8664SSALowerer::lower_xor(ssa::Instruction &instr) {
-    lower_bitwise(X8664Opcode::XOR, instr);
+    ssa::Operand *lhs = &instr.get_operand(0);
+    ssa::Operand *rhs = &instr.get_operand(1);
+    ssa::VirtualRegister dst = *instr.get_dest();
+    unsigned size = get_size(lhs->get_type());
+
+    if (should_swap(*lhs, *rhs)) {
+        std::swap(lhs, rhs);
+    }
+
+    mcode::Operand m_dst = map_vreg_as_operand(dst, size);
+
+    if (is_neg_one(*rhs, size)) {
+        mcode::Operand m_lhs = lower_value(*lhs, OperandKind::REG_ADDR);
+
+        emit({X8664Opcode::MOV, {m_dst, m_lhs}});
+        emit({X8664Opcode::NOT, {m_dst}});
+    } else {
+        mcode::Operand m_lhs = lower_value(*lhs, OperandKind::REG);
+        mcode::Operand m_rhs = lower_value(*rhs, OperandKind::REG_ADDR_IMM);
+
+        emit({X8664Opcode::MOV, {m_dst, m_lhs}});
+        emit({X8664Opcode::XOR, {m_dst, m_rhs}});
+    }
 }
 
 void X8664SSALowerer::lower_lshl(ssa::Instruction &instr) {
@@ -830,6 +875,7 @@ bool X8664SSALowerer::lower_stored_operation(ssa::Instruction &store) {
         NORMAL,
         COMMUTATIVE,
         SHIFT,
+        NEGATE,
     };
 
     if (!store.get_operand(0).is_register()) {
@@ -843,6 +889,9 @@ bool X8664SSALowerer::lower_stored_operation(ssa::Instruction &store) {
     if (!operation) {
         return false;
     }
+
+    ssa::Type type = operation->get_operand(0).get_type();
+    unsigned size = get_size(type);
 
     mcode::Opcode m_opcode;
     OpCategory category;
@@ -883,11 +932,19 @@ bool X8664SSALowerer::lower_stored_operation(ssa::Instruction &store) {
         default: return false;
     }
 
-    FixedVector<std::pair<ssa::Operand *, ssa::Operand *>, 2> candidates;
-    candidates.append({&operation->get_operand(0), &operation->get_operand(1)});
+    if (operation->is_negate()) {
+        category = OpCategory::NEGATE;
+    }
 
-    if (category == OpCategory::COMMUTATIVE) {
+    FixedVector<std::pair<ssa::Operand *, ssa::Operand *>, 2> candidates;
+
+    if (category == OpCategory::NEGATE) {
+        candidates.append({&operation->get_operand(1), nullptr});
+    } else if (category == OpCategory::COMMUTATIVE) {
+        candidates.append({&operation->get_operand(0), &operation->get_operand(1)});
         candidates.append({&operation->get_operand(1), &operation->get_operand(0)});
+    } else {
+        candidates.append({&operation->get_operand(0), &operation->get_operand(1)});
     }
 
     for (auto [lhs, rhs] : candidates) {
@@ -909,10 +966,19 @@ bool X8664SSALowerer::lower_stored_operation(ssa::Instruction &store) {
                 discard_use(store_addr.get_register());
             }
 
+            if (operation->get_opcode() == ssa::Opcode::XOR) {
+                if (is_neg_one(*rhs, size)) {
+                    lower_in_place_unary(X8664Opcode::NOT, store_addr, size);
+                    return true;
+                }
+            }
+
             if (category == OpCategory::SHIFT) {
                 lower_in_place_shift(m_opcode, store_addr, *rhs);
+            } else if (category == OpCategory::NEGATE) {
+                lower_in_place_unary(X8664Opcode::NEG, store_addr, size);
             } else {
-                lower_in_place_operation(m_opcode, store_addr, *rhs);
+                lower_in_place_binary(m_opcode, store_addr, *rhs);
             }
 
             return true;
@@ -922,7 +988,7 @@ bool X8664SSALowerer::lower_stored_operation(ssa::Instruction &store) {
     return false;
 }
 
-void X8664SSALowerer::lower_in_place_operation(mcode::Opcode m_opcode, ssa::Operand &addr, ssa::Value &rhs) {
+void X8664SSALowerer::lower_in_place_binary(mcode::Opcode m_opcode, ssa::Operand &addr, ssa::Value &rhs) {
     AddrComponents addr_components = collect_addr(addr);
     unsigned size = get_size(rhs.get_type());
 
@@ -947,6 +1013,12 @@ void X8664SSALowerer::lower_in_place_shift(mcode::Opcode m_opcode, ssa::Operand 
         emit({X8664Opcode::MOV, {m_rcx, m_rhs}});
         emit({m_opcode, {m_lhs, m_rcx}});
     }
+}
+
+void X8664SSALowerer::lower_in_place_unary(mcode::Opcode m_opcode, ssa::Operand &addr, unsigned size) {
+    AddrComponents addr_components = collect_addr(addr);
+    mcode::Operand m_dst = lower_addr_mem_access(addr_components).with_size(size);
+    emit({m_opcode, {m_dst}});
 }
 
 void X8664SSALowerer::lower_into_div(mcode::PhysicalReg result, ssa::Instruction &instr) {

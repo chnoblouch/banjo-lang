@@ -4,6 +4,15 @@
 
 namespace banjo::ssa {
 
+bool Instruction::is_negate() const {
+    if (opcode != ssa::Opcode::SUB) {
+        return false;
+    }
+
+    const ssa::Operand &lhs = operands[0];
+    return lhs.is_int_immediate() && lhs.get_int_immediate() == 0;
+}
+
 bool Instruction::might_access_memory() const {
     switch (opcode) {
         case Opcode::LOAD:

@@ -49,6 +49,8 @@ enum {
     CWD,
     CDQ,
     CQO,
+    NEG,
+    NOT,
     XCHG,
     LOCK_CMPXCHG,
     JMP,

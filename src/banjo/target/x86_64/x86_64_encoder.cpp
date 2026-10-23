@@ -57,6 +57,8 @@ void X8664Encoder::encode_instr(mcode::Instruction &instr, mcode::Function *func
         case X8664Opcode::SHL: encode_shl(instr); break;
         case X8664Opcode::SHR: encode_shr(instr); break;
         case X8664Opcode::SAR: encode_sar(instr); break;
+        case X8664Opcode::NEG: encode_neg(instr); break;
+        case X8664Opcode::NOT: encode_not(instr); break;
         case X8664Opcode::CWD: encode_cwd(); break;
         case X8664Opcode::CDQ: encode_cdq(); break;
         case X8664Opcode::CQO: encode_cqo(); break;
@@ -415,6 +417,14 @@ void X8664Encoder::encode_shr(mcode::Instruction &instr) {
 
 void X8664Encoder::encode_sar(mcode::Instruction &instr) {
     encode_shl_family(instr, {7});
+}
+
+void X8664Encoder::encode_neg(mcode::Instruction &instr) {
+    encode_neg_family(instr, {3});
+}
+
+void X8664Encoder::encode_not(mcode::Instruction &instr) {
+    encode_neg_family(instr, {2});
 }
 
 void X8664Encoder::encode_cwd() {
@@ -1104,6 +1114,18 @@ void X8664Encoder::encode_shl_family(mcode::Instruction &instr, std::array<std::
     } else {
         ASSERT_UNREACHABLE;
     }
+}
+
+void X8664Encoder::encode_neg_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {
+    mcode::Operand &m_dst = instr.get_operand(0);
+    unsigned size = m_dst.get_size();
+
+    RegOrAddr dst = roa(m_dst);
+
+    emit_16bit_prefix_if_required(size);
+    emit_rex_rroa(size, 0, dst);
+    emit_opcode(size == 1 ? 0xF6 : 0xF7);
+    emit_modrm_sib(params[0], dst);
 }
 
 void X8664Encoder::encode_jcc_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params) {

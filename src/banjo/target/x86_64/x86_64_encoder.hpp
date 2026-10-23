@@ -124,6 +124,8 @@ private:
     void encode_shl(mcode::Instruction &instr);
     void encode_shr(mcode::Instruction &instr);
     void encode_sar(mcode::Instruction &instr);
+    void encode_neg(mcode::Instruction &instr);
+    void encode_not(mcode::Instruction &instr);
     void encode_cwd();
     void encode_cdq();
     void encode_cqo();
@@ -215,6 +217,7 @@ private:
     void encode_add_family(mcode::Instruction &instr, const BasicInstrOpcodes &opcodes);
     void encode_div_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
     void encode_shl_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
+    void encode_neg_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
     void encode_jcc_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
     void encode_setcc_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);
     void encode_cmovcc_family(mcode::Instruction &instr, std::array<std::uint32_t, 1> params);

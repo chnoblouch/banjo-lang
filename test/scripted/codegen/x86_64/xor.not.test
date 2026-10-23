@@ -1,0 +1,119 @@
+# test:subtest
+# test:section ssa
+
+func i64 @f(i64 %0) {
+    %1 = xor i64 %0, i64 18446744073709551615
+    ret i64 %1
+}
+
+# test:section mcode
+
+func f:
+    not rdi
+    mov rax, rdi
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i64 @f(i64 %0) {
+    %1 = xor i64 18446744073709551615, i64 %0
+    ret i64 %1
+}
+
+# test:section mcode
+
+func f:
+    not rdi
+    mov rax, rdi
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i32 @f(i32 %0) {
+    %1 = xor i32 %0, i32 4294967295
+    ret i32 %1
+}
+
+# test:section mcode
+
+func f:
+    not edi
+    mov eax, edi
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i32 @f(i32 %0) {
+    %1 = xor i32 4294967295, i32 %0
+    ret i32 %1
+}
+
+# test:section mcode
+
+func f:
+    not edi
+    mov eax, edi
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i16 @f(i16 %0) {
+    %1 = xor i16 %0, i16 65535
+    ret i16 %1
+}
+
+# test:section mcode
+
+func f:
+    not edi
+    mov eax, edi
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i16 @f(i16 %0) {
+    %1 = xor i16 65535, i16 %0
+    ret i16 %1
+}
+
+# test:section mcode
+
+func f:
+    not edi
+    mov eax, edi
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i8 @f(i8 %0) {
+    %1 = xor i8 %0, i8 255
+    ret i8 %1
+}
+
+# test:section mcode
+
+func f:
+    not edi
+    mov eax, edi
+    ret
+
+# test:subtest
+# test:section ssa
+
+func i8 @f(i8 %0) {
+    %1 = xor i8 255, i8 %0
+    ret i8 %1
+}
+
+# test:section mcode
+
+func f:
+    not edi
+    mov eax, edi
+    ret

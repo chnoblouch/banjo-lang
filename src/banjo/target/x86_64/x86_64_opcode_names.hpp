@@ -31,6 +31,8 @@ const BiHashMap<mcode::Opcode, std::string_view> X86_64_OPCODE_NAMES{
     {X8664Opcode::CWD, "cwd"},
     {X8664Opcode::CDQ, "cdq"},
     {X8664Opcode::CQO, "cqo"},
+    {X8664Opcode::NEG, "neg"},
+    {X8664Opcode::NOT, "not"},
     {X8664Opcode::XCHG, "xchg"},
     {X8664Opcode::LOCK_CMPXCHG, "lock cmpxchg"},
     {X8664Opcode::JMP, "jmp"},

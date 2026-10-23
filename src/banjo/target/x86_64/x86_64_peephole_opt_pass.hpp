@@ -22,10 +22,13 @@ private:
     void optimize_and(mcode::Instruction &instr);
     void optimize_or(mcode::Instruction &instr);
     void optimize_xor(mcode::Instruction &instr);
+    void optimize_neg(mcode::Instruction &instr);
+    void optimize_not(mcode::Instruction &instr);
     void optimize_movss(mcode::Instruction &instr);
     void optimize_movsd(mcode::Instruction &instr);
 
-    void optimize_encoding(mcode::Instruction &instr);
+    void optimize_encoding_dst_src(mcode::Instruction &instr);
+    void optimize_encoding_dst(mcode::Instruction &instr);
 };
 
 } // namespace banjo::target

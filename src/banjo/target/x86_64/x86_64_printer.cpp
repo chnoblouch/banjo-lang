@@ -143,7 +143,9 @@ void X8664Printer::print_operand(mcode::Function &func, mcode::Instruction &inst
         switch (instr.get_opcode()) {
             case X8664Opcode::IMUL:
             case X8664Opcode::DIV:
-            case X8664Opcode::IDIV: requires_size = true; break;
+            case X8664Opcode::IDIV:
+            case X8664Opcode::NEG:
+            case X8664Opcode::NOT: requires_size = true; break;
 
             default: break;
         }

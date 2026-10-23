@@ -90,8 +90,9 @@ public:
     void lower_frame_address(ssa::Instruction &instr) override;
 
     bool lower_stored_operation(ssa::Instruction &store);
-    void lower_in_place_operation(mcode::Opcode m_opcode, ssa::Operand &addr, ssa::Value &rhs);
+    void lower_in_place_binary(mcode::Opcode m_opcode, ssa::Operand &addr, ssa::Value &rhs);
     void lower_in_place_shift(mcode::Opcode m_opcode, ssa::Operand &addr, ssa::Value &rhs);
+    void lower_in_place_unary(mcode::Opcode m_opcode, ssa::Operand &addr, unsigned size);
 
     void lower_into_div(mcode::PhysicalReg result, ssa::Instruction &instr);
     void lower_into_idiv(mcode::PhysicalReg result, ssa::Instruction &instr);

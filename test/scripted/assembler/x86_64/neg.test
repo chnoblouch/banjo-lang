@@ -1,0 +1,79 @@
+# test:subtest
+# test:encoding "48F7DA"
+
+neg rdx
+
+# test:subtest
+# test:encoding "49F7D8"
+
+neg r8
+
+# test:subtest
+# test:encoding "48F71A"
+
+neg qword [rdx]
+
+# test:subtest
+# test:encoding "49F718"
+
+neg qword [r8]
+
+# test:subtest
+# test:encoding "F7DA"
+
+neg edx
+
+# test:subtest
+# test:encoding "41F7D8"
+
+neg r8d
+
+# test:subtest
+# test:encoding "F71A"
+
+neg dword [rdx]
+
+# test:subtest
+# test:encoding "41F718"
+
+neg dword [r8]
+
+# test:subtest
+# test:encoding "66F7DA"
+
+neg dx
+
+# test:subtest
+# test:encoding "6641F7D8"
+
+neg r8w
+
+# test:subtest
+# test:encoding "66F71A"
+
+neg word [rdx]
+
+# test:subtest
+# test:encoding "6641F718"
+
+neg word [r8]
+
+# test:subtest
+# test:encoding "F6DA"
+
+neg dl
+
+# test:subtest
+# test:encoding "41F6D8"
+
+neg r8b
+
+# test:subtest
+# test:encoding "F61A"
+
+neg byte [rdx]
+
+# test:subtest
+# test:encoding "41F618"
+
+neg byte [r8]

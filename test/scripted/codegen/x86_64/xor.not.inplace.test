@@ -1,0 +1,127 @@
+# test:subtest
+# test:section ssa
+
+func void @f(addr %0) {
+    %1 = load i64, addr %0
+    %2 = xor i64 %1, i64 18446744073709551615
+    store i64 %2, addr %0
+    ret
+}
+
+# test:section mcode
+
+func f:
+    not qword [rdi]
+    ret
+
+# test:subtest
+# test:section ssa
+
+func void @f(addr %0) {
+    %1 = load i64, addr %0
+    %2 = xor i64 18446744073709551615, i64 %1
+    store i64 %2, addr %0
+    ret
+}
+
+# test:section mcode
+
+func f:
+    not qword [rdi]
+    ret
+
+# test:subtest
+# test:section ssa
+
+func void @f(addr %0) {
+    %1 = load i32, addr %0
+    %2 = xor i32 %1, i32 4294967295
+    store i32 %2, addr %0
+    ret
+}
+
+# test:section mcode
+
+func f:
+    not dword [rdi]
+    ret
+
+# test:subtest
+# test:section ssa
+
+func void @f(addr %0) {
+    %1 = load i32, addr %0
+    %2 = xor i32 4294967295, i32 %1
+    store i32 %2, addr %0
+    ret
+}
+
+# test:section mcode
+
+func f:
+    not dword [rdi]
+    ret
+
+# test:subtest
+# test:section ssa
+
+func void @f(addr %0) {
+    %1 = load i16, addr %0
+    %2 = xor i16 %1, i16 65535
+    store i16 %2, addr %0
+    ret
+}
+
+# test:section mcode
+
+func f:
+    not word [rdi]
+    ret
+
+# test:subtest
+# test:section ssa
+
+func void @f(addr %0) {
+    %1 = load i16, addr %0
+    %2 = xor i16 65535, i16 %1
+    store i16 %2, addr %0
+    ret
+}
+
+# test:section mcode
+
+func f:
+    not word [rdi]
+    ret
+
+# test:subtest
+# test:section ssa
+
+func void @f(addr %0) {
+    %1 = load i8, addr %0
+    %2 = xor i8 %1, i8 255
+    store i8 %2, addr %0
+    ret
+}
+
+# test:section mcode
+
+func f:
+    not byte [rdi]
+    ret
+
+# test:subtest
+# test:section ssa
+
+func void @f(addr %0) {
+    %1 = load i8, addr %0
+    %2 = xor i8 255, i8 %1
+    store i8 %2, addr %0
+    ret
+}
+
+# test:section mcode
+
+func f:
+    not byte [rdi]
+    ret
