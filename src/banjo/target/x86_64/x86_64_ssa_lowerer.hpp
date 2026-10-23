@@ -26,11 +26,6 @@ private:
         REG_ADDR_IMM,
     };
 
-    struct ValueLowerFlags {
-        bool allow_addrs = false;
-        bool is_callee = false;
-    };
-
     X8664ConstLowering const_lowering;
     std::unordered_map<ssa::VirtualRegister, ssa::VirtualRegister> block_arg_tmps;
     std::optional<mcode::Symbol> const_neg_zero_64;
@@ -94,13 +89,6 @@ public:
     void lower_copy(ssa::Instruction &instr) override;
     void lower_frame_address(ssa::Instruction &instr) override;
 
-    mcode::Opcode get_move_opcode(ssa::Type type);
-    void copy_block_using_movs(ssa::Instruction &instr, unsigned size);
-    mcode::Opcode get_cmovcc_opcode(ssa::Comparison comparison);
-
-    void emit_mov_zero_ext(mcode::Operand dst, mcode::Operand src);
-    void emit_mov_sign_ext(mcode::Operand dst, mcode::Operand src);
-
     bool lower_stored_operation(ssa::Instruction &store);
     void lower_in_place_operation(mcode::Opcode m_opcode, ssa::Operand &addr, ssa::Value &rhs);
     void lower_in_place_shift(mcode::Opcode m_opcode, ssa::Operand &addr, ssa::Value &rhs);
@@ -112,16 +100,11 @@ public:
     void lower_cond_branch(ssa::Instruction &instr);
     void lower_atomic_cas_loop(mcode::Opcode opcode, ssa::Instruction &instr);
 
-    X8664Condition lower_condition(ssa::Comparison comparison);
-    void move_branch_args(ssa::BranchTarget &target);
+    void lower_to_copy_into(mcode::Register reg, ssa::Value &value);
+    void lower_to_copy_into(mcode::Operand &m_dst, ssa::Value &value);
 
-    mcode::Operand lower_as_move_into_reg(mcode::Register reg, const ssa::Value &value);
-    mcode::Operand lower_as_move(mcode::Operand m_dst, const ssa::Value &value);
-    mcode::Operand lower_int_imm_as_move(mcode::Operand m_dst, LargeInt value);
-    mcode::Operand lower_fp_imm_as_move(mcode::Operand m_dst, double value);
-    mcode::Operand lower_reg_as_move(mcode::Operand m_dst, ssa::VirtualRegister src_reg, ssa::Type type);
-
-    mcode::Operand lower_symbol_as_operand(const ssa::Value &value, unsigned size, ValueLowerFlags flags);
+    void emit_branch_arg_copies(ssa::BranchTarget &target);
+    void emit_memory_copy_using_movs(ssa::Instruction &instr, unsigned size);
 
     mcode::Operand lower_value(ssa::Value &value, OperandKind kind);
     mcode::Operand lower_reg(ssa::VirtualRegister reg, unsigned size, OperandKind kind);
@@ -130,12 +113,15 @@ public:
     X8664Condition lower_comparison(ssa::Operand *lhs, ssa::Operand *rhs, ssa::Comparison comparison);
 
     mcode::Operand lower_addr_mem_access(AddrComponents addr);
+    mcode::Operand lower_callee(ssa::Value &value);
+    mcode::Operand lower_symbol(ssa::Value &value, unsigned size, bool is_callee);
 
     mcode::Register create_reg();
     mcode::Operand create_fp_const_load(double value, unsigned size);
     mcode::Symbol &create_const_neg_zero_64();
     mcode::Symbol &create_const_neg_zero_32();
 
+    mcode::Opcode mov_opcode(ssa::Type type);
     bool should_swap(ssa::Value &lhs, ssa::Value &rhs);
     bool is_loaded(ssa::Value &value);
 };

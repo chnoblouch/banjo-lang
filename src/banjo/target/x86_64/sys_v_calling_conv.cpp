@@ -99,7 +99,7 @@ void SysVCallingConv::lower_call(codegen::SSALowerer &lowerer, ssa::Instruction 
         }
 
         mcode::Operand dst = get_arg_dst(arg_storage[i - 2], lowerer).with_size(size);
-        x86_64_lowerer.lower_as_move(dst, operand);
+        x86_64_lowerer.lower_to_copy_into(dst, operand);
     }
 
     if (instr.get_attr() == ssa::Instruction::Attribute::VARIADIC) {
@@ -116,7 +116,8 @@ void SysVCallingConv::lower_call(codegen::SSALowerer &lowerer, ssa::Instruction 
         lowerer.emit({X8664Opcode::MOV, {m_dst, m_imm}});
     }
 
-    append_call(instr.get_operand(1), lowerer);
+    mcode::Operand m_callee = x86_64_lowerer.lower_callee(instr.get_operand(1));
+    lowerer.emit({X8664Opcode::CALL, {m_callee}, mcode::Instruction::FLAG_CALL});
 
     if (instr.get_dest()) {
         append_ret_val_move(lowerer, instr);
@@ -141,28 +142,6 @@ mcode::Operand SysVCallingConv::get_arg_dst(mcode::ArgStorage &storage, codegen:
         mcode::StackSlotID slot_index = stack_frame.get_call_arg_slot_indices()[storage.arg_slot_index];
         return mcode::Operand::from_stack_slot(slot_index);
     }
-}
-
-void SysVCallingConv::append_call(ssa::Operand func_operand, codegen::SSALowerer &lowerer) {
-    X8664SSALowerer &x86_64_lowerer = static_cast<X8664SSALowerer &>(lowerer);
-
-    mcode::Operand m_callee;
-    if (func_operand.is_symbol()) {
-        m_callee = x86_64_lowerer.lower_symbol_as_operand(func_operand, 8, {.is_callee = true});
-    } else if (func_operand.is_register()) {
-        ssa::InstrIter producer =
-            lowerer.find_def(func_operand.get_register(), codegen::DefSearchScope::BLOCK_NO_SIDE_EFFECTS);
-
-        if (producer && producer->get_opcode() == ssa::Opcode::LOAD) {
-            codegen::SSALowerer::AddrComponents addr = lowerer.collect_addr(producer->get_operand(1));
-            m_callee = x86_64_lowerer.lower_addr_mem_access(addr);
-            lowerer.discard_use(func_operand.get_register());
-        } else {
-            m_callee = lowerer.map_vreg_as_operand(func_operand.get_register(), 8);
-        }
-    }
-
-    lowerer.emit(mcode::Instruction(X8664Opcode::CALL, {m_callee}, mcode::Instruction::FLAG_CALL));
 }
 
 void SysVCallingConv::append_ret_val_move(codegen::SSALowerer &lowerer, ssa::Instruction &call_instr) {

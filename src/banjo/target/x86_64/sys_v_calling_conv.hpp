@@ -28,7 +28,6 @@ public:
 
 private:
     mcode::Operand get_arg_dst(mcode::ArgStorage &storage, codegen::SSALowerer &lowerer);
-    void append_call(ssa::Operand func_operand, codegen::SSALowerer &lowerer);
     void append_ret_val_move(codegen::SSALowerer &lowerer, ssa::Instruction &call_instr);
 };
 

@@ -57,7 +57,7 @@ void X8664SSALowerer::emit_block_prologue(ssa::BasicBlock &block) {
                 continue;
             }
 
-            mcode::Opcode opcode = get_move_opcode(type);
+            mcode::Opcode opcode = mov_opcode(type);
             mcode::Operand m_dst = map_vreg_as_operand(arg_reg, size);
 
             if (arg_storage[i].in_reg) {
@@ -77,7 +77,7 @@ void X8664SSALowerer::emit_block_prologue(ssa::BasicBlock &block) {
             ssa::Type type = block.get_param_types()[i];
 
             ssa::VirtualRegister tmp_reg = block_arg_tmps.at(arg_reg);
-            mcode::Opcode opcode = get_move_opcode(type);
+            mcode::Opcode opcode = mov_opcode(type);
             unsigned reg_size = get_size(type) == 8 ? 8 : 4;
 
             mcode::Operand dst = mcode::Operand::from_register(mcode::Register::from_virtual(arg_reg), reg_size);
@@ -92,7 +92,7 @@ void X8664SSALowerer::lower_load(ssa::Instruction &instr) {
     unsigned size = get_size(type);
     AddrComponents addr = collect_addr(instr.get_operand(1));
 
-    mcode::Opcode opcode = get_move_opcode(type);
+    mcode::Opcode opcode = mov_opcode(type);
     mcode::Operand m_dst = map_vreg_as_operand(*instr.get_dest(), size);
     mcode::Operand m_src = lower_addr_mem_access(addr).with_size(size);
     emit({opcode, {m_dst, m_src}});
@@ -117,7 +117,7 @@ void X8664SSALowerer::lower_store(ssa::Instruction &instr) {
         m_instr = mcode::Instruction(X8664Opcode::MOV, {dst, src});
     } else {
         mcode::Operand src = lower_value(instr.get_operand(0), OperandKind::REG_IMM);
-        mcode::Opcode opcode = get_move_opcode(type);
+        mcode::Opcode opcode = mov_opcode(type);
         dst.set_size(src.get_size());
         m_instr = mcode::Instruction(opcode, {dst, src});
     }
@@ -332,7 +332,7 @@ void X8664SSALowerer::lower_ashr(ssa::Instruction &instr) {
 void X8664SSALowerer::lower_jmp(ssa::Instruction &instr) {
     ssa::BranchTarget target = instr.get_operand(0).get_branch_target();
 
-    move_branch_args(target);
+    emit_branch_arg_copies(target);
 
     if (target.block != ssa_block.get_next()) {
         mcode::Operand m_block = mcode::Operand::from_basic_block(*block_map.at(target.block));
@@ -795,7 +795,7 @@ void X8664SSALowerer::lower_copy(ssa::Instruction &instr) {
 
     // TODO
     if (size <= 64 && instr.get_operand(0).is_register() && instr.get_operand(1).is_register()) {
-        copy_block_using_movs(instr, size);
+        emit_memory_copy_using_movs(instr, size);
         return;
     }
 
@@ -817,75 +817,12 @@ void X8664SSALowerer::lower_frame_address(ssa::Instruction &instr) {
     emit({X8664Opcode::MOV, {m_dst, mcode::Operand::from_register(rbp, 8)}});
 }
 
-mcode::Opcode X8664SSALowerer::get_move_opcode(ssa::Type type) {
-    if (type.is_primitive(ssa::Primitive::F32)) return X8664Opcode::MOVSS;
-    else if (type.is_primitive(ssa::Primitive::F64)) return X8664Opcode::MOVSD;
-    else return X8664Opcode::MOV;
-}
-
 mcode::CallingConvention *X8664SSALowerer::get_calling_convention(ssa::CallingConv calling_conv) {
     switch (calling_conv) {
         case ssa::CallingConv::X86_64_SYS_V_ABI: return (mcode::CallingConvention *)&SysVCallingConv::INSTANCE;
         case ssa::CallingConv::X86_64_MS_ABI: return (mcode::CallingConvention *)&MSABICallingConv::INSTANCE;
         default: return nullptr;
     }
-}
-
-void X8664SSALowerer::copy_block_using_movs(ssa::Instruction &instr, unsigned size) {
-    unsigned offset = 0;
-
-    std::variant<mcode::Register, mcode::StackSlotID> dst = map_vreg(instr.get_operand(0).get_register());
-    std::variant<mcode::Register, mcode::StackSlotID> src = map_vreg(instr.get_operand(1).get_register());
-
-    for (unsigned mov_size = 8; mov_size != 0; mov_size /= 2) {
-        while (size >= mov_size) {
-            X8664Address dst_addr;
-            X8664Address src_addr;
-
-            if (std::holds_alternative<mcode::Register>(dst)) {
-                dst_addr = {std::get<mcode::Register>(dst), static_cast<int>(offset)};
-            } else {
-                mcode::StackAddress stack_addr{std::get<mcode::StackSlotID>(dst), offset};
-                dst_addr = {mcode::Register::from_physical(X8664Register::RSP), stack_addr};
-            }
-
-            if (std::holds_alternative<mcode::Register>(src)) {
-                src_addr = {std::get<mcode::Register>(src), static_cast<int>(offset)};
-            } else {
-                mcode::StackAddress stack_addr{std::get<mcode::StackSlotID>(src), offset};
-                src_addr = {mcode::Register::from_physical(X8664Register::RSP), stack_addr};
-            }
-
-            mcode::Register tmp_reg = create_reg();
-            mcode::Operand dst_val = mcode::Operand::from_x86_64_addr(dst_addr, mov_size);
-            mcode::Operand src_val = mcode::Operand::from_x86_64_addr(src_addr, mov_size);
-            mcode::Operand tmp_val = mcode::Operand::from_register(tmp_reg, mov_size);
-
-            emit({X8664Opcode::MOV, {tmp_val, src_val}});
-            emit({X8664Opcode::MOV, {dst_val, tmp_val}});
-
-            size -= mov_size;
-            offset += mov_size;
-        }
-    }
-
-    ASSERT(size == 0);
-}
-
-void X8664SSALowerer::emit_mov_zero_ext(mcode::Operand dst, mcode::Operand src) {
-    // FIXME
-
-    bool extend = !src.is_int_immediate() && dst.get_size() > src.get_size();
-    mcode::Opcode opcode = extend ? X8664Opcode::MOVZX : X8664Opcode::MOV;
-    emit({opcode, {std::move(dst), std::move(src)}});
-}
-
-void X8664SSALowerer::emit_mov_sign_ext(mcode::Operand dst, mcode::Operand src) {
-    // FIXME
-
-    bool extend = !src.is_int_immediate() && dst.get_size() > src.get_size();
-    mcode::Opcode opcode = extend ? X8664Opcode::MOVSX : X8664Opcode::MOV;
-    emit({opcode, {std::move(dst), std::move(src)}});
 }
 
 bool X8664SSALowerer::lower_stored_operation(ssa::Instruction &store) {
@@ -1173,13 +1110,13 @@ void X8664SSALowerer::lower_cond_branch(ssa::Instruction &instr) {
     mcode::Operand m_target_true = mcode::Operand::from_basic_block(*block_map.at(target_true->block));
     mcode::Operand m_target_false = mcode::Operand::from_basic_block(*block_map.at(target_false->block));
 
-    move_branch_args(*target_true);
+    emit_branch_arg_copies(*target_true);
 
     X8664Condition condition = lower_comparison(&lhs, &rhs, comparison);
     mcode::Opcode m_opcode = X8664Opcode::JCC + static_cast<unsigned>(condition);
     emit({m_opcode, {m_target_true}});
 
-    move_branch_args(*target_false);
+    emit_branch_arg_copies(*target_false);
 
     if (target_false->block != ssa_block.get_next()) {
         emit({X8664Opcode::JMP, {m_target_false}});
@@ -1209,200 +1146,87 @@ void X8664SSALowerer::lower_atomic_cas_loop(mcode::Opcode opcode, ssa::Instructi
     emit({X8664Opcode::MOV, {m_dst, m_rax}});
 }
 
-X8664Condition X8664SSALowerer::lower_condition(ssa::Comparison comparison) {
-    switch (comparison) {
-        case ssa::Comparison::EQ: return X8664Condition::E;
-        case ssa::Comparison::NE: return X8664Condition::NE;
-        case ssa::Comparison::UGT: return X8664Condition::A;
-        case ssa::Comparison::UGE: return X8664Condition::AE;
-        case ssa::Comparison::ULT: return X8664Condition::B;
-        case ssa::Comparison::ULE: return X8664Condition::BE;
-        case ssa::Comparison::SGT: return X8664Condition::G;
-        case ssa::Comparison::SGE: return X8664Condition::GE;
-        case ssa::Comparison::SLT: return X8664Condition::L;
-        case ssa::Comparison::SLE: return X8664Condition::LE;
-        case ssa::Comparison::FEQ: return X8664Condition::E;
-        case ssa::Comparison::FNE: return X8664Condition::NE;
-        case ssa::Comparison::FGT: return X8664Condition::A;
-        case ssa::Comparison::FGE: return X8664Condition::AE;
-        case ssa::Comparison::FLT: return X8664Condition::B;
-        case ssa::Comparison::FLE: return X8664Condition::BE;
+void X8664SSALowerer::lower_to_copy_into(mcode::Register reg, ssa::Value &value) {
+    unsigned size = get_size(value.get_type());
+    mcode::Operand m_dst = mcode::Operand::from_register(reg, size);
+    lower_to_copy_into(m_dst, value);
+}
+
+void X8664SSALowerer::lower_to_copy_into(mcode::Operand &m_dst, ssa::Value &value) {
+    ssa::Type type = value.get_type();
+
+    if (m_dst.is_register()) {
+        if (value.is_int_immediate() && value.get_int_immediate() == 0) {
+            emit({X8664Opcode::XOR, {m_dst, m_dst}});
+            return;
+        } else if (value.is_fp_immediate() && value.get_fp_immediate() == 0.0) {
+            mcode::Opcode m_opcode = type == ssa::Primitive::F64 ? X8664Opcode::XORPD : X8664Opcode::XORPS;
+            emit({m_opcode, {m_dst, m_dst}});
+            return;
+        }
+    }
+
+    if (type.is_floating_point()) {
+        mcode::Opcode m_opcode = type == ssa::Primitive::F64 ? X8664Opcode::MOVSD : X8664Opcode::MOVSS;
+        mcode::Operand m_src = lower_value(value, OperandKind::REG_ADDR);
+        emit({m_opcode, {m_dst, m_src}});
+    } else {
+        mcode::Operand m_src = lower_value(value, OperandKind::REG_ADDR_IMM);
+        emit({X8664Opcode::MOV, {m_dst, m_src}});
     }
 }
 
-void X8664SSALowerer::move_branch_args(ssa::BranchTarget &target) {
+void X8664SSALowerer::emit_branch_arg_copies(ssa::BranchTarget &target) {
     for (unsigned i = 0; i < target.args.size(); i++) {
         ssa::Value &arg = target.args[i];
         ssa::VirtualRegister arg_reg = target.block->get_param_regs()[i];
         ssa::VirtualRegister tmp_reg = block_arg_tmps.at(arg_reg);
 
-        ssa::Type type = arg.get_type();
-        unsigned size = get_size(type);
-        mcode::Operand dst = mcode::Operand::from_register(mcode::Register::from_virtual(tmp_reg), size);
-
-        if (arg.is_int_immediate() && arg.get_int_immediate() == 0) {
-            emit({X8664Opcode::XOR, {dst, dst}, mcode::Instruction::FLAG_CALL_ARG});
-        } else if (arg.is_fp_immediate() && arg.get_fp_immediate() == 0.0) {
-            emit({X8664Opcode::XORPS, {dst, dst}, mcode::Instruction::FLAG_CALL_ARG});
-        } else if (type.is_floating_point()) {
-            mcode::Opcode opcode = type == ssa::Primitive::F64 ? X8664Opcode::MOVSD : X8664Opcode::MOVSS;
-            mcode::Operand src = lower_value(arg, OperandKind::REG_ADDR);
-            emit({opcode, {dst, src}, mcode::Instruction::FLAG_CALL_ARG});
-        } else {
-            mcode::Operand src = lower_value(arg, OperandKind::REG_ADDR_IMM);
-            emit({X8664Opcode::MOV, {dst, src}, mcode::Instruction::FLAG_CALL_ARG});
-        }
+        unsigned size = get_size(arg.get_type());
+        mcode::Operand m_dst = mcode::Operand::from_register(mcode::Register::from_virtual(tmp_reg), size);
+        lower_to_copy_into(m_dst, arg);
     }
 }
 
-mcode::Operand X8664SSALowerer::lower_as_move_into_reg(mcode::Register reg, const ssa::Value &value) {
-    unsigned size = get_size(value.get_type());
-    mcode::Operand m_dst = mcode::Operand::from_register(reg, size);
-    return lower_as_move(m_dst, value);
-}
+void X8664SSALowerer::emit_memory_copy_using_movs(ssa::Instruction &instr, unsigned size) {
+    unsigned offset = 0;
 
-mcode::Operand X8664SSALowerer::lower_as_move(mcode::Operand m_dst, const ssa::Value &value) {
-    if (value.is_int_immediate()) {
-        return lower_int_imm_as_move(m_dst, value.get_int_immediate());
-    } else if (value.is_fp_immediate()) {
-        return lower_fp_imm_as_move(m_dst, value.get_fp_immediate());
-    } else if (value.is_register()) {
-        return lower_reg_as_move(m_dst, value.get_register(), value.get_type());
-    } else if (value.is_symbol()) {
-        emit({X8664Opcode::MOV, {m_dst, lower_symbol_as_operand(value, m_dst.get_size(), {})}});
-        return m_dst;
-    } else {
-        ASSERT_UNREACHABLE;
-    }
-}
+    std::variant<mcode::Register, mcode::StackSlotID> dst = map_vreg(instr.get_operand(0).get_register());
+    std::variant<mcode::Register, mcode::StackSlotID> src = map_vreg(instr.get_operand(1).get_register());
 
-mcode::Operand X8664SSALowerer::lower_int_imm_as_move(mcode::Operand m_dst, LargeInt value) {
-    // Use `XOR dst, dst` for zeroing registers to save code size and also because modern CPUs recognize and
-    // optimize this idiom.
-    if (value == 0 && m_dst.is_register()) {
-        // Use the 32-bit variant even when operating on 64-bit registers so we can potentially omit the REX prefix.
-        m_dst.set_size(std::min(m_dst.get_size(), 4));
+    for (unsigned mov_size = 8; mov_size != 0; mov_size /= 2) {
+        while (size >= mov_size) {
+            X8664Address dst_addr;
+            X8664Address src_addr;
 
-        emit({X8664Opcode::XOR, {m_dst, m_dst}});
-        return m_dst;
-    }
+            if (std::holds_alternative<mcode::Register>(dst)) {
+                dst_addr = {std::get<mcode::Register>(dst), static_cast<int>(offset)};
+            } else {
+                mcode::StackAddress stack_addr{std::get<mcode::StackSlotID>(dst), offset};
+                dst_addr = {mcode::Register::from_physical(X8664Register::RSP), stack_addr};
+            }
 
-    mcode::Operand m_src = mcode::Operand::from_int_immediate(value, m_dst.get_size());
-    emit({X8664Opcode::MOV, {m_dst, m_src}});
-    return m_dst;
-}
+            if (std::holds_alternative<mcode::Register>(src)) {
+                src_addr = {std::get<mcode::Register>(src), static_cast<int>(offset)};
+            } else {
+                mcode::StackAddress stack_addr{std::get<mcode::StackSlotID>(src), offset};
+                src_addr = {mcode::Register::from_physical(X8664Register::RSP), stack_addr};
+            }
 
-mcode::Operand X8664SSALowerer::lower_fp_imm_as_move(mcode::Operand m_dst, double value) {
-    // Use `XORP[S,D] dst, dst` to generate a zero floating-point number so we don't have to load it from memory.
-    if (value == 0.0) {
-        mcode::Opcode m_opcode = m_dst.get_size() == 4 ? X8664Opcode::XORPS : X8664Opcode::XORPD;
+            mcode::Register tmp_reg = create_reg();
+            mcode::Operand dst_val = mcode::Operand::from_x86_64_addr(dst_addr, mov_size);
+            mcode::Operand src_val = mcode::Operand::from_x86_64_addr(src_addr, mov_size);
+            mcode::Operand tmp_val = mcode::Operand::from_register(tmp_reg, mov_size);
 
-        if (m_dst.is_register()) {
-            emit({m_opcode, {m_dst, m_dst}});
-        } else {
-            mcode::Operand m_tmp = mcode::Operand::from_register(create_reg(), m_dst.get_size());
-            mcode::Opcode m_mov_opcode = m_dst.get_size() == 4 ? X8664Opcode::MOVSS : X8664Opcode::MOVSD;
+            emit({X8664Opcode::MOV, {tmp_val, src_val}});
+            emit({X8664Opcode::MOV, {dst_val, tmp_val}});
 
-            emit({m_opcode, {m_tmp, m_tmp}});
-            emit({m_mov_opcode, {m_dst, m_tmp}});
-        }
-
-        return m_dst;
-    }
-
-    mcode::Opcode m_opcode = m_dst.get_size() == 4 ? X8664Opcode::MOVSS : X8664Opcode::MOVSD;
-    mcode::Operand m_src = create_fp_const_load(value, m_dst.get_size());
-
-    if (m_dst.is_register()) {
-        emit({m_opcode, {m_dst, m_src}});
-    } else {
-        mcode::Operand m_tmp = mcode::Operand::from_register(create_reg(), m_dst.get_size());
-        emit({m_opcode, {m_tmp, m_src}});
-        emit({m_opcode, {m_dst, m_tmp}});
-    }
-
-    return m_dst;
-}
-
-mcode::Operand X8664SSALowerer::lower_reg_as_move(mcode::Operand m_dst, ssa::VirtualRegister src_reg, ssa::Type type) {
-    mcode::Operand m_src = map_vreg_as_operand(src_reg, m_dst.get_size());
-
-    if (m_src.is_stack_slot()) {
-        if (m_dst.is_register()) {
-            emit({X8664Opcode::LEA, {m_dst, m_src}});
-        } else {
-            mcode::Operand m_tmp = mcode::Operand::from_register(create_reg(), m_dst.get_size());
-            emit({X8664Opcode::LEA, {m_tmp, m_src}});
-            emit({X8664Opcode::MOV, {m_dst, m_tmp}});
-        }
-    } else if (type.is_floating_point()) {
-        mcode::Opcode m_opcode = m_dst.get_size() == 4 ? X8664Opcode::MOVSS : X8664Opcode::MOVSD;
-        emit({m_opcode, {m_dst, m_src}});
-    } else {
-        unsigned size = m_dst.get_size() == 8 ? 8 : 4;
-        emit({X8664Opcode::MOV, {m_dst.with_size(size), m_src.with_size(size)}});
-    }
-
-    return m_dst;
-}
-
-mcode::Operand X8664SSALowerer::lower_symbol_as_operand(const ssa::Value &value, unsigned size, ValueLowerFlags flags) {
-    const std::string &symbol_name = value.get_symbol_name();
-
-    mcode::Relocation reloc = mcode::Relocation::NONE;
-    if (target->get_descr().is_linux()) {
-        if (value.is_extern_func()) {
-            // Actually, the PLT doesn't seem to be that popular nowadays, so we might want to not
-            // use it? Rust disabled it back in 2018: https://github.com/rust-lang/rust/pull/54592
-            reloc = mcode::Relocation::PLT;
-        } else if (value.is_extern_global()) {
-            reloc = mcode::Relocation::GOT;
+            size -= mov_size;
+            offset += mov_size;
         }
     }
 
-    mcode::Symbol symbol{symbol_name, reloc};
-
-    if (target->get_descr().is_darwin() && (value.is_func() || value.is_extern_func())) {
-        return mcode::Operand::from_symbol(symbol, 8);
-    }
-
-    if (flags.is_callee) {
-        if (target->get_code_model() == CodeModel::SMALL) {
-            return mcode::Operand::from_symbol(symbol, 8);
-        } else if (target->get_code_model() == CodeModel::LARGE) {
-            mcode::Register addr_reg = create_reg();
-            mcode::Operand dst = mcode::Operand::from_register(addr_reg, 8);
-            mcode::Operand src = mcode::Operand::from_symbol(symbol, 8);
-            emit(mcode::Instruction(X8664Opcode::MOV, {dst, src}));
-            return dst;
-        } else {
-            ASSERT_UNREACHABLE;
-        }
-    }
-
-    if (target->get_code_model() == CodeModel::SMALL) {
-        if (reloc == mcode::Relocation::PLT || reloc == mcode::Relocation::GOT) {
-            X8664Address addr{.base = symbol};
-            mcode::Operand m_src = mcode::Operand::from_x86_64_addr(addr, 8);
-            mcode::Operand m_dst = mcode::Operand::from_register(create_reg(), 8);
-            emit({X8664Opcode::MOV, {m_dst, m_src}});
-            return m_dst;
-        } else {
-            X8664Address addr{.base = symbol};
-            mcode::Operand m_src = mcode::Operand::from_x86_64_addr(addr, size);
-            mcode::Operand m_dst = mcode::Operand::from_register(create_reg(), 8);
-            emit({X8664Opcode::LEA, {m_dst, m_src}});
-            return m_dst;
-        }
-    } else if (target->get_code_model() == CodeModel::LARGE) {
-        mcode::Register addr_reg = create_reg();
-        mcode::Operand dst = mcode::Operand::from_register(addr_reg, 8);
-        mcode::Operand src = mcode::Operand::from_symbol(symbol, 8);
-        emit(mcode::Instruction(X8664Opcode::MOV, {dst, src}));
-        return dst;
-    } else {
-        ASSERT_UNREACHABLE;
-    }
+    ASSERT(size == 0);
 }
 
 mcode::Operand X8664SSALowerer::lower_value(ssa::Value &value, OperandKind kind) {
@@ -1415,7 +1239,7 @@ mcode::Operand X8664SSALowerer::lower_value(ssa::Value &value, OperandKind kind)
     } else if (value.is_fp_immediate()) {
         return lower_fp_imm(value.get_fp_immediate(), size, kind);
     } else if (value.is_symbol()) {
-        return lower_symbol_as_operand(value, size, {});
+        return lower_symbol(value, size, false);
     } else {
         ASSERT_UNREACHABLE;
     }
@@ -1513,7 +1337,24 @@ X8664Condition X8664SSALowerer::lower_comparison(ssa::Operand *lhs, ssa::Operand
         emit({X8664Opcode::CMP, {m_lhs, m_rhs}});
     }
 
-    return lower_condition(comparison);
+    switch (comparison) {
+        case ssa::Comparison::EQ: return X8664Condition::E;
+        case ssa::Comparison::NE: return X8664Condition::NE;
+        case ssa::Comparison::UGT: return X8664Condition::A;
+        case ssa::Comparison::UGE: return X8664Condition::AE;
+        case ssa::Comparison::ULT: return X8664Condition::B;
+        case ssa::Comparison::ULE: return X8664Condition::BE;
+        case ssa::Comparison::SGT: return X8664Condition::G;
+        case ssa::Comparison::SGE: return X8664Condition::GE;
+        case ssa::Comparison::SLT: return X8664Condition::L;
+        case ssa::Comparison::SLE: return X8664Condition::LE;
+        case ssa::Comparison::FEQ: return X8664Condition::E;
+        case ssa::Comparison::FNE: return X8664Condition::NE;
+        case ssa::Comparison::FGT: return X8664Condition::A;
+        case ssa::Comparison::FGE: return X8664Condition::AE;
+        case ssa::Comparison::FLT: return X8664Condition::B;
+        case ssa::Comparison::FLE: return X8664Condition::BE;
+    }
 }
 
 mcode::Operand X8664SSALowerer::lower_addr_mem_access(AddrComponents addr) {
@@ -1595,6 +1436,67 @@ mcode::Operand X8664SSALowerer::lower_addr_mem_access(AddrComponents addr) {
     return mcode::Operand::from_x86_64_addr(m_addr, 8);
 }
 
+mcode::Operand X8664SSALowerer::lower_callee(ssa::Value &value) {
+    if (value.is_symbol()) {
+        return lower_symbol(value, 8, true);
+    } else {
+        return lower_value(value, OperandKind::REG_ADDR);
+    }
+}
+
+mcode::Operand X8664SSALowerer::lower_symbol(ssa::Value &value, unsigned size, bool is_callee) {
+    mcode::Relocation reloc = mcode::Relocation::NONE;
+    if (target->get_descr().is_linux()) {
+        if (value.is_extern_func()) {
+            // Actually, the PLT doesn't seem to be that popular nowadays, so we might want to not
+            // use it? Rust disabled it back in 2018: https://github.com/rust-lang/rust/pull/54592
+            reloc = mcode::Relocation::PLT;
+        } else if (value.is_extern_global()) {
+            reloc = mcode::Relocation::GOT;
+        }
+    }
+
+    mcode::Symbol symbol{value.get_symbol_name(), reloc};
+
+    if (is_callee) {
+        if (target->get_code_model() == CodeModel::SMALL) {
+            return mcode::Operand::from_symbol(symbol, 8);
+        } else if (target->get_code_model() == CodeModel::LARGE) {
+            mcode::Register addr_reg = create_reg();
+            mcode::Operand dst = mcode::Operand::from_register(addr_reg, 8);
+            mcode::Operand src = mcode::Operand::from_symbol(symbol, 8);
+            emit(mcode::Instruction(X8664Opcode::MOV, {dst, src}));
+            return dst;
+        } else {
+            ASSERT_UNREACHABLE;
+        }
+    }
+
+    if (target->get_code_model() == CodeModel::SMALL) {
+        if (reloc == mcode::Relocation::PLT || reloc == mcode::Relocation::GOT) {
+            X8664Address addr{.base = symbol};
+            mcode::Operand m_src = mcode::Operand::from_x86_64_addr(addr, 8);
+            mcode::Operand m_dst = mcode::Operand::from_register(create_reg(), 8);
+            emit({X8664Opcode::MOV, {m_dst, m_src}});
+            return m_dst;
+        } else {
+            X8664Address addr{.base = symbol};
+            mcode::Operand m_src = mcode::Operand::from_x86_64_addr(addr, size);
+            mcode::Operand m_dst = mcode::Operand::from_register(create_reg(), 8);
+            emit({X8664Opcode::LEA, {m_dst, m_src}});
+            return m_dst;
+        }
+    } else if (target->get_code_model() == CodeModel::LARGE) {
+        mcode::Register addr_reg = create_reg();
+        mcode::Operand dst = mcode::Operand::from_register(addr_reg, 8);
+        mcode::Operand src = mcode::Operand::from_symbol(symbol, 8);
+        emit(mcode::Instruction(X8664Opcode::MOV, {dst, src}));
+        return dst;
+    } else {
+        ASSERT_UNREACHABLE;
+    }
+}
+
 mcode::Register X8664SSALowerer::create_reg() {
     return mcode::Register::from_virtual(get_func().next_virtual_reg());
 }
@@ -1655,6 +1557,16 @@ mcode::Symbol &X8664SSALowerer::create_const_neg_zero_32() {
     }
 
     return *const_neg_zero_32;
+}
+
+mcode::Opcode X8664SSALowerer::mov_opcode(ssa::Type type) {
+    if (type.is_primitive(ssa::Primitive::F32)) {
+        return X8664Opcode::MOVSS;
+    } else if (type.is_primitive(ssa::Primitive::F64)) {
+        return X8664Opcode::MOVSD;
+    } else {
+        return X8664Opcode::MOV;
+    }
 }
 
 bool X8664SSALowerer::should_swap(ssa::Value &lhs, ssa::Value &rhs) {

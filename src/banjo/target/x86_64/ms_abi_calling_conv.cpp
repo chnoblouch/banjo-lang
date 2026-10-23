@@ -71,6 +71,8 @@ MSABICallingConv::MSABICallingConv() {
 }
 
 void MSABICallingConv::lower_call(codegen::SSALowerer &lowerer, ssa::Instruction &instr) {
+    X8664SSALowerer &x86_64_lowerer = static_cast<X8664SSALowerer &>(lowerer);
+
     bool variadic = instr.get_attr() == ssa::Instruction::Attribute::VARIADIC;
 
     for (unsigned i = 2; i < instr.get_operands().size(); i++) {
@@ -78,7 +80,8 @@ void MSABICallingConv::lower_call(codegen::SSALowerer &lowerer, ssa::Instruction
         emit_arg_move(lowerer, operand, i - 2, variadic);
     }
 
-    emit_call(lowerer, instr.get_operand(1));
+    mcode::Operand m_callee = x86_64_lowerer.lower_callee(instr.get_operand(1));
+    lowerer.emit({X8664Opcode::CALL, {m_callee}, mcode::Instruction::FLAG_CALL});
 
     if (instr.get_dest()) {
         emit_ret_val_move(lowerer, instr);
@@ -109,7 +112,7 @@ void MSABICallingConv::emit_reg_arg_move(codegen::SSALowerer &lowerer, ssa::Oper
     mcode::PhysicalReg m_reg = is_fp ? ARG_REGS_FP[index] : ARG_REGS_INT[index];
     mcode::Register m_dst_reg = mcode::Register::from_physical(m_reg);
 
-    x86_64_lowerer.lower_as_move_into_reg(m_dst_reg, operand);
+    x86_64_lowerer.lower_to_copy_into(m_dst_reg, operand);
 }
 
 void MSABICallingConv::emit_reg_arg_move_variadic(codegen::SSALowerer &lowerer, ssa::Operand &operand, unsigned index) {
@@ -121,14 +124,14 @@ void MSABICallingConv::emit_reg_arg_move_variadic(codegen::SSALowerer &lowerer, 
 
         mcode::Register m_dst_reg_fp = mcode::Register::from_physical(ARG_REGS_FP[index]);
         mcode::Operand m_dst_fp = mcode::Operand::from_register(m_dst_reg_fp, 8);
-        x86_64_lowerer.lower_as_move_into_reg(m_dst_reg_fp, operand);
+        x86_64_lowerer.lower_to_copy_into(m_dst_reg_fp, operand);
 
         mcode::Register m_dst_reg_gp = mcode::Register::from_physical(ARG_REGS_INT[index]);
         mcode::Operand m_dst_gp = mcode::Operand::from_register(m_dst_reg_gp, 8);
         lowerer.emit({X8664Opcode::MOVQ, {m_dst_gp, m_dst_fp}});
     } else {
         mcode::Register m_dst_reg = mcode::Register::from_physical(ARG_REGS_INT[index]);
-        x86_64_lowerer.lower_as_move_into_reg(m_dst_reg, operand);
+        x86_64_lowerer.lower_to_copy_into(m_dst_reg, operand);
     }
 }
 
@@ -154,30 +157,7 @@ void MSABICallingConv::emit_stack_arg_move(codegen::SSALowerer &lowerer, ssa::Op
 
     unsigned size = x86_64_lowerer.get_size(operand.get_type());
     mcode::Operand m_dst = mcode::Operand::from_stack_slot(slot_index, size);
-
-    x86_64_lowerer.lower_as_move(m_dst, operand);
-}
-
-void MSABICallingConv::emit_call(codegen::SSALowerer &lowerer, const ssa::Operand &func_operand) {
-    X8664SSALowerer &x86_64_lowerer = static_cast<X8664SSALowerer &>(lowerer);
-
-    mcode::Operand operand;
-    if (func_operand.is_symbol()) {
-        operand = x86_64_lowerer.lower_symbol_as_operand(func_operand, 8, {.is_callee = true});
-    } else if (func_operand.is_register()) {
-        ssa::InstrIter producer =
-            lowerer.find_def(func_operand.get_register(), codegen::DefSearchScope::BLOCK_NO_SIDE_EFFECTS);
-
-        if (producer && producer->get_opcode() == ssa::Opcode::LOAD) {
-            codegen::SSALowerer::AddrComponents addr = lowerer.collect_addr(producer->get_operand(1));
-            operand = x86_64_lowerer.lower_addr_mem_access(addr);
-            lowerer.discard_use(func_operand.get_register());
-        } else {
-            operand = lowerer.map_vreg_as_operand(func_operand.get_register(), 8);
-        }
-    }
-
-    lowerer.emit({X8664Opcode::CALL, {operand}, mcode::Instruction::FLAG_CALL});
+    x86_64_lowerer.lower_to_copy_into(m_dst, operand);
 }
 
 void MSABICallingConv::emit_ret_val_move(codegen::SSALowerer &lowerer, ssa::Instruction &call_instr) {
