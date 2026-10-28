@@ -312,7 +312,7 @@ void PeepholeOptimizer::process_memcpy(ssa::InstrIter &iter, ssa::BasicBlock &bl
 }
 
 void PeepholeOptimizer::process_memmove(ssa::InstrIter &iter, ssa::BasicBlock &block) {
-    if (iter->get_operands().size() != 5 || iter->get_dest()) {
+    if (iter->get_operands().size() != 5) {
         return;
     }
 
@@ -339,7 +339,7 @@ void PeepholeOptimizer::process_memmove(ssa::InstrIter &iter, ssa::BasicBlock &b
         }
     }
 
-    iter->get_operand(2) = ssa::Operand::from_extern_func(memcpy_func, ssa::Primitive::ADDR);
+    iter->get_operand(1) = ssa::Operand::from_extern_func(memcpy_func, ssa::Primitive::ADDR);
     process_memcpy(iter, block);
 }
 

@@ -373,7 +373,7 @@ void BlockSSAGenerator::generate_expr_stmt(const sir::Expr &expr, ssa::Value *ds
     if (dst) {
         ExprSSAGenerator{ctx}.generate_into_dst(expr, *dst);
     } else {
-        ExprSSAGenerator{ctx}.generate(expr);
+        ExprSSAGenerator{ctx}.generate(expr, StorageHints::unused());
     }
 
     DeinitSSAGenerator{ctx}.generate_deferred_deinits();
