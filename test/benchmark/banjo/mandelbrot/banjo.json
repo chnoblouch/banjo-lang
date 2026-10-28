@@ -1,0 +1,7 @@
+{
+    "name": "mandelbrot",
+    "type": "executable",
+    "args": [
+        "--optional-semicolons"
+    ]
+}
