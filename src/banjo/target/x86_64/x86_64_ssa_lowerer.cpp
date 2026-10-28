@@ -890,9 +890,6 @@ bool X8664SSALowerer::lower_stored_operation(ssa::Instruction &store) {
         return false;
     }
 
-    ssa::Type type = operation->get_operand(0).get_type();
-    unsigned size = get_size(type);
-
     mcode::Opcode m_opcode;
     OpCategory category;
 
@@ -965,6 +962,9 @@ bool X8664SSALowerer::lower_stored_operation(ssa::Instruction &store) {
             if (store_addr.is_register()) {
                 discard_use(store_addr.get_register());
             }
+
+            ssa::Type type = operation->get_operand(0).get_type();
+            unsigned size = get_size(type);
 
             if (operation->get_opcode() == ssa::Opcode::XOR) {
                 if (is_neg_one(*rhs, size)) {
