@@ -112,6 +112,7 @@ static const ArgumentParser::Option OPTION_DEBUG_COMPILER{
     "Emit internal data for debugging the compiler",
 };
 
+static const ArgumentParser::Positional POSITIONAL_SOURCE_FILE{"source file", true};
 static const ArgumentParser::Positional POSITIONAL_NAME{"name"};
 static const ArgumentParser::Positional POSITIONAL_TEST_NAME{"test name", true};
 static const ArgumentParser::Positional POSITIONAL_TOOL{"tool"};
@@ -130,7 +131,7 @@ static const ArgumentParser::Command COMMAND_NEW{
 
 static const ArgumentParser::Command COMMAND_BUILD{
     .name = "build",
-    .description = "Build the current package",
+    .description = "Build the current package or a source file",
     .options{
         &OPTION_HELP,
         &OPTION_TARGET,
@@ -141,11 +142,12 @@ static const ArgumentParser::Command COMMAND_BUILD{
         &OPTION_QUIET,
         &OPTION_VERBOSE,
     },
+    .positional = &POSITIONAL_SOURCE_FILE,
 };
 
 static const ArgumentParser::Command COMMAND_RUN{
     .name = "run",
-    .description = "Build and run the current package",
+    .description = "Build and run the current package or a source file",
     .options{
         &OPTION_HELP,
         &OPTION_TARGET,
@@ -157,6 +159,7 @@ static const ArgumentParser::Command COMMAND_RUN{
         &OPTION_QUIET,
         &OPTION_VERBOSE,
     },
+    .positional = &POSITIONAL_SOURCE_FILE,
 };
 
 static const ArgumentParser::Command COMMAND_TEST{
@@ -415,9 +418,9 @@ void CLI::run(int argc, const char *argv[]) {
     } else if (args.command == &COMMAND_NEW) {
         execute_new(args);
     } else if (args.command == &COMMAND_BUILD) {
-        execute_build();
+        execute_build(args);
     } else if (args.command == &COMMAND_RUN) {
-        execute_run();
+        execute_run(args);
     } else if (args.command == &COMMAND_TEST) {
         execute_test(args);
     } else if (args.command == &COMMAND_INVOKE) {
@@ -547,13 +550,21 @@ void CLI::execute_new(const ArgumentParser::Result &args) {
     utils::write_string_file("{\n  \"name\": \"" + name + "\",\n  \"type\": \"executable\"\n}\n", manifest_path);
 }
 
-void CLI::execute_build() {
+void CLI::execute_build(const ArgumentParser::Result &args) {
+    if (args.command_positional) {
+        source_file = *args.command_positional;
+    }
+
     load_config();
     build();
     print_clear_line();
 }
 
-void CLI::execute_run() {
+void CLI::execute_run(const ArgumentParser::Result &args) {
+    if (args.command_positional) {
+        source_file = *args.command_positional;
+    }
+
     load_config();
 
     if (!target.is_executable_on_host()) {
@@ -814,10 +825,14 @@ void CLI::load_config() {
     target = target_override ? *target_override : Target::host();
     load_toolchain();
 
-    source_paths.push_back("src");
+    if (source_file) {
+        package_name = std::filesystem::path{*source_file}.stem();
+    } else {
+        source_paths.push_back("src");
 
-    manifest = parse_manifest("banjo.json");
-    load_root_manifest(manifest);
+        Manifest manifest = parse_manifest("banjo.json");
+        load_root_manifest(manifest);
+    }
 }
 
 void CLI::load_toolchain() {
@@ -834,6 +849,8 @@ void CLI::load_toolchain() {
 
 void CLI::load_root_manifest(const Manifest &manifest) {
     load_manifest(manifest);
+
+    package_name = manifest.name;
 
     if (manifest.type == "executable") {
         package_type = PackageType::EXECUTABLE;
@@ -1749,6 +1766,11 @@ void CLI::append_compilation_args(std::vector<std::string> &args) {
         args.push_back("1");
     }
 
+    if (source_file) {
+        args.push_back("--file");
+        args.push_back(*source_file);
+    }
+
     for (const std::string &path : source_paths) {
         args.push_back("--path");
         args.push_back(path);
@@ -1787,7 +1809,7 @@ std::string CLI::get_output_path() {
     std::string file_name;
 
     if (package_type == PackageType::EXECUTABLE) {
-        std::string base = manifest.name;
+        std::string base = package_name;
 
         if (hot_reloading_enabled) {
             base += "-hot-reloadable";
@@ -1800,17 +1822,17 @@ std::string CLI::get_output_path() {
         }
     } else if (package_type == PackageType::STATIC_LIBRARY) {
         if (target.os == "windows" && target.env == "msvc") {
-            file_name = manifest.name + ".lib";
+            file_name = package_name + ".lib";
         } else {
-            file_name = manifest.name + ".a";
+            file_name = package_name + ".a";
         }
     } else if (package_type == PackageType::SHARED_LIBRARY) {
         if (target.os == "windows") {
-            file_name = manifest.name + ".dll";
+            file_name = package_name + ".dll";
         } else if (target.os == "macos") {
-            file_name = "lib" + manifest.name + ".dylib";
+            file_name = "lib" + package_name + ".dylib";
         } else {
-            file_name = "lib" + manifest.name + ".so";
+            file_name = "lib" + package_name + ".so";
         }
     }
 
@@ -1826,6 +1848,10 @@ std::string CLI::get_output_path() {
 }
 
 std::filesystem::path CLI::get_output_dir() {
+    if (source_file) {
+        return std::filesystem::current_path();
+    }
+
     std::string build_config_string;
 
     switch (build_config) {

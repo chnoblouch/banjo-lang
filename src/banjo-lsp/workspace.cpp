@@ -25,7 +25,7 @@ Workspace::Workspace()
 
 std::vector<SourceFile *> Workspace::initialize() {
     module_manager.add_standard_stdlib_search_path();
-    module_manager.add_config_search_paths(config);
+    module_manager.read_config(config);
     module_manager.load_all();
 
     sir_unit = SIRGenerator().generate(module_manager.get_module_list());

@@ -13,6 +13,11 @@ namespace banjo {
 
 std::vector<ModuleTreeNode> ModuleDiscovery::find_all_modules() {
     std::vector<ModuleTreeNode> modules;
+    modules.reserve(source_files.size());
+
+    for (const std::filesystem::path &source_file : source_files) {
+        modules.push_back(node_from_file(source_file, {}));
+    }
 
     for (const std::filesystem::path &search_path : search_paths) {
         find_modules(search_path, {}, modules);
@@ -36,8 +41,6 @@ void ModuleDiscovery::find_modules(
     std::default_random_engine rng;
     std::ranges::shuffle(file_paths, rng);
 #endif
-
-    std::reverse(file_paths.begin(), file_paths.end());
 
     for (const std::filesystem::path &file_path : file_paths) {
         if (file_path.extension() == ".bnj" && file_path.stem() != "module") {

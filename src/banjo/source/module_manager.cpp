@@ -24,6 +24,10 @@ ModuleManager::ModuleManager(ReportManager &report_manager, Lexer::Mode lexer_mo
   : report_manager{report_manager},
     lexer_mode{lexer_mode} {}
 
+void ModuleManager::add_source_file(std::filesystem::path path) {
+    module_discovery.add_source_file(std::move(path));
+}
+
 void ModuleManager::add_search_path(std::filesystem::path path) {
     module_discovery.add_search_path(std::move(path));
 }
@@ -37,7 +41,11 @@ void ModuleManager::add_standard_stdlib_search_path() {
     add_search_path(stdlib_path);
 }
 
-void ModuleManager::add_config_search_paths(const Config &config) {
+void ModuleManager::read_config(const Config &config) {
+    for (std::filesystem::path path : config.files) {
+        add_source_file(std::move(path));
+    }
+
     for (std::filesystem::path path : config.paths) {
         add_search_path(std::move(path));
     }

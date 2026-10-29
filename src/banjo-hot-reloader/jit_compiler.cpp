@@ -22,7 +22,7 @@ JITCompiler::JITCompiler(Config &config, ssa::AddrTable &addr_table)
     target(target::Target::create(config.target, target::CodeModel::LARGE)),
     module_manager(report_manager) {
     module_manager.add_standard_stdlib_search_path();
-    module_manager.add_config_search_paths(config);
+    module_manager.read_config(config);
 }
 
 JITCompiler::~JITCompiler() {

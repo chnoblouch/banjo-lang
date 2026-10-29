@@ -23,9 +23,11 @@ struct ModuleTreeNode {
 class ModuleDiscovery {
 
 private:
+    std::vector<std::filesystem::path> source_files;
     std::vector<std::filesystem::path> search_paths;
 
 public:
+    void add_source_file(std::filesystem::path path) { source_files.push_back(std::move(path)); }
     void add_search_path(std::filesystem::path path) { search_paths.push_back(std::move(path)); }
 
     std::vector<ModuleTreeNode> find_all_modules();

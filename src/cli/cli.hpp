@@ -12,6 +12,7 @@
 #include <chrono>
 #include <filesystem>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -56,7 +57,6 @@ private:
 
     Target target;
     std::unique_ptr<Toolchain> toolchain = nullptr;
-    Manifest manifest;
 
     std::optional<Target> target_override;
     BuildConfig build_config = BuildConfig::DEBUG;
@@ -65,8 +65,10 @@ private:
     bool hot_reloading_enabled = false;
     std::vector<std::string> extra_compiler_args;
 
+    std::string package_name;
     PackageType package_type;
     std::vector<std::string> packages;
+    std::optional<std::string> source_file;
     std::vector<std::string> source_paths;
     std::vector<std::string> linker_args;
     std::vector<std::string> libraries;
@@ -87,8 +89,8 @@ private:
     void execute_toolchain_remove(const ArgumentParser::Result &args);
     void execute_version();
     void execute_new(const ArgumentParser::Result &args);
-    void execute_build();
-    void execute_run();
+    void execute_build(const ArgumentParser::Result &args);
+    void execute_run(const ArgumentParser::Result &args);
     void execute_test(const ArgumentParser::Result &args);
     void execute_invoke(const ArgumentParser::Result &args);
     void execute_lsp();

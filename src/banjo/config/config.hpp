@@ -21,6 +21,7 @@ struct Config {
     bool force_asm = false;
     bool disable_std = false;
     bool debug = false;
+    std::vector<std::filesystem::path> files;
     std::vector<std::filesystem::path> paths;
     std::optional<target::CodeModel> code_model;
 

@@ -45,7 +45,7 @@ void Compiler::compile() {
     PROFILE_SECTION_BEGIN("FRONTEND");
 
     module_manager.add_standard_stdlib_search_path();
-    module_manager.add_config_search_paths(config);
+    module_manager.read_config(config);
     module_manager.load_all();
 
     if (config.debug) {

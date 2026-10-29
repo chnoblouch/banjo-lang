@@ -1,0 +1,49 @@
+# Thanks to:
+#   - https://en.wikipedia.org/wiki/Mandelbrot_set
+#   - https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-node-1.html
+
+use std.{file.File, format, io};
+
+const SIZE: u32 = 2048;
+const MAX_ITERATIONS: u32 = 100;
+
+func main() {
+    var buffer: Array[u8] = [];
+
+    for py in 0..SIZE {
+        for px in 0..SIZE {
+            var zr = 0.0;
+            var zi = 0.0;
+            var cr = 2.0 * px as f32 / SIZE as f32 - 1.5;
+            var ci = 2.0 * py as f32 / SIZE as f32 - 1.0;
+
+            var num_iterations = 0;
+
+            for i in 0..MAX_ITERATIONS {
+                var tr = zr * zr - zi * zi + cr;
+                var ti = 2.0 * zr * zi + ci;
+                zi = ti;
+                zr = tr;
+
+                if zr * zr + zi * zi > 4.0 {
+                    break;
+                }
+
+                num_iterations += 1;
+            }
+
+            var value = num_iterations as f32 / MAX_ITERATIONS as f32;
+            var color = (255.0 * value) as u8;
+
+            buffer.append(color);
+            buffer.append(color);
+            buffer.append(color);
+        }
+    }
+
+    var header = format.format("P6\n{} {}\n255\n", SIZE, SIZE);
+
+    var stdout = io.stdout();
+    stdout.write_string(header.slice()).unwrap();
+    stdout.write(buffer.slice()).unwrap();
+}

@@ -34,9 +34,10 @@ public:
 
     ModuleList &get_module_list() { return module_list; }
 
+    void add_source_file(std::filesystem::path path);
     void add_search_path(std::filesystem::path path);
     void add_standard_stdlib_search_path();
-    void add_config_search_paths(const Config &config);
+    void read_config(const Config &config);
 
     void load_all();
     SourceFile *load_tree(const ModuleTreeNode &module_tree_node);

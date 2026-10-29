@@ -17,6 +17,7 @@ static const std::string ARG_TESTING = "testing";
 static const std::string ARG_FORCE_ASM = "force-asm";
 static const std::string ARG_DISABLE_STD = "disable-std";
 static const std::string ARG_DEBUG = "debug";
+static const std::string ARG_FILE = "file";
 static const std::string ARG_PATH = "path";
 
 ConfigParser::ConfigParser() {
@@ -34,6 +35,7 @@ ConfigParser::ConfigParser() {
         .add_flag(ARG_FORCE_ASM)
         .add_flag(ARG_DISABLE_STD)
         .add_flag(ARG_DEBUG)
+        .add_list(ARG_FILE)
         .add_list(ARG_PATH);
 }
 
@@ -59,6 +61,10 @@ Config ConfigParser::create_config(const ParsedArgs &args) {
     if (code_model == "small") config.code_model = {target::CodeModel::SMALL};
     else if (code_model == "large") config.code_model = {target::CodeModel::LARGE};
     else config.code_model = {};
+
+    for (const std::string &file : args.lists.at(ARG_FILE)) {
+        config.files.push_back(file);
+    }
 
     for (const std::string &path : args.lists.at(ARG_PATH)) {
         config.paths.push_back(path);
