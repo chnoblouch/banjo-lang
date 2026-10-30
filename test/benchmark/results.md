@@ -10,14 +10,14 @@ Banjo programs run.
 
 Benchmarks are compiled and run with the following configurations:
 
-- Debug: `banjo --opt-level 2` / `clang++ -O3`
-- Optimized: `banjo --opt-level 0` / `clang++ -O0`
+- Debug: `banjo --opt-level 0` / `clang++ -O0`
+- Optimized: `banjo --opt-level 2` / `clang++ -O3`
 
 ## Mandelbrot
 
 | Processor              | Architecture | OS    | Configuration | Banjo  | C++    | Comparison     |
 |------------------------|--------------|-------|---------------|--------|--------|----------------|
-| AMD Ryzen 7 PRO 7840HS | x86-64       | Linux | Debug         | 1.242s | 1.885s | 1.52x as fast  |
-| AMD Ryzen 7 PRO 7840HS | x86-64       | Linux | Optimized     | 0.407s | 0.509s | 1.25x as fast  |
-| Apple M3               | AArch64      | macOS | Debug         | 1.267s | 1.667s | 1.32x as fast  |
-| Apple M3               | AArch64      | macOS | Optimized     | 0.530s | 0.494s | 0.93x as fast  |
+| AMD Ryzen 7 PRO 7840HS | x86-64       | Linux | Debug         | 1.232s | 1.370s | 1.11x as fast  |
+| AMD Ryzen 7 PRO 7840HS | x86-64       | Linux | Optimized     | 0.410s | 0.386s | 0.94x as fast  |
+| Apple M3               | AArch64      | macOS | Debug         | 1.156s | 1.398s | 1.21x as fast  |
+| Apple M3               | AArch64      | macOS | Optimized     | 0.501s | 0.339s | 0.68x as fast  |

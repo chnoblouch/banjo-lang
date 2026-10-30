@@ -9,38 +9,36 @@ from pathlib import Path
 def run_benchmark(banjo_binary, cpp_binary):
     subprocess.run([
         "hyperfine",
-        "-w10", "-m50",
-        banjo_binary,
-        cpp_binary,
+        "-w10", "-m20", "-usecond",
+        "-nbanjo",
+        "-nc++",
+        f"./{banjo_binary}",
+        f"./{cpp_binary}",
     ])
 
 
 if __name__ == "__main__":
     name = sys.argv[1]
-
-    benchmarks_dir = Path(__file__).parent
-    banjo_dir = benchmarks_dir / "banjo"
-    cpp_dir = benchmarks_dir / "cpp"
+    os.chdir(Path(__file__).parent / name)
 
     banjo_source = f"./{name}.bnj"
     cpp_source = f"./{name}.cpp"
 
     if platform.system().lower() == "windows":
-        banjo_binary = banjo_dir / f"{name}.exe"
-        cpp_binary = cpp_dir / "a.exe"
+        banjo_binary = f"{name}.exe"
+        cpp_binary = f"{name}-cpp.exe"
     else:
-        banjo_binary = banjo_dir / name
-        cpp_binary = cpp_dir / "a.out"
+        banjo_binary = name
+        cpp_binary = f"{name}-cpp"
 
     print("\n--- Debug Build ---\n")
-    subprocess.run(["banjo", "build", "--opt-level", "0", banjo_source], cwd=banjo_dir)
-    subprocess.run(["clang++", "-O0", cpp_source], cwd=cpp_dir)
-
+    subprocess.run(["banjo", "build", "--opt-level", "0", "-q", banjo_source])
+    subprocess.run(["clang++", f"-o{cpp_binary}", "-O0", cpp_source])
     run_benchmark(banjo_binary, cpp_binary)
 
     print("\n--- Optimized Build ---\n")
-    subprocess.run(["banjo", "build", "--opt-level", "2", banjo_source], cwd=banjo_dir)
-    subprocess.run(["clang++", "-O3", cpp_source], cwd=cpp_dir)
+    subprocess.run(["banjo", "build", "--opt-level", "2", "-q", banjo_source])
+    subprocess.run(["clang++", f"-o{cpp_binary}", "-O3", cpp_source])
     run_benchmark(banjo_binary, cpp_binary)
 
     os.remove(banjo_binary)
