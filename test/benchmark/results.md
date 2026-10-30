@@ -21,3 +21,12 @@ Benchmarks are compiled and run with the following configurations:
 | AMD Ryzen 7 PRO 7840HS | x86-64       | Linux | Optimized     | 0.410s | 0.386s | 0.94x as fast  |
 | Apple M3               | AArch64      | macOS | Debug         | 1.156s | 1.398s | 1.21x as fast  |
 | Apple M3               | AArch64      | macOS | Optimized     | 0.501s | 0.339s | 0.68x as fast  |
+
+## UTF-8 Decode
+
+| Processor              | Architecture | OS    | Configuration | Banjo   | C++     | Comparison     |
+|------------------------|--------------|-------|---------------|---------|---------|----------------|
+| AMD Ryzen 7 PRO 7840HS | x86-64       | Linux | Debug         |  65.7ms | 170.2ms | 2.59x as fast  |
+| AMD Ryzen 7 PRO 7840HS | x86-64       | Linux | Optimized     |  34.1ms |  35.9ms | 1.05x as fast  |
+| Apple M3               | AArch64      | macOS | Debug         |  57.5ms | 204.6ms | 3.56x as fast  |
+| Apple M3               | AArch64      | macOS | Optimized     |  20.2ms |  12.7ms | 0.63x as fast  |

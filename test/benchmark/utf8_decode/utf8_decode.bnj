@@ -1,0 +1,41 @@
+use std.{file.File, io};
+
+func main() {
+    var input = File.read_all("input.txt").unwrap();
+    var buffer: Array[u32] = [];
+
+    for i in 0..input.length() {
+        var c = input[i];
+
+        if c & 0x80 == 0 {
+            buffer.append(c as u32);
+        } else if c & 0xE0 == 0xC0 {
+            var c1 = c as u32;
+            var c2 = input[i + 1] as u32;
+            var value = ((c1 & 0x1F) << 6) | (c2 & 0x3F);
+
+            buffer.append(value);
+            i += 1;
+        } else if c & 0xF0 == 0xE0 {
+            var c1 = c as u32;
+            var c2 = input[i + 1] as u32;
+            var c3 = input[i + 2] as u32;
+            var value = ((c1 & 0x0F) << 12) | ((c2 & 0x3F) << 6) | (c3 & 0x3F);
+
+            buffer.append(value);
+            i += 2;
+        } else {
+            var c1 = c as u32;
+            var c2 = input[i + 1] as u32;
+            var c3 = input[i + 2] as u32;
+            var c4 = input[i + 3] as u32;
+            var value = ((c1 & 0x07) << 18) | ((c2 & 0x3F) << 12) | ((c3 & 0x3F) << 6) | (c4 & 0x3F);
+
+            buffer.append(value);
+            i += 3;
+        }
+    }
+
+    var stdout = io.stdout();
+    stdout.write(buffer.slice().as_bytes()).unwrap();
+}
