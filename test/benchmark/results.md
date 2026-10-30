@@ -3,7 +3,7 @@
 These results compare the execution time of the same algorithm written in Banjo
 and C++. The C++ compiler is Clang on all platforms. Results are collected and
 averaged over multiple runs using `hyperfine`. The last column shows how much
-faster/slower the Banjo code ran compared to C++.
+faster/slower the Banjo code ran relative to C++.
 
 This is not a scientific comparison. Its purpose is to get a feel for how fast
 Banjo programs run.
@@ -12,6 +12,11 @@ Benchmarks are compiled and run with the following configurations:
 
 - Debug: `banjo --opt-level 0` / `clang++ -O0`
 - Optimized: `banjo --opt-level 2` / `clang++ -O3`
+
+In general, Banjo beats C++ in debug builds (probably because its standard
+library relies less on inlining). C++ wins almost always in optimized builds,
+especially if number crunching is involved, although there are cases where it
+gets pretty close.
 
 ## Mandelbrot
 

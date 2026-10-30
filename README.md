@@ -1,6 +1,8 @@
 # The Banjo Programming Language
 
-A small low-level programming language I use for personal projects. The language and toolchain are documented [here](https://chnoblouch.github.io/banjo-lang/). The name still needs some workshopping.
+A small low-level programming language I use for personal projects. The language
+and toolchain are documented [here](https://chnoblouch.github.io/banjo-lang/).
+The name still needs some workshopping.
 
 ![Some Banjo source code in VSCode](docs/example.png?)
 
@@ -15,9 +17,9 @@ A small low-level programming language I use for personal projects. The language
 - Built-in support for unit testing
 - Cross-compilation for Linux, Windows, macOS, and WebAssembly
 - Fast compile times
-- Currently reaches about 50% of the performance of C/C++
-- Includes a tool to generate bindings for C libraries
-- Built-in language server
+- Currently reaches about [60-80% of the performance of C/C++](./test/benchmark/results.md)
+- A tool to generate bindings for C libraries
+- A built-in language server
 - Hot reloading (on Windows and Linux)
 - Half-baked package management
 
@@ -36,14 +38,16 @@ cmake -Bbuild -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=install
 cmake --build build --target install
 ```
 
-After building, add the `install/bin` directory to your `PATH` variable. After that, you can start using the `banjo`
-command.
+After building, add the `install/bin` directory to your `PATH` variable. You can
+now start using the `banjo` command!
 
 ## Toolchain
 
 ### Compiler
 
-The compiler is written completely from scratch and emits either object files or assembly code depending on the target architecture and operating system. These targets are currently supported:
+The compiler is written completely from scratch and directly emits object files
+for the target architecture and operating system. These targets are currently
+supported:
 
 - `x86_64-windows-msvc`: 64-bit Windows using MSVC (Microsoft Visual C++) libraries
 - `x86_64-windows-gnu`: 64-bit Windows using MinGW (GNU) libraries
@@ -57,7 +61,10 @@ The internals of the compiler are documented [here](docs/compiler.md).
 
 ### Language Server
 
-The toolchain includes a language server implementing the [Language Server Protocol (LSP)](https://microsoft.github.io/language-server-protocol/). This language server can be integrated into any editor that supports LSP to get features like syntax highlighting and code completion. I've only tested the language server with VS Code on Windows.
+The toolchain includes a language server implementing the [Language Server
+Protocol (LSP)](https://microsoft.github.io/language-server-protocol/). This
+language server can be integrated into any editor that supports LSP to get
+features like syntax highlighting and code completion.
 
 The language server currently supports these LSP features:
 - Semantic highlighting
@@ -68,7 +75,14 @@ The language server currently supports these LSP features:
 
 ### Hot Reloader
 
-The hot reloader is a tool that watches source files for changes, recompiles them, and injects them into a running process. For this to work, the code has to be compiled with support for hot reloading. The compiler generates an address table that contains a list of all functions. Functions are called indirectly by looking up their address in this address table. This allows the hot reloader to allocate some memory in the target process for functions that have changed, store the freshly compiled code there, and update the pointer in the address table. Future calls to the function will then run the updated code.
+The hot reloader is a tool that watches source files for changes, recompiles
+them, and injects them into a running process. For this to work, the code has to
+be compiled with support for hot reloading. The compiler generates an address
+table that contains a list of all functions. Functions are called indirectly by
+looking up their address in this address table. This allows the hot reloader to
+allocate some memory in the target process for functions that have changed,
+store the freshly compiled code there, and update the pointer in the address
+table. Future calls to the function will then run the updated code.
 
 ## Directory Structure
 
@@ -102,11 +116,14 @@ The hot reloader is a tool that watches source files for changes, recompiles the
     - `banjo-format`: The formatter
     - `banjo-lsp`: The language server
     - `banjo-hot-reloader`: The hot reloader
+    - `banjo-test-util`: Development util for running the tests in `test/scripted`
     - `bindgen`: Tool for generating bindings for C libraries
     - `cli`: CLI tool that wraps all other tools
 - `lib`: Libraries used by the compiler
     - `stdlib`: The standard library
 - `test`: Test cases
-    - `compiled`: Tests written in C++
-    - `scripted`: Tests written in Python that invoke the compiler with some input and an expected output 
+    - `scripted`: Scripts for testing different parts of the compiler (the entire pipeline e2e, the assembler, the optimizer, ...)
+    - `unit`: Unit tests written in C++
+    - `benchmark`: Microbenchmarks measuring performance of compiled programs
+- `scripts`: Development scripts
 - `docs`: Online documentation
