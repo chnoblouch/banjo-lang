@@ -7,7 +7,11 @@
 #include "workspace.hpp"
 
 #include <memory>
+#include <string_view>
 #include <utility>
+
+static constexpr std::string_view INTERNAL_MOD_NAME = "internal";
+static constexpr std::string_view ARRAY_LENGTH_NAME = "length";
 
 namespace banjo::lsp {
 
@@ -19,7 +23,7 @@ CompletionEngine::CompletionEngine(Workspace &workspace) : workspace{workspace} 
 
     array_length_symbol = std::make_unique<sir::StructField>(sir::StructField{
         .ast_node = nullptr,
-        .ident{.ast_node = nullptr, .value = "length"},
+        .ident{.ast_node = nullptr, .value = ARRAY_LENGTH_NAME},
         .type = array_length_type.get(),
         .attrs = nullptr,
         .index = 0,
@@ -77,6 +81,10 @@ void CompletionEngine::complete_in_block(Request request, sir::SymbolTable &symb
 
     for (const std::unique_ptr<SourceFile> &mod : workspace.get_mod_list()) {
         if (mod.get() == &request.file) {
+            continue;
+        }
+
+        if (mod->mod_path[0] == INTERNAL_MOD_NAME) {
             continue;
         }
 
