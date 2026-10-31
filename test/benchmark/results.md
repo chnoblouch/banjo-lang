@@ -27,6 +27,15 @@ gets pretty close.
 | Apple M3               | AArch64      | macOS | Debug         | 1.156s | 1.398s | 1.21x as fast  |
 | Apple M3               | AArch64      | macOS | Optimized     | 0.501s | 0.339s | 0.68x as fast  |
 
+## Primes
+
+| Processor              | Architecture | OS    | Configuration | Banjo  | C++    | Comparison     |
+|------------------------|--------------|-------|---------------|--------|--------|----------------|
+| AMD Ryzen 7 PRO 7840HS | x86-64       | Linux | Debug         | 1.399s | 10.37s | 7.41x as fast  |
+| AMD Ryzen 7 PRO 7840HS | x86-64       | Linux | Optimized     | 0.518s | 0.258s | 0.50x as fast  |
+| Apple M3               | AArch64      | macOS | Debug         | 1.107s | 2.951s | 2.67x as fast  |
+| Apple M3               | AArch64      | macOS | Optimized     | 0.465s | 0.305s | 0.66x as fast  |
+
 ## UTF-8 Decode
 
 | Processor              | Architecture | OS    | Configuration | Banjo   | C++     | Comparison     |
