@@ -1,6 +1,7 @@
 #include "sir_comparison.hpp"
+
 #include "banjo/sir/sir.hpp"
-#include "banjo/sir/sir_visitor.hpp"
+#include "banjo/sir/sir_match.hpp"
 
 #include <utility>
 
@@ -20,7 +21,7 @@ bool Comparison::compare(Expr lhs, Expr rhs) {
         return false;
     }
 
-    SIR_VISIT_EXPR(
+    SIR_MATCH_EXPR(
         lhs,
         return true,                                       // empty
         return compare(*inner, rhs.as<IntLiteral>()),      // int_literal

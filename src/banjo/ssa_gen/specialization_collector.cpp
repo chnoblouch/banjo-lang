@@ -3,7 +3,7 @@
 #include "banjo/sir/magic_methods.hpp"
 #include "banjo/sir/resource_generator.hpp"
 #include "banjo/sir/sir.hpp"
-#include "banjo/sir/sir_visitor.hpp"
+#include "banjo/sir/sir_match.hpp"
 #include "banjo/sir/specializer.hpp"
 #include "banjo/utils/arena.hpp"
 #include "banjo/utils/macros.hpp"
@@ -95,26 +95,26 @@ void SpecializationCollector::visit_block(const sir::Block &block) {
 }
 
 void SpecializationCollector::visit_stmt(sir::Stmt stmt) {
-    SIR_VISIT_STMT(
+    SIR_MATCH_STMT(
         stmt,
-        SIR_VISIT_IGNORE,            // empty
+        SIR_MATCH_IGNORE,            // empty
         visit_var_stmt(*inner),      // var_stmt
         visit_assign_stmt(*inner),   // assign_stmt
-        SIR_VISIT_IMPOSSIBLE,        // comp_assign_stmt
+        SIR_MATCH_IMPOSSIBLE,        // comp_assign_stmt
         visit_return_stmt(*inner),   // return_stmt
         visit_switch_stmt(*inner),   // switch_stmt
-        SIR_VISIT_IMPOSSIBLE,        // try_stmt
-        SIR_VISIT_IMPOSSIBLE,        // while_stmt
-        SIR_VISIT_IMPOSSIBLE,        // for_stmt
+        SIR_MATCH_IMPOSSIBLE,        // try_stmt
+        SIR_MATCH_IMPOSSIBLE,        // while_stmt
+        SIR_MATCH_IMPOSSIBLE,        // for_stmt
         visit_loop_stmt(*inner),     // loop_stmt
-        SIR_VISIT_IGNORE,            // continue_stmt
-        SIR_VISIT_IGNORE,            // break_stmt
-        SIR_VISIT_IGNORE,            // meta_if_stmt
+        SIR_MATCH_IGNORE,            // continue_stmt
+        SIR_MATCH_IGNORE,            // break_stmt
+        SIR_MATCH_IGNORE,            // meta_if_stmt
         visit_meta_for_stmt(*inner), // meta_for_stmt
-        SIR_VISIT_IGNORE,            // expanded_meta_stmt
+        SIR_MATCH_IGNORE,            // expanded_meta_stmt
         visit_expr(*inner),          // expr_stmt
         visit_block(*inner),         // block_stmt
-        SIR_VISIT_IMPOSSIBLE         // error
+        SIR_MATCH_IMPOSSIBLE         // error
     );
 }
 
@@ -217,23 +217,23 @@ void SpecializationCollector::visit_meta_for_stmt(const sir::MetaForStmt &meta_f
 }
 
 void SpecializationCollector::visit_expr(sir::Expr expr) {
-    SIR_VISIT_EXPR(
+    SIR_MATCH_EXPR(
         expr,
-        SIR_VISIT_IGNORE,                // empty
-        SIR_VISIT_IGNORE,                // int_literal (TODO)
-        SIR_VISIT_IGNORE,                // fp_literal (TODO)
-        SIR_VISIT_IGNORE,                // bool_literal (TODO)
-        SIR_VISIT_IGNORE,                // char_literal (TODO)
-        SIR_VISIT_IGNORE,                // null_literal (TODO)
-        SIR_VISIT_IMPOSSIBLE,            // none_literal
-        SIR_VISIT_IGNORE,                // undefined_literal (TODO)
+        SIR_MATCH_IGNORE,                // empty
+        SIR_MATCH_IGNORE,                // int_literal (TODO)
+        SIR_MATCH_IGNORE,                // fp_literal (TODO)
+        SIR_MATCH_IGNORE,                // bool_literal (TODO)
+        SIR_MATCH_IGNORE,                // char_literal (TODO)
+        SIR_MATCH_IGNORE,                // null_literal (TODO)
+        SIR_MATCH_IMPOSSIBLE,            // none_literal
+        SIR_MATCH_IGNORE,                // undefined_literal (TODO)
         visit_array_literal(*inner),     // array_literal
-        SIR_VISIT_IGNORE,                // string_literal (TODO)
+        SIR_MATCH_IGNORE,                // string_literal (TODO)
         visit_struct_literal(*inner),    // struct_literal
-        SIR_VISIT_IGNORE,                // union_case_literal (TODO)
-        SIR_VISIT_IMPOSSIBLE,            // map_literal
-        SIR_VISIT_IMPOSSIBLE,            // closure_literal
-        SIR_VISIT_IGNORE,                // symbol_expr (TODO)
+        SIR_MATCH_IGNORE,                // union_case_literal (TODO)
+        SIR_MATCH_IMPOSSIBLE,            // map_literal
+        SIR_MATCH_IMPOSSIBLE,            // closure_literal
+        SIR_MATCH_IGNORE,                // symbol_expr (TODO)
         visit_binary_expr(*inner),       // binary_expr
         visit_unary_expr(*inner),        // unary_expr
         visit_cast_expr(*inner),         // cast_expr
@@ -246,31 +246,31 @@ void SpecializationCollector::visit_expr(sir::Expr expr) {
         visit_tuple_expr(*inner),        // tuple_expr
         visit_coercion_expr(*inner),     // coercion_expr
         visit_specialize_expr(*inner),   // specialize_expr
-        SIR_VISIT_IGNORE,                // primitive_type
+        SIR_MATCH_IGNORE,                // primitive_type
         visit_pointer_type(*inner),      // pointer_type
         visit_static_array_type(*inner), // static_array_type
         visit_func_type(*inner),         // func_type
-        SIR_VISIT_IMPOSSIBLE,            // optional_type
-        SIR_VISIT_IMPOSSIBLE,            // result_type
-        SIR_VISIT_IMPOSSIBLE,            // array_type
-        SIR_VISIT_IMPOSSIBLE,            // map_type
-        SIR_VISIT_IGNORE,                // closure_type (TODO)
+        SIR_MATCH_IMPOSSIBLE,            // optional_type
+        SIR_MATCH_IMPOSSIBLE,            // result_type
+        SIR_MATCH_IMPOSSIBLE,            // array_type
+        SIR_MATCH_IMPOSSIBLE,            // map_type
+        SIR_MATCH_IGNORE,                // closure_type (TODO)
         visit_reference_type(*inner),    // reference_type
-        SIR_VISIT_IMPOSSIBLE,            // ident_expr
-        SIR_VISIT_IMPOSSIBLE,            // star_expr
-        SIR_VISIT_IMPOSSIBLE,            // bracket_expr
-        SIR_VISIT_IMPOSSIBLE,            // dot_expr
-        SIR_VISIT_IGNORE,                // pseudo_type
+        SIR_MATCH_IMPOSSIBLE,            // ident_expr
+        SIR_MATCH_IMPOSSIBLE,            // star_expr
+        SIR_MATCH_IMPOSSIBLE,            // bracket_expr
+        SIR_MATCH_IMPOSSIBLE,            // dot_expr
+        SIR_MATCH_IGNORE,                // pseudo_type
         visit_meta_access(*inner),       // meta_access
         visit_meta_field_expr(*inner),   // meta_field_expr
         visit_meta_call_expr(*inner),    // meta_call_expr
         visit_init_expr(*inner),         // init_expr
         visit_move_expr(*inner),         // move_expr
         visit_deinit_expr(*inner),       // deinit_expr
-        SIR_VISIT_IGNORE,                // type_check_expr (TODO)
+        SIR_MATCH_IGNORE,                // type_check_expr (TODO)
         visit_builtin_expr(*inner),      // builtin_expr
         visit_placeholder_expr(*inner),  // placeholder_expr
-        SIR_VISIT_IMPOSSIBLE             // error
+        SIR_MATCH_IMPOSSIBLE             // error
     )
 }
 

@@ -1,6 +1,6 @@
 #include "sir_cloner.hpp"
 
-#include "banjo/sir/sir_visitor.hpp"
+#include "banjo/sir/sir_match.hpp"
 #include "banjo/utils/macros.hpp"
 #include "sir.hpp"
 
@@ -39,7 +39,7 @@ DeclBlock Cloner::clone_decl_block(const DeclBlock &decl_block) {
 }
 
 Decl Cloner::clone_decl(const Decl &decl) {
-    SIR_VISIT_DECL(
+    SIR_MATCH_DECL(
         decl,
         return nullptr,
         return clone_func_def(*inner),
@@ -58,7 +58,7 @@ Decl Cloner::clone_decl(const Decl &decl) {
         return clone_type_alias(*inner),
         return clone_use_decl(*inner),
         return clone_meta_if_stmt(*inner),
-        SIR_VISIT_IMPOSSIBLE,
+        SIR_MATCH_IMPOSSIBLE,
         return clone_error(*inner)
     );
 }
@@ -380,7 +380,7 @@ Block Cloner::clone_block(const Block &block) {
 }
 
 Stmt Cloner::clone_stmt(const Stmt &stmt) {
-    SIR_VISIT_STMT(
+    SIR_MATCH_STMT(
         stmt,
         return nullptr,
         return clone_var_stmt(*inner),
@@ -396,7 +396,7 @@ Stmt Cloner::clone_stmt(const Stmt &stmt) {
         return clone_break_stmt(*inner),
         return clone_meta_if_stmt(*inner),
         return clone_meta_for_stmt(*inner),
-        SIR_VISIT_IMPOSSIBLE,
+        SIR_MATCH_IMPOSSIBLE,
         return clone_expr_stmt(*inner),
         return clone_block_stmt(*inner),
         return clone_error(*inner)
@@ -572,7 +572,7 @@ Expr Cloner::clone_expr(const Expr &expr) {
         }
     }
 
-    SIR_VISIT_EXPR(
+    SIR_MATCH_EXPR(
         expr,
         return nullptr,
         return clone_int_literal(*inner),

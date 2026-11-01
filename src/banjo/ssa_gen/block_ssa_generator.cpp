@@ -1,7 +1,7 @@
 #include "block_ssa_generator.hpp"
 
 #include "banjo/sir/sir.hpp"
-#include "banjo/sir/sir_visitor.hpp"
+#include "banjo/sir/sir_match.hpp"
 #include "banjo/ssa/comparison.hpp"
 #include "banjo/ssa/virtual_register.hpp"
 #include "banjo/ssa_gen/deinit_ssa_generator.hpp"
@@ -89,23 +89,23 @@ void BlockSSAGenerator::generate_block_deinit(const sir::Block &block) {
 }
 
 void BlockSSAGenerator::generate_stmt(sir::Stmt sir_stmt, ssa::Value *dst) {
-    SIR_VISIT_STMT(
+    SIR_MATCH_STMT(
         sir_stmt,
-        SIR_VISIT_IMPOSSIBLE,            // empty
+        SIR_MATCH_IMPOSSIBLE,            // empty
         generate_var_stmt(*inner),       // var_stmt
         generate_assign_stmt(*inner),    // assign_stmt
-        SIR_VISIT_IMPOSSIBLE,            // comp_assign_stmt
+        SIR_MATCH_IMPOSSIBLE,            // comp_assign_stmt
         generate_return_stmt(*inner),    // return_stmt
         generate_switch_stmt(*inner),    // switch_stmt
-        SIR_VISIT_IMPOSSIBLE,            // try_stmt
-        SIR_VISIT_IMPOSSIBLE,            // while_stmt
-        SIR_VISIT_IMPOSSIBLE,            // for_stmt
+        SIR_MATCH_IMPOSSIBLE,            // try_stmt
+        SIR_MATCH_IMPOSSIBLE,            // while_stmt
+        SIR_MATCH_IMPOSSIBLE,            // for_stmt
         generate_loop_stmt(*inner),      // loop_stmt
         generate_continue_stmt(*inner),  // continue_stmt
         generate_break_stmt(*inner),     // break_stmt
-        SIR_VISIT_IGNORE,                // meta_if_stmt
+        SIR_MATCH_IGNORE,                // meta_if_stmt
         generate_meta_for_stmt(*inner),  // meta_for_stmt
-        SIR_VISIT_IGNORE,                // expanded_meta_stmt
+        SIR_MATCH_IGNORE,                // expanded_meta_stmt
         generate_expr_stmt(*inner, dst), // expr_stmt
         generate_block(*inner),          // block_stmt
         return                           // error

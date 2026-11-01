@@ -13,7 +13,7 @@
 #include "banjo/sema/use_resolver.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_create.hpp"
-#include "banjo/sir/sir_visitor.hpp"
+#include "banjo/sir/sir_match.hpp"
 #include "banjo/ssa/type.hpp"
 #include "banjo/ssa_gen/ssa_generator_context.hpp"
 #include "banjo/ssa_gen/type_ssa_generator.hpp"

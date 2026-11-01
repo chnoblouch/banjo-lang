@@ -3,7 +3,7 @@
 #include "banjo/sema/completion_context.hpp"
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
-#include "banjo/sir/sir_visitor.hpp"
+#include "banjo/sir/sir_match.hpp"
 
 namespace banjo::sema {
 
@@ -32,15 +32,15 @@ void SymbolCollector::collect_closure_def(sir::FuncDef &func_def) {
 }
 
 void SymbolCollector::collect_decl(sir::Decl &decl, unsigned index) {
-    SIR_VISIT_DECL(
+    SIR_MATCH_DECL(
         decl,
-        SIR_VISIT_IMPOSSIBLE,                   // empty
+        SIR_MATCH_IMPOSSIBLE,                   // empty
         collect_func_def(*inner),               // func_def
         collect_func_decl(*inner),              // func_decl
         collect_native_func_decl(*inner),       // native_func_decl
         collect_const_def(*inner),              // const_def
         collect_struct_def(*inner),             // struct_def
-        SIR_VISIT_IMPOSSIBLE,                   // struct_field
+        SIR_MATCH_IMPOSSIBLE,                   // struct_field
         collect_var_decl(*inner),               // var_decl
         collect_native_var_decl(*inner),        // native_var_decl
         collect_enum_def(*inner),               // enum_def
@@ -51,8 +51,8 @@ void SymbolCollector::collect_decl(sir::Decl &decl, unsigned index) {
         collect_type_alias(*inner),             // type_alias
         collect_use_decl(*inner),               // use_decl
         collect_in_meta_if_stmt(*inner, index), // meta_if_stmt
-        SIR_VISIT_IGNORE,                       // expanded_meta_stmt
-        SIR_VISIT_IGNORE                        // error
+        SIR_MATCH_IGNORE,                       // expanded_meta_stmt
+        SIR_MATCH_IGNORE                        // error
     );
 }
 

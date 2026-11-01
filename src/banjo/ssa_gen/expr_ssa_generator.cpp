@@ -3,7 +3,7 @@
 #include "banjo/reports/report_texts.hpp"
 #include "banjo/sir/magic_methods.hpp"
 #include "banjo/sir/sir.hpp"
-#include "banjo/sir/sir_visitor.hpp"
+#include "banjo/sir/sir_match.hpp"
 #include "banjo/sir/specializer.hpp"
 #include "banjo/ssa/basic_block.hpp"
 #include "banjo/ssa/builder.hpp"
@@ -49,22 +49,22 @@ StoredValue ExprSSAGenerator::generate_as_reference(const sir::Expr &expr) {
 }
 
 StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints &hints) {
-    SIR_VISIT_EXPR(
+    SIR_MATCH_EXPR(
         expr,
-        SIR_VISIT_IMPOSSIBLE,                              // empty
+        SIR_MATCH_IMPOSSIBLE,                              // empty
         return generate_int_literal(*inner),               // int_literal
         return generate_fp_literal(*inner),                // fp_literal
         return generate_bool_literal(*inner),              // bool_literal
         return generate_char_literal(*inner),              // char_literal
         return generate_null_literal(*inner),              // null_literal
-        SIR_VISIT_IMPOSSIBLE,                              // none_literal
+        SIR_MATCH_IMPOSSIBLE,                              // none_literal
         return generate_undefined_literal(*inner),         // undefined_literal
         return generate_array_literal(*inner, hints),      // array_literal
         return generate_string_literal(*inner),            // string_literal
         return generate_struct_literal(*inner, hints),     // struct_literal
         return generate_union_case_literal(*inner, hints), // union_case_literal
-        SIR_VISIT_IMPOSSIBLE,                              // map_literal
-        SIR_VISIT_IMPOSSIBLE,                              // closure_literal
+        SIR_MATCH_IMPOSSIBLE,                              // map_literal
+        SIR_MATCH_IMPOSSIBLE,                              // closure_literal
         return generate_symbol_expr(*inner),               // symbol_expr
         return generate_binary_expr(*inner),               // binary_expr
         return generate_unary_expr(*inner),                // unary_expr
@@ -72,37 +72,37 @@ StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints
         return generate_index_expr(*inner),                // index_expr
         return generate_call_expr(*inner, hints),          // call_expr
         return generate_field_expr(*inner),                // field_expr
-        SIR_VISIT_IMPOSSIBLE,                              // range_expr
+        SIR_MATCH_IMPOSSIBLE,                              // range_expr
         return generate_if_expr(*inner, hints),            // if_expr
         return generate_try_expr(*inner, hints),           // try_expr
         return generate_tuple_expr(*inner, hints),         // tuple_expr
         return generate_coercion_expr(*inner, hints),      // coercion_expr
         return generate_specialize_expr(*inner),           // specialize_expr
-        SIR_VISIT_IMPOSSIBLE,                              // primitive_type
-        SIR_VISIT_IMPOSSIBLE,                              // pointer_type
-        SIR_VISIT_IMPOSSIBLE,                              // static_array_type
-        SIR_VISIT_IMPOSSIBLE,                              // func_type
-        SIR_VISIT_IMPOSSIBLE,                              // optional_type
-        SIR_VISIT_IMPOSSIBLE,                              // result_type
-        SIR_VISIT_IMPOSSIBLE,                              // array_type
-        SIR_VISIT_IMPOSSIBLE,                              // map_type
-        SIR_VISIT_IMPOSSIBLE,                              // closure_type
-        SIR_VISIT_IMPOSSIBLE,                              // reference_type
-        SIR_VISIT_IMPOSSIBLE,                              // ident_expr
-        SIR_VISIT_IMPOSSIBLE,                              // star_expr
-        SIR_VISIT_IMPOSSIBLE,                              // bracket_expr
-        SIR_VISIT_IMPOSSIBLE,                              // dot_expr
-        SIR_VISIT_IMPOSSIBLE,                              // pseudo_type
-        SIR_VISIT_IMPOSSIBLE,                              // meta_access
+        SIR_MATCH_IMPOSSIBLE,                              // primitive_type
+        SIR_MATCH_IMPOSSIBLE,                              // pointer_type
+        SIR_MATCH_IMPOSSIBLE,                              // static_array_type
+        SIR_MATCH_IMPOSSIBLE,                              // func_type
+        SIR_MATCH_IMPOSSIBLE,                              // optional_type
+        SIR_MATCH_IMPOSSIBLE,                              // result_type
+        SIR_MATCH_IMPOSSIBLE,                              // array_type
+        SIR_MATCH_IMPOSSIBLE,                              // map_type
+        SIR_MATCH_IMPOSSIBLE,                              // closure_type
+        SIR_MATCH_IMPOSSIBLE,                              // reference_type
+        SIR_MATCH_IMPOSSIBLE,                              // ident_expr
+        SIR_MATCH_IMPOSSIBLE,                              // star_expr
+        SIR_MATCH_IMPOSSIBLE,                              // bracket_expr
+        SIR_MATCH_IMPOSSIBLE,                              // dot_expr
+        SIR_MATCH_IMPOSSIBLE,                              // pseudo_type
+        SIR_MATCH_IMPOSSIBLE,                              // meta_access
         return generate_meta_field_expr(*inner, hints),    // meta_field_expr
-        SIR_VISIT_IMPOSSIBLE,                              // meta_call_expr
+        SIR_MATCH_IMPOSSIBLE,                              // meta_call_expr
         return generate_init_expr(*inner, hints),          // init_expr
         return generate_move_expr(*inner, hints),          // move_expr
         return generate_deinit_expr(*inner),               // deinit_expr
         return generate_type_check(*inner),                // type_check_expr
         return generate_builtin_expr(*inner),              // builtin_expr
         return generate_placeholder_expr(*inner, hints),   // placeholder_expr
-        SIR_VISIT_IMPOSSIBLE                               // error
+        SIR_MATCH_IMPOSSIBLE                               // error
     );
 }
 

@@ -4,7 +4,7 @@
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/resource_generator.hpp"
 #include "banjo/sir/sir.hpp"
-#include "banjo/sir/sir_visitor.hpp"
+#include "banjo/sir/sir_match.hpp"
 #include "banjo/utils/macros.hpp"
 
 #include <ranges>
@@ -106,26 +106,26 @@ ResourceAnalyzer::Scope ResourceAnalyzer::analyze_block(sir::Block &block, Conte
         bool is_last = stmt == block.stmts.back();
         Context stmt_ctx = is_last ? ctx : Context{};
 
-        SIR_VISIT_STMT(
+        SIR_MATCH_STMT(
             stmt,
-            SIR_VISIT_IGNORE,                 // empty
+            SIR_MATCH_IGNORE,                 // empty
             analyze_var_stmt(*inner),         // var_stmt
             analyze_assign_stmt(*inner),      // assign_stmt
             analyze_comp_assign_stmt(*inner), // comp_assign_stmt
             analyze_return_stmt(*inner),      // return_stmt
-            SIR_VISIT_IGNORE,                 // switch_stmt (TODO!)
+            SIR_MATCH_IGNORE,                 // switch_stmt (TODO!)
             analyze_try_stmt(*inner),         // try_stmt
-            SIR_VISIT_IGNORE,                 // while_stmt
-            SIR_VISIT_IGNORE,                 // for_stmt
+            SIR_MATCH_IGNORE,                 // while_stmt
+            SIR_MATCH_IGNORE,                 // for_stmt
             analyze_loop_stmt(*inner),        // loop_stmt
             analyze_continue_stmt(*inner),    // continue_stmt
             analyze_break_stmt(*inner),       // break_stmt
-            SIR_VISIT_IGNORE,                 // meta_if_stmt
-            SIR_VISIT_IGNORE,                 // meta_for_stmt
-            SIR_VISIT_IGNORE,                 // expanded_meta_stmt
+            SIR_MATCH_IGNORE,                 // meta_if_stmt
+            SIR_MATCH_IGNORE,                 // meta_for_stmt
+            SIR_MATCH_IGNORE,                 // expanded_meta_stmt
             analyze_expr(*inner, stmt_ctx),   // expr_stmt
             analyze_block_stmt(*inner),       // block_stmt
-            SIR_VISIT_IGNORE                  // error
+            SIR_MATCH_IGNORE                  // error
         );
     }
 
@@ -290,22 +290,22 @@ Result ResourceAnalyzer::analyze_expr(sir::Expr &expr, bool moving, bool conditi
 Result ResourceAnalyzer::analyze_expr(sir::Expr &expr, Context &ctx) {
     Result result = Result::SUCCESS;
 
-    SIR_VISIT_EXPR(
+    SIR_MATCH_EXPR(
         expr,
-        SIR_VISIT_IGNORE,                                 // empty
-        SIR_VISIT_IGNORE,                                 // int_literal
-        SIR_VISIT_IGNORE,                                 // fp_literal
-        SIR_VISIT_IGNORE,                                 // bool_literal
-        SIR_VISIT_IGNORE,                                 // char_literal
-        SIR_VISIT_IGNORE,                                 // null_literal
-        SIR_VISIT_IGNORE,                                 // none_literal
-        SIR_VISIT_IGNORE,                                 // undefined_literal
+        SIR_MATCH_IGNORE,                                 // empty
+        SIR_MATCH_IGNORE,                                 // int_literal
+        SIR_MATCH_IGNORE,                                 // fp_literal
+        SIR_MATCH_IGNORE,                                 // bool_literal
+        SIR_MATCH_IGNORE,                                 // char_literal
+        SIR_MATCH_IGNORE,                                 // null_literal
+        SIR_MATCH_IGNORE,                                 // none_literal
+        SIR_MATCH_IGNORE,                                 // undefined_literal
         result = analyze_array_literal(*inner, ctx),      // array_literal
-        SIR_VISIT_IGNORE,                                 // string_literal
+        SIR_MATCH_IGNORE,                                 // string_literal
         result = analyze_struct_literal(*inner, ctx),     // struct_literal
         result = analyze_union_case_literal(*inner, ctx), // union_case_literal
-        SIR_VISIT_IGNORE,                                 // map_literal
-        SIR_VISIT_IGNORE,                                 // closure_literal (TODO)
+        SIR_MATCH_IGNORE,                                 // map_literal
+        SIR_MATCH_IGNORE,                                 // closure_literal (TODO)
         result = analyze_symbol_expr(*inner, expr, ctx),  // symbol_expr
         result = analyze_binary_expr(*inner, ctx),        // binary_expr
         result = analyze_unary_expr(*inner, ctx),         // unary_expr
@@ -313,37 +313,37 @@ Result ResourceAnalyzer::analyze_expr(sir::Expr &expr, Context &ctx) {
         result = analyze_index_expr(*inner, ctx),         // index_expr
         result = analyze_call_expr(*inner, ctx),          // call_expr
         result = analyze_field_expr(*inner, expr, ctx),   // field_expr
-        SIR_VISIT_IGNORE,                                 // range_expr
+        SIR_MATCH_IGNORE,                                 // range_expr
         result = analyze_if_expr(*inner, ctx),            // if_expr
         result = analyze_try_expr(*inner, ctx),           // try_expr
         result = analyze_tuple_expr(*inner, ctx),         // tuple_expr
         result = analyze_coercion_expr(*inner, ctx),      // coercion_expr
-        SIR_VISIT_IGNORE,                                 // specialize_expr
-        SIR_VISIT_IGNORE,                                 // primitive_type
-        SIR_VISIT_IGNORE,                                 // pointer_type
-        SIR_VISIT_IGNORE,                                 // static_array_type
-        SIR_VISIT_IGNORE,                                 // func_type
-        SIR_VISIT_IGNORE,                                 // optional_type
-        SIR_VISIT_IGNORE,                                 // result_type
-        SIR_VISIT_IGNORE,                                 // array_type
-        SIR_VISIT_IGNORE,                                 // map_type
-        SIR_VISIT_IGNORE,                                 // closure_type
-        SIR_VISIT_IGNORE,                                 // reference_type
-        SIR_VISIT_IGNORE,                                 // ident_expr
-        SIR_VISIT_IGNORE,                                 // star_expr
-        SIR_VISIT_IGNORE,                                 // bracket_expr
-        SIR_VISIT_IGNORE,                                 // dot_expr
-        SIR_VISIT_IGNORE,                                 // pseudo_tpe
-        SIR_VISIT_IGNORE,                                 // meta_access (TODO)
-        SIR_VISIT_IGNORE,                                 // meta_field_expr (TODO)
-        SIR_VISIT_IGNORE,                                 // meta_call_expr (TODO)
-        SIR_VISIT_IGNORE,                                 // init_expr
-        SIR_VISIT_IGNORE,                                 // move_expr
+        SIR_MATCH_IGNORE,                                 // specialize_expr
+        SIR_MATCH_IGNORE,                                 // primitive_type
+        SIR_MATCH_IGNORE,                                 // pointer_type
+        SIR_MATCH_IGNORE,                                 // static_array_type
+        SIR_MATCH_IGNORE,                                 // func_type
+        SIR_MATCH_IGNORE,                                 // optional_type
+        SIR_MATCH_IGNORE,                                 // result_type
+        SIR_MATCH_IGNORE,                                 // array_type
+        SIR_MATCH_IGNORE,                                 // map_type
+        SIR_MATCH_IGNORE,                                 // closure_type
+        SIR_MATCH_IGNORE,                                 // reference_type
+        SIR_MATCH_IGNORE,                                 // ident_expr
+        SIR_MATCH_IGNORE,                                 // star_expr
+        SIR_MATCH_IGNORE,                                 // bracket_expr
+        SIR_MATCH_IGNORE,                                 // dot_expr
+        SIR_MATCH_IGNORE,                                 // pseudo_tpe
+        SIR_MATCH_IGNORE,                                 // meta_access (TODO)
+        SIR_MATCH_IGNORE,                                 // meta_field_expr (TODO)
+        SIR_MATCH_IGNORE,                                 // meta_call_expr (TODO)
+        SIR_MATCH_IGNORE,                                 // init_expr
+        SIR_MATCH_IGNORE,                                 // move_expr
         result = analyze_deinit_expr(*inner, expr),       // deinit_expr
-        SIR_VISIT_IGNORE,                                 // type_check_expr
+        SIR_MATCH_IGNORE,                                 // type_check_expr
         result = analyze_builtin_expr(*inner, ctx),       // builtin_expr
-        SIR_VISIT_IGNORE,                                 // placeholder_expr (TODO)
-        SIR_VISIT_IGNORE                                  // error
+        SIR_MATCH_IGNORE,                                 // placeholder_expr (TODO)
+        SIR_MATCH_IGNORE                                  // error
     );
 
     if (ctx.cur_resource && ctx.cur_resource->has_deinit) {

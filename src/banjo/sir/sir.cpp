@@ -1,7 +1,7 @@
 #include "sir.hpp"
 
 #include "banjo/sir/sir_comparison.hpp"
-#include "banjo/sir/sir_visitor.hpp"
+#include "banjo/sir/sir_match.hpp"
 #include "banjo/utils/macros.hpp"
 
 #include <utility>
@@ -13,7 +13,7 @@ bool Expr::operator==(const Expr &other) const {
 }
 
 Expr Expr::get_type() const {
-    SIR_VISIT_EXPR(
+    SIR_MATCH_EXPR(
         *this,
         return nullptr,     // empty
         return inner->type, // int_literal
@@ -71,7 +71,7 @@ Expr Expr::get_type() const {
 }
 
 ExprCategory Expr::get_category() const {
-    SIR_VISIT_EXPR(
+    SIR_MATCH_EXPR(
         *this,
         return ExprCategory::OTHER,          // empty
         return ExprCategory::VALUE,          // int_literal
@@ -243,9 +243,9 @@ bool Expr::is_pseudo_type(PseudoTypeKind kind) const {
 }
 
 ASTNode *Expr::get_ast_node() const {
-    SIR_VISIT_EXPR(
+    SIR_MATCH_EXPR(
         *this,
-        SIR_VISIT_IMPOSSIBLE,
+        SIR_MATCH_IMPOSSIBLE,
         return inner->ast_node,
         return inner->ast_node,
         return inner->ast_node,
@@ -311,9 +311,9 @@ DeclBlock *Expr::get_decl_block() {
 }
 
 ASTNode *Stmt::get_ast_node() const {
-    SIR_VISIT_STMT(
+    SIR_MATCH_STMT(
         *this,
-        SIR_VISIT_IMPOSSIBLE,
+        SIR_MATCH_IMPOSSIBLE,
         return inner->ast_node,
         return inner->ast_node,
         return inner->ast_node,
@@ -327,7 +327,7 @@ ASTNode *Stmt::get_ast_node() const {
         return inner->ast_node,
         return inner->ast_node,
         return inner->ast_node,
-        SIR_VISIT_IMPOSSIBLE,
+        SIR_MATCH_IMPOSSIBLE,
         return inner->get_ast_node(),
         return inner->ast_node,
         return inner->ast_node
@@ -335,10 +335,10 @@ ASTNode *Stmt::get_ast_node() const {
 }
 
 const Ident &Symbol::get_ident() const {
-    SIR_VISIT_SYMBOL(
+    SIR_MATCH_SYMBOL(
         *this,
-        SIR_VISIT_IMPOSSIBLE,              // empty
-        SIR_VISIT_IMPOSSIBLE,              // module
+        SIR_MATCH_IMPOSSIBLE,              // empty
+        SIR_MATCH_IMPOSSIBLE,              // module
         return inner->ident,               // func_def
         return inner->ident,               // func_decl
         return inner->ident,               // native_func_decl
@@ -410,7 +410,7 @@ Module &Symbol::find_mod() const {
 }
 
 Expr Symbol::get_type() {
-    SIR_VISIT_SYMBOL(
+    SIR_MATCH_SYMBOL(
         *this,
         return nullptr,      // empty
         return nullptr,      // module
@@ -438,7 +438,7 @@ Expr Symbol::get_type() {
 }
 
 ExprCategory Symbol::get_category() const {
-    SIR_VISIT_SYMBOL(
+    SIR_MATCH_SYMBOL(
         *this,
         return ExprCategory::OTHER,        // empty
         return ExprCategory::OTHER,        // module

@@ -9,7 +9,7 @@
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_cloner.hpp"
 #include "banjo/sir/sir_create.hpp"
-#include "banjo/sir/sir_visitor.hpp"
+#include "banjo/sir/sir_match.hpp"
 #include "banjo/sir/specializer.hpp"
 
 #include <optional>
@@ -40,9 +40,9 @@ void StmtAnalyzer::analyze(sir::Block &block, unsigned &index, const StmtContext
         stmt_context = context;
     }
 
-    SIR_VISIT_STMT(
+    SIR_MATCH_STMT(
         stmt,
-        SIR_VISIT_IMPOSSIBLE,                                        // empty
+        SIR_MATCH_IMPOSSIBLE,                                        // empty
         analyze_var_stmt(*inner),                                    // var_stmt
         analyze_assign_stmt(*inner),                                 // assign_stmt
         analyze_comp_assign_stmt(*inner, stmt),                      // comp_assign_stmt
@@ -56,10 +56,10 @@ void StmtAnalyzer::analyze(sir::Block &block, unsigned &index, const StmtContext
         analyze_break_stmt(*inner),                                  // break_stmt
         MetaExpansion{analyzer}.evaluate_meta_if_stmt(block, index), // meta_if_stmt
         analyze_meta_for_stmt(*inner),                               // meta_for_stmt
-        SIR_VISIT_IGNORE,                                            // expanded_meta_stmt
+        SIR_MATCH_IGNORE,                                            // expanded_meta_stmt
         analyze_expr_stmt(*inner, stmt_context),                     // expr_stmt
         analyze_block(*inner, stmt_context),                         // block_stmt
-        SIR_VISIT_IGNORE                                             // error
+        SIR_MATCH_IGNORE                                             // error
     )
 }
 

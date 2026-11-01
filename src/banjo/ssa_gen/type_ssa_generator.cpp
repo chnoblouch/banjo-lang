@@ -1,13 +1,12 @@
 #include "type_ssa_generator.hpp"
 
 #include "banjo/sir/sir.hpp"
-#include "banjo/sir/sir_visitor.hpp"
+#include "banjo/sir/sir_match.hpp"
 #include "banjo/sir/specializer.hpp"
 #include "banjo/ssa/primitive.hpp"
 #include "banjo/ssa_gen/expr_ssa_generator.hpp"
 #include "banjo/ssa_gen/ssa_generator_context.hpp"
 #include "banjo/utils/macros.hpp"
-#include "banjo/utils/utils.hpp"
 
 namespace banjo {
 

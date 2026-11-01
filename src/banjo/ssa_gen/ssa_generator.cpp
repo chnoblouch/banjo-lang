@@ -1,7 +1,7 @@
 #include "ssa_generator.hpp"
 
 #include "banjo/sir/sir.hpp"
-#include "banjo/sir/sir_visitor.hpp"
+#include "banjo/sir/sir_match.hpp"
 #include "banjo/ssa/function.hpp"
 #include "banjo/ssa/primitive.hpp"
 #include "banjo/ssa/structure.hpp"

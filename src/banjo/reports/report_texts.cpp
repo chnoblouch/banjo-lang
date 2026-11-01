@@ -2,7 +2,7 @@
 
 #include "banjo/lexer/token.hpp"
 #include "banjo/sir/sir.hpp"
-#include "banjo/sir/sir_visitor.hpp"
+#include "banjo/sir/sir_match.hpp"
 
 #include <string>
 
@@ -126,7 +126,7 @@ ReportText &ReportText::format(const sir::TypeConstraint &type_constraint) {
 }
 
 std::string ReportText::to_string(const sir::Expr &expr) {
-    SIR_VISIT_EXPR(
+    SIR_MATCH_EXPR(
         expr,
         return "invalid",
         return inner->value.to_string(),

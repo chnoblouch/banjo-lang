@@ -1,8 +1,9 @@
 #include "sir_printer.hpp"
 
 #include "banjo/sir/sir.hpp"
-#include "banjo/sir/sir_visitor.hpp"
+#include "banjo/sir/sir_match.hpp"
 #include "banjo/utils/macros.hpp"
+
 #include <sstream>
 
 #define BEGIN_OBJECT(name)                                                                                             \
@@ -91,9 +92,9 @@ void Printer::print_decl_block(const DeclBlock &decl_block) {
 }
 
 void Printer::print_decl(const Decl &decl) {
-    SIR_VISIT_DECL(
+    SIR_MATCH_DECL(
         decl,
-        SIR_VISIT_IMPOSSIBLE,
+        SIR_MATCH_IMPOSSIBLE,
         print_func_def(*inner),
         print_func_decl(*inner),
         print_native_func_decl(*inner),
@@ -399,9 +400,9 @@ void Printer::print_block(const Block &block) {
 }
 
 void Printer::print_stmt(const Stmt &stmt) {
-    SIR_VISIT_STMT(
+    SIR_MATCH_STMT(
         stmt,
-        SIR_VISIT_IMPOSSIBLE,
+        SIR_MATCH_IMPOSSIBLE,
         print_var_stmt(*inner),
         print_assign_stmt(*inner),
         print_comp_assign_stmt(*inner),
@@ -603,7 +604,7 @@ void Printer::print_block_stmt(const Block &block) {
 }
 
 void Printer::print_expr(const Expr &expr) {
-    SIR_VISIT_EXPR(
+    SIR_MATCH_EXPR(
         expr,
         stream << "none\n",
         print_int_literal(*inner),

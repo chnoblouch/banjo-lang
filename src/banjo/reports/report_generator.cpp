@@ -7,8 +7,8 @@
 #include "banjo/reports/report_manager.hpp"
 #include "banjo/sir/magic_methods.hpp"
 #include "banjo/sir/sir.hpp"
+#include "banjo/sir/sir_match.hpp"
 #include "banjo/sir/sir_to_text.hpp"
-#include "banjo/sir/sir_visitor.hpp"
 #include "banjo/source/source_file.hpp"
 #include "banjo/source/text_range.hpp"
 #include "banjo/utils/macros.hpp"
@@ -1024,7 +1024,7 @@ std::string_view ReportGenerator::expr_category_name(sir::ExprCategory category)
 }
 
 std::string_view ReportGenerator::symbol_kind_name(sir::Symbol symbol) {
-    SIR_VISIT_SYMBOL(
+    SIR_MATCH_SYMBOL(
         symbol,
         return "<empty>",              // empty,
         return "module",               // module,

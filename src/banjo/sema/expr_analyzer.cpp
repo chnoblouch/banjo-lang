@@ -19,7 +19,7 @@
 #include "banjo/sir/resource_generator.hpp"
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_create.hpp"
-#include "banjo/sir/sir_visitor.hpp"
+#include "banjo/sir/sir_match.hpp"
 #include "banjo/sir/specializer.hpp"
 #include "banjo/sir/type_constraints.hpp"
 #include "banjo/source/module_path.hpp"
@@ -167,9 +167,9 @@ Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
         is_ref = unary_expr->op == sir::UnaryOp::REF || unary_expr->op == sir::UnaryOp::REF_MUT;
     }
 
-    SIR_VISIT_EXPR(
+    SIR_MATCH_EXPR(
         expr,
-        SIR_VISIT_IMPOSSIBLE,                           // empty
+        SIR_MATCH_IMPOSSIBLE,                           // empty
         result = analyze_int_literal(*inner),           // int_literal
         result = analyze_fp_literal(*inner),            // fp_literal
         result = analyze_bool_literal(*inner),          // bool_literal
@@ -180,24 +180,24 @@ Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
         result = analyze_array_literal(*inner, expr),   // array_literal
         result = analyze_string_literal(*inner),        // string_literal
         result = analyze_struct_literal(*inner),        // struct_literal
-        SIR_VISIT_IGNORE,                               // union_case_literal
+        SIR_MATCH_IGNORE,                               // union_case_literal
         result = analyze_map_literal(*inner, expr),     // map_literal
         result = analyze_closure_literal(*inner, expr), // closure_literal
-        SIR_VISIT_IGNORE,                               // symbol_expr
+        SIR_MATCH_IGNORE,                               // symbol_expr
         result = analyze_binary_expr(*inner, expr),     // binary_expr
         result = analyze_unary_expr(*inner, expr),      // unary_expr
         result = analyze_cast_expr(*inner),             // cast_expr
-        SIR_VISIT_IGNORE,                               // index_expr
+        SIR_MATCH_IGNORE,                               // index_expr
         result = analyze_call_expr(*inner, expr),       // call_expr
-        SIR_VISIT_IGNORE,                               // field_expr
+        SIR_MATCH_IGNORE,                               // field_expr
         analyze_range_expr(*inner),                     // range_expr
         result = analyze_if_expr(*inner),               // if_expr
         result = analyze_try_expr(*inner),              // try_expr
         analyze_tuple_expr(*inner),                     // tuple_expr
-        SIR_VISIT_IGNORE,                               // coercion_expr
-        SIR_VISIT_IGNORE,                               // specialize_expr
-        SIR_VISIT_IGNORE,                               // primitive_type
-        SIR_VISIT_IGNORE,                               // pointer_type
+        SIR_MATCH_IGNORE,                               // coercion_expr
+        SIR_MATCH_IGNORE,                               // specialize_expr
+        SIR_MATCH_IGNORE,                               // primitive_type
+        SIR_MATCH_IGNORE,                               // pointer_type
         result = analyze_static_array_type(*inner),     // static_array_type
         analyze_func_type(*inner),                      // func_type
         result = analyze_optional_type(*inner, expr),   // optional_type
@@ -210,16 +210,16 @@ Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
         result = analyze_star_expr(*inner, expr),       // star_expr
         result = analyze_bracket_expr(*inner, expr),    // bracket_expr
         result = analyze_dot_expr(*inner, expr),        // dot_expr
-        SIR_VISIT_IGNORE,                               // pseudo_tpe
+        SIR_MATCH_IGNORE,                               // pseudo_tpe
         result = analyze_meta_access(*inner),           // meta_access
         result = analyze_meta_field_expr(*inner),       // meta_field_expr
         result = analyze_meta_call_expr(*inner, expr),  // meta_call_expr
-        SIR_VISIT_IMPOSSIBLE,                           // init_expr
-        SIR_VISIT_IMPOSSIBLE,                           // move_expr
-        SIR_VISIT_IMPOSSIBLE,                           // deinit_expr
+        SIR_MATCH_IMPOSSIBLE,                           // init_expr
+        SIR_MATCH_IMPOSSIBLE,                           // move_expr
+        SIR_MATCH_IMPOSSIBLE,                           // deinit_expr
         result = analyze_type_check_expr(*inner),       // type_check_expr
-        SIR_VISIT_IMPOSSIBLE,                           // builtin_expr
-        SIR_VISIT_IMPOSSIBLE,                           // placeholder_expr
+        SIR_MATCH_IMPOSSIBLE,                           // builtin_expr
+        SIR_MATCH_IMPOSSIBLE,                           // placeholder_expr
         result = Result::ERROR                          // error
     );
 

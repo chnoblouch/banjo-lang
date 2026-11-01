@@ -6,7 +6,7 @@
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_cloner.hpp"
 #include "banjo/sir/sir_create.hpp"
-#include "banjo/sir/sir_visitor.hpp"
+#include "banjo/sir/sir_match.hpp"
 #include "banjo/utils/macros.hpp"
 
 namespace banjo::sema {
@@ -40,9 +40,9 @@ bool ConstEvaluator::evaluate_to_bool(sir::Expr &expr) {
 }
 
 ConstEvaluator::Output ConstEvaluator::evaluate(sir::Expr &expr) {
-    SIR_VISIT_EXPR(
+    SIR_MATCH_EXPR(
         expr,
-        SIR_VISIT_IMPOSSIBLE,                    // empty
+        SIR_MATCH_IMPOSSIBLE,                    // empty
         return expr,                             // int_literal
         return expr,                             // fp_literal
         return expr,                             // bool_literal
@@ -150,29 +150,29 @@ ConstEvaluator::Output ConstEvaluator::evaluate_struct_literal(sir::StructLitera
 }
 
 ConstEvaluator::Output ConstEvaluator::evaluate_symbol_expr(sir::SymbolExpr &symbol_expr) {
-    SIR_VISIT_SYMBOL(
+    SIR_MATCH_SYMBOL(
         symbol_expr.symbol,
-        SIR_VISIT_IMPOSSIBLE,                      // empty
-        SIR_VISIT_IMPOSSIBLE,                      // module
-        SIR_VISIT_IMPOSSIBLE,                      // func_def
-        SIR_VISIT_IMPOSSIBLE,                      // func_decl
-        SIR_VISIT_IMPOSSIBLE,                      // native_func_decl
+        SIR_MATCH_IMPOSSIBLE,                      // empty
+        SIR_MATCH_IMPOSSIBLE,                      // module
+        SIR_MATCH_IMPOSSIBLE,                      // func_def
+        SIR_MATCH_IMPOSSIBLE,                      // func_decl
+        SIR_MATCH_IMPOSSIBLE,                      // native_func_decl
         return evaluate_const_def_value(*inner),   // const_def
         return sir::Expr(&symbol_expr),            // struct_def
-        SIR_VISIT_IMPOSSIBLE,                      // struct_field
-        SIR_VISIT_IMPOSSIBLE,                      // var_decl
-        SIR_VISIT_IMPOSSIBLE,                      // native_var_decl
+        SIR_MATCH_IMPOSSIBLE,                      // struct_field
+        SIR_MATCH_IMPOSSIBLE,                      // var_decl
+        SIR_MATCH_IMPOSSIBLE,                      // native_var_decl
         return sir::Expr(&symbol_expr),            // enum_def
         return clone(evaluate(inner->value).expr), // enum_variant
         return sir::Expr(&symbol_expr),            // union_def
-        SIR_VISIT_IMPOSSIBLE,                      // union_case
-        SIR_VISIT_IMPOSSIBLE,                      // proto_def
-        SIR_VISIT_IMPOSSIBLE,                      // type_alias
-        SIR_VISIT_IMPOSSIBLE,                      // use_ident
-        SIR_VISIT_IMPOSSIBLE,                      // use_rebind
+        SIR_MATCH_IMPOSSIBLE,                      // union_case
+        SIR_MATCH_IMPOSSIBLE,                      // proto_def
+        SIR_MATCH_IMPOSSIBLE,                      // type_alias
+        SIR_MATCH_IMPOSSIBLE,                      // use_ident
+        SIR_MATCH_IMPOSSIBLE,                      // use_rebind
         return sir::Expr(&symbol_expr),            // local
         return sir::Expr(&symbol_expr),            // param
-        SIR_VISIT_IMPOSSIBLE,                      // overload_set
+        SIR_MATCH_IMPOSSIBLE,                      // overload_set
         return sir::Expr(&symbol_expr)             // generic_param
     );
 }

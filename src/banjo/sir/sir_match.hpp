@@ -1,13 +1,13 @@
-#ifndef BANJO_SIR_VISITOR_H
-#define BANJO_SIR_VISITOR_H
+#ifndef BANJO_SIR_MATCH_H
+#define BANJO_SIR_MATCH_H
 
-#include "banjo/sir/sir.hpp" // IWYU pragma: export
-#include "banjo/utils/macros.hpp"
+#include "banjo/sir/sir.hpp"      // IWYU pragma: export
+#include "banjo/utils/macros.hpp" // IWYU pragma: export
 
-#define SIR_VISIT_IMPOSSIBLE ASSERT_UNREACHABLE
-#define SIR_VISIT_IGNORE ;
+#define SIR_MATCH_IMPOSSIBLE ASSERT_UNREACHABLE
+#define SIR_MATCH_IGNORE ;
 
-#define SIR_VISIT_EXPR(                                                                                                \
+#define SIR_MATCH_EXPR(                                                                                                \
     expr,                                                                                                              \
     empty_visitor,                                                                                                     \
     int_literal_visitor,                                                                                               \
@@ -170,7 +170,7 @@
         ASSERT_UNREACHABLE;                                                                                            \
     }
 
-#define SIR_VISIT_STMT(                                                                                                \
+#define SIR_MATCH_STMT(                                                                                                \
     stmt,                                                                                                              \
     empty_visitor,                                                                                                     \
     var_stmt_visitor,                                                                                                  \
@@ -231,7 +231,7 @@
         ASSERT_UNREACHABLE;                                                                                            \
     }
 
-#define SIR_VISIT_DECL(                                                                                                \
+#define SIR_MATCH_DECL(                                                                                                \
     decl,                                                                                                              \
     empty_visitor,                                                                                                     \
     func_def_visitor,                                                                                                  \
@@ -295,7 +295,7 @@
         ASSERT_UNREACHABLE;                                                                                            \
     }
 
-#define SIR_VISIT_SYMBOL(                                                                                              \
+#define SIR_MATCH_SYMBOL(                                                                                              \
     symbol,                                                                                                            \
     empty_visitor,                                                                                                     \
     module_visitor,                                                                                                    \
