@@ -9,11 +9,12 @@ from pathlib import Path
 def run_benchmark(banjo_binary, cpp_binary):
     subprocess.run([
         "hyperfine",
-        "-w10", "-m20", "-umillisecond",
-        "-nbanjo",
+        "-w10", "-m20",
+        "--metrics", "time_wall_clock:ms",
         "-nc++",
-        f"./{banjo_binary}",
+        "-nbanjo",
         f"./{cpp_binary}",
+        f"./{banjo_binary}",
     ])
 
 
