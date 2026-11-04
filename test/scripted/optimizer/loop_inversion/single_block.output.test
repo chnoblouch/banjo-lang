@@ -1,0 +1,31 @@
+# test:section input
+
+func i32 @f(i32 %0) {
+    jmp void b0(i32 0)
+
+b0(i32 %1):
+    cjmp i32 %1, void ult, i32 42, void b1, void b2
+
+b1:
+    %2 = add i32 %1, i32 1
+    jmp void b0(i32 %2)
+
+b2:
+    ret i32 %1
+}
+
+# test:section output
+
+func i32 @f(i32 %0) {
+    jmp void b0(i32 0)
+
+b0(i32 %1):
+    cjmp i32 %1, void ult, i32 42, void b1(i32 %1), void b2(i32 %1)
+
+b1(i32 %2):
+    %3 = add i32 %2, i32 1
+    cjmp i32 %3, void ult, i32 42, void b1(i32 %3), void b2(i32 %3)
+
+b2(i32 %4):
+    ret i32 %4
+}

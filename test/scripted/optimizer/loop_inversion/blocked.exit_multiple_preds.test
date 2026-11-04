@@ -1,0 +1,15 @@
+# test:identical
+
+func void @f(i32 %0, i8 %1) {
+    cjmp i8 %1, void eq, i8 1, void b0(i32 0), void b2
+
+b0(i32 %2):
+    cjmp i32 %2, void ult, i32 42, void b1, void b2
+
+b1:
+    %3 = add i32 %2, i32 1
+    jmp void b0(i32 %3)
+
+b2:
+    ret
+}

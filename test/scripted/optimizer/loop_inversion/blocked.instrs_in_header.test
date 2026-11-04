@@ -1,0 +1,16 @@
+# test:identical
+
+func i32 @f(i32 %0, i32 %1) {
+    jmp void b0(i32 0)
+
+b0(i32 %2):
+    %3 = add i32 %1, i32 1
+    cjmp i32 %2, void ult, i32 42, void b1, void b2
+
+b1:
+    %4 = add i32 %2, i32 1
+    jmp void b0(i32 %4)
+
+b2:
+    ret i32 %3
+}
