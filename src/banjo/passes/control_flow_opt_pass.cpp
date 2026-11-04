@@ -187,8 +187,20 @@ void ControlFlowOptPass::try_inline_into_jmp(ssa::BasicBlockIter origin_block, s
     } else if (target_branch_instr->is_cond_branch()) {
         ssa::Instruction new_branch_instr = *target_branch_instr;
 
-        for (ssa::Operand &operand : new_branch_instr.get_operands()) {
-            if (!try_replace_regs_with_block_args(operand, target, origin_block)) {
+        std::vector<ssa::Operand *> args;
+        args.push_back(&new_branch_instr.get_operand(0));
+        args.push_back(&new_branch_instr.get_operand(2));
+
+        for (ssa::Operand &arg : new_branch_instr.get_operand(3).get_branch_target().args) {
+            args.push_back(&arg);
+        }
+
+        for (ssa::Operand &arg : new_branch_instr.get_operand(4).get_branch_target().args) {
+            args.push_back(&arg);
+        }
+
+        for (ssa::Operand *arg : args) {
+            if (!try_replace_regs_with_block_args(*arg, target, origin_block)) {
                 DEBUG_LOG << "  cannot inline branch to " << target.block->get_debug_label();
                 DEBUG_LOG << " into " << origin_block->get_debug_label();
                 DEBUG_LOG << " (not all registers have known values)\n";
