@@ -472,6 +472,10 @@ void SpecializationCollector::visit_placeholder_expr(const sir::PlaceholderExpr 
 }
 
 void SpecializationCollector::visit_concrete(sir::Symbol symbol, std::span<sir::Expr> args) {
+    if (auto default_method = symbol.match<sir::DefaultMethod>()) {
+        symbol = default_method->def;
+    }
+
     std::vector<sir::Expr> args_full(args.begin(), args.end());
 
     if (!entry_stack.empty()) {

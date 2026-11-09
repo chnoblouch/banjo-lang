@@ -8,6 +8,7 @@
 #include "banjo/ssa/basic_block.hpp"
 #include "banjo/ssa/builder.hpp"
 #include "banjo/ssa/comparison.hpp"
+#include "banjo/ssa/function.hpp"
 #include "banjo/ssa/instruction.hpp"
 #include "banjo/ssa/operand.hpp"
 #include "banjo/ssa/primitive.hpp"
@@ -1118,9 +1119,18 @@ StoredValue ExprSSAGenerator::generate_generic_method(const sir::PlaceholderExpr
     sir::Expr generic_arg = ctx.get_generic_arg(*generic_method.param);
     sir::Concrete<sir::StructDef> concrete_struct = generic_arg.as_concrete<sir::StructDef>();
     std::string_view method_name = generic_method.symbol_name;
-    sir::FuncDef *func_def = &concrete_struct.def->block.symbol_table->look_up(method_name).as<sir::FuncDef>();
+    sir::Symbol method = concrete_struct.def->block.symbol_table->look_up(method_name);
 
-    ssa::Function *ssa_func = ctx.ssa_funcs.find({func_def, concrete_struct.generic_args});
+    ssa::Function *ssa_func;
+
+    if (auto func_def = method.match<sir::FuncDef>()) {
+        ssa_func = ctx.ssa_funcs.find({func_def, concrete_struct.generic_args});
+    } else if (auto default_method = method.match<sir::DefaultMethod>()) {
+        ssa_func = ctx.ssa_impl_funcs.find({default_method, concrete_struct.generic_args});
+    } else {
+        ASSERT_UNREACHABLE;
+    }
+
     ssa::Value ssa_value = ssa::Value::from_func(ssa_func, ssa::Primitive::ADDR);
     return StoredValue::create_value(ssa_value);
 }

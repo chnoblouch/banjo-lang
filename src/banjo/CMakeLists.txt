@@ -297,7 +297,6 @@ add_library(banjo STATIC
     "ssa_gen/expr_ssa_generator.hpp"
     "ssa_gen/global_ssa_generator.cpp"
     "ssa_gen/global_ssa_generator.hpp"
-    "ssa_gen/mono_map.hpp"
     "ssa_gen/name_mangling.cpp"
     "ssa_gen/name_mangling.hpp"
     "ssa_gen/specialization_collector.cpp"
