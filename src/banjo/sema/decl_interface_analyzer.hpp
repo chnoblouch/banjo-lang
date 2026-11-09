@@ -30,7 +30,6 @@ private:
     void analyze_self_param(sir::FuncType &func_type, unsigned index, sir::Symbol func_parent);
     bool compare_overloads(sir::FuncDef &func_a, sir::FuncDef &func_b);
     void analyze_proto_impl(sir::StructDef &struct_def, sir::ProtoDef &proto_def);
-    void insert_default_impl(sir::StructDef &struct_def, sir::FuncDef &func_def);
     void analyze_type_constraints(std::span<sir::GenericParam *> params);
     void analyze_type_constraint(sir::TypeConstraint &constraint);
 };

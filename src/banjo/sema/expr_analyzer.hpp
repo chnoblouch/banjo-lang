@@ -29,6 +29,10 @@ private:
         sir::Symbol symbol;
     };
 
+    struct ResolvedMethod {
+        sir::Symbol symbol;
+    };
+
     struct ResolvedGenericMethod {
         sir::Symbol symbol;
         sir::FuncType *type;
@@ -137,10 +141,12 @@ private:
 
     Result resolve_decl_member(sir::DotExpr &dot_expr, sir::Expr &out_expr, sir::DeclBlock &block);
     Result resolve_field(sir::DotExpr &dot_expr, sir::Expr &out_expr);
-    Result resolve_method_call(sir::DotExpr &dot_expr, sir::CallExpr &out_call_expr);
     std::optional<ResolvedField> resolve_struct_field(sir::Concrete<sir::StructDef> struct_, std::string_view name);
     std::optional<ResolvedField> resolve_union_case_field(sir::UnionCase &union_case, std::string_view name);
     std::optional<ResolvedField> resolve_tuple_field(sir::TupleExpr &tuple_type, std::string_view name);
+    Result resolve_method_call(sir::DotExpr &dot_expr, sir::CallExpr &out_call_expr);
+    std::optional<ResolvedMethod> resolve_struct_method(sir::Concrete<sir::StructDef> struct_, std::string_view name);
+    std::optional<ResolvedMethod> resolve_union_method(sir::Concrete<sir::UnionDef> union_, std::string_view name);
 
     Result finalize_call_expr_args(sir::CallExpr &call_expr, sir::FuncType &func_type, sir::FuncDef *func_def);
     void resolve_type_aliases(sir::Expr &expr);

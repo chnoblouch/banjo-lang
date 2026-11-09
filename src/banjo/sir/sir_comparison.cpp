@@ -64,7 +64,7 @@ bool Comparison::compare(Expr lhs, Expr rhs) {
         return false,                                      // star_expr
         return false,                                      // bracket_expr
         return false,                                      // dot_expr
-        return false,                                      // pseudo_type
+        return compare(*inner, rhs.as<PseudoType>()),      // pseudo_type
         return compare(*inner, rhs.as<MetaAccess>()),      // meta_access
         return compare(*inner, rhs.as<MetaFieldExpr>()),   // meta_field_expr
         return false,                                      // meta_call_expr
@@ -140,6 +140,10 @@ bool Comparison::compare(ClosureType &lhs, ClosureType &rhs) {
 
 bool Comparison::compare(ReferenceType &lhs, ReferenceType &rhs) {
     return lhs.mut == rhs.mut && compare(lhs.base_type, rhs.base_type);
+}
+
+bool Comparison::compare(PseudoType &lhs, PseudoType &rhs) {
+    return lhs.kind == rhs.kind;
 }
 
 bool Comparison::compare(MetaAccess &lhs, MetaAccess &rhs) {

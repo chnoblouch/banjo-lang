@@ -5,6 +5,7 @@
 #include "banjo/sir/type_constraints.hpp"
 #include "banjo/ssa_gen/specialization_collector.hpp"
 #include "banjo/ssa_gen/type_ssa_generator.hpp"
+#include "banjo/utils/macros.hpp"
 
 namespace banjo {
 
@@ -370,14 +371,22 @@ const std::vector<unsigned> &SSAGeneratorContext::create_vtables(const sir::Stru
 
         for (unsigned j = 0; j < concrete_proto.def->func_decls.size(); j++) {
             sir::ProtoFuncDecl func_decl = concrete_proto.def->func_decls[j];
-            const sir::FuncDef &func_def = symbol_table.symbols.at(func_decl.get_ident().value).as<sir::FuncDef>();
 
             std::string vtable_entry_name = vtable_name;
             if (j != 0) {
                 vtable_entry_name += "." + std::to_string(j);
             }
 
-            ssa::Function *ssa_func = ssa_funcs.find(&func_def);
+            sir::Symbol symbol = symbol_table.symbols.at(func_decl.get_ident().value);
+            ssa::Function *ssa_func = nullptr;
+
+            if (auto func_def = symbol.match<sir::FuncDef>()) {
+                ssa_func = ssa_funcs.find(func_def);
+            } else if (auto default_method = symbol.match<sir::DefaultMethod>()) {
+                ssa_func = ssa_impl_funcs.find(default_method);
+            } else {
+                ASSERT_UNREACHABLE;
+            }
 
             ssa_mod->add(new ssa::Global{
                 .name = vtable_entry_name,

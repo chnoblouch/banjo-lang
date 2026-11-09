@@ -295,6 +295,10 @@ StoredValue ExprSSAGenerator::generate_symbol_expr(const sir::SymbolExpr &symbol
         ssa::Function *ssa_func = ctx.ssa_funcs.find(func_def);
         ssa::Value ssa_value = ssa::Value::from_func(ssa_func, ssa::Primitive::ADDR);
         return StoredValue::create_value(ssa_value);
+    } else if (auto func_impl = symbol_expr.symbol.match<sir::DefaultMethod>()) {
+        ssa::Function *ssa_func = ctx.ssa_impl_funcs.find(func_impl);
+        ssa::Value ssa_value = ssa::Value::from_func(ssa_func, ssa::Primitive::ADDR);
+        return StoredValue::create_value(ssa_value);
     } else if (auto native_func_decl = symbol_expr.symbol.match<sir::NativeFuncDecl>()) {
         ssa::FunctionDecl *ssa_func = ctx.ssa_native_funcs[native_func_decl];
         ssa::Value ssa_value = ssa::Value::from_extern_func(ssa_func, ssa::Primitive::ADDR);
@@ -596,7 +600,22 @@ StoredValue ExprSSAGenerator::generate_call_expr(const sir::CallExpr &call_expr,
     ssa::Type ssa_type = TypeSSAGenerator(ctx).generate(call_expr.type);
     CallSSABuilder ssa_builder{ctx, ssa_type, hints};
 
-    if (concrete_proto) {
+    if (concrete_proto && ctx.get_func_context().sir_func->parent == concrete_proto->def) {
+        std::string_view name = callee_symbol.get_ident().value;
+        sir::Symbol symbol = ctx.self_type.get_decl_block()->symbol_table->look_up(name);
+
+        if (auto func_def = symbol.match<sir::FuncDef>()) {
+            ssa::Function *ssa_func = ctx.ssa_funcs.find(func_def);
+            ssa::Value ssa_value = ssa::Value::from_func(ssa_func, ssa::Primitive::ADDR);
+            ssa_builder.set_callee(StoredValue::create_value(ssa_value).get_value());
+        } else if (auto func_def = symbol.match<sir::DefaultMethod>()) {
+            ssa::Function *ssa_func = ctx.ssa_impl_funcs.find(func_def);
+            ssa::Value ssa_value = ssa::Value::from_func(ssa_func, ssa::Primitive::ADDR);
+            ssa_builder.set_callee(StoredValue::create_value(ssa_value).get_value());
+        } else {
+            ASSERT_UNREACHABLE;
+        }
+    } else if (concrete_proto) {
         utils::Arena arena;
 
         if (auto specialization = ctx.get_specialization()) {

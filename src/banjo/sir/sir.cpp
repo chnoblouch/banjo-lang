@@ -358,6 +358,7 @@ const Ident &Symbol::get_ident() const {
         return inner->name,                // local
         return inner->name,                // param
         return inner->func_defs[0]->ident, // overload_set
+        return inner->def.get_ident(),     // proto_method_impl
         return inner->ident                // generic_param
     );
 }
@@ -433,6 +434,7 @@ Expr Symbol::get_type() {
         return inner->type,  // local
         return inner->type,  // param
         return nullptr,      // overload_set
+        return inner->type,  // proto_method_impl
         return nullptr       // generic_param
     );
 }
@@ -461,6 +463,7 @@ ExprCategory Symbol::get_category() const {
         return ExprCategory::VALUE,        // local
         return ExprCategory::VALUE,        // param
         return ExprCategory::OVERLOAD_SET, // overload_set
+        return ExprCategory::VALUE,        // proto_method_impl
         return ExprCategory::TYPE          // generic_param
     );
 }

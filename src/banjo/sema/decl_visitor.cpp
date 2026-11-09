@@ -185,6 +185,7 @@ void DeclVisitor::visit_symbol(sir::Symbol symbol) {
         SIR_MATCH_IGNORE,               // local
         SIR_MATCH_IGNORE,               // param
         SIR_MATCH_IGNORE,               // overload_set
+        SIR_MATCH_IGNORE,               // proto_method_impl
         SIR_MATCH_IGNORE                // generic_param
     );
 }

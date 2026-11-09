@@ -83,7 +83,7 @@ ConstEvaluator::Output ConstEvaluator::evaluate(sir::Expr &expr) {
         return expr,                             // star_expr
         return expr,                             // bracket_expr
         return expr,                             // dot_expr
-        return expr,                             // pseudo_tpe
+        return expr,                             // pseudo_type
         return expr,                             // meta_access
         return evaluate_meta_field_expr(*inner), // meta_field_expr
         return evaluate_meta_call_expr(*inner),  // meta_call_expr
@@ -173,6 +173,7 @@ ConstEvaluator::Output ConstEvaluator::evaluate_symbol_expr(sir::SymbolExpr &sym
         return sir::Expr(&symbol_expr),            // local
         return sir::Expr(&symbol_expr),            // param
         SIR_MATCH_IMPOSSIBLE,                      // overload_set
+        SIR_MATCH_IMPOSSIBLE,                      // proto_method_impl
         return sir::Expr(&symbol_expr)             // generic_param
     );
 }

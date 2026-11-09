@@ -333,7 +333,7 @@ Result ResourceAnalyzer::analyze_expr(sir::Expr &expr, Context &ctx) {
         SIR_MATCH_IGNORE,                                 // star_expr
         SIR_MATCH_IGNORE,                                 // bracket_expr
         SIR_MATCH_IGNORE,                                 // dot_expr
-        SIR_MATCH_IGNORE,                                 // pseudo_tpe
+        SIR_MATCH_IGNORE,                                 // pseudo_type
         SIR_MATCH_IGNORE,                                 // meta_access (TODO)
         SIR_MATCH_IGNORE,                                 // meta_field_expr (TODO)
         SIR_MATCH_IGNORE,                                 // meta_call_expr (TODO)

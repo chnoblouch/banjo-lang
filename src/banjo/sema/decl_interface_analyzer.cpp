@@ -36,10 +36,8 @@ Result DeclInterfaceAnalyzer::analyze_func_def(sir::FuncDef &func_def) {
     }
 
     for (sir::Param &param : func_def.type.params) {
-        if (!(func_def.parent.is<sir::ProtoDef>() && func_def.is_method())) {
-            analyzer.get_symbol_table().insert_local(param.name.value, &param);
-            analyzer.add_symbol_def(&param);
-        }
+        analyzer.get_symbol_table().insert_local(param.name.value, &param);
+        analyzer.add_symbol_def(&param);
     }
 
     ExprAnalyzer(analyzer).analyze_type(func_def.type.return_type);
@@ -150,7 +148,8 @@ void DeclInterfaceAnalyzer::analyze_proto_impl(sir::StructDef &struct_def, sir::
 
         if (iter == symbol_table.symbols.end()) {
             if (auto func_def = func_decl.decl.match<sir::FuncDef>()) {
-                insert_default_impl(struct_def, *func_def);
+                sir::Symbol impl = analyzer.create(sir::DefaultMethod{.def = func_def, .type = &func_def->type});
+                struct_def.block.symbol_table->insert_decl(name, impl);
             } else {
                 analyzer.report_generator.report_err_impl_missing_func(struct_def, func_decl);
             }
@@ -160,17 +159,6 @@ void DeclInterfaceAnalyzer::analyze_proto_impl(sir::StructDef &struct_def, sir::
             }
         }
     }
-}
-
-void DeclInterfaceAnalyzer::insert_default_impl(sir::StructDef &struct_def, sir::FuncDef &func_def) {
-    if (func_def.stage <= sir::SemaStage::INTERFACE) {
-        DeclInterfaceAnalyzer{analyzer}.visit_func_def(func_def);
-    }
-
-    sir::SymbolTable &parent_symbol_table = *func_def.block.symbol_table->parent;
-    sir::FuncDef *clone = sir::Cloner(analyzer.get_mod(), parent_symbol_table).clone_func_def(func_def);
-    struct_def.block.decls.push_back(clone);
-    SymbolCollector(analyzer).collect_func_def(*clone);
 }
 
 Result DeclInterfaceAnalyzer::analyze_var_decl(sir::VarDecl &var_decl, sir::Decl &out_decl) {

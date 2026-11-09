@@ -2,6 +2,7 @@
 #define BANJO_SSA_GENERATOR_H
 
 #include "banjo/sir/sir.hpp"
+#include "banjo/ssa/function.hpp"
 #include "banjo/ssa/module.hpp"
 #include "banjo/ssa/structure.hpp"
 #include "banjo/ssa_gen/ssa_generator_context.hpp"
@@ -27,6 +28,7 @@ public:
 private:
     void create_decls(const sir::DeclBlock &decl_block);
     void create_func_defs(const sir::FuncDef &sir_func);
+    void create_impl_func_def(const sir::DefaultMethod &sir_impl);
     ssa::Function *create_func_def(const sir::FuncDef &sir_func, const std::vector<sir::Expr> &sir_generic_args);
     void create_native_func_decl(const sir::NativeFuncDecl &sir_func);
     std::vector<ssa::Type> generate_params(const sir::FuncType &sir_func_type);

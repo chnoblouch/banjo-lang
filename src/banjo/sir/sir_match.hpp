@@ -318,6 +318,7 @@
     local_visitor,                                                                                                     \
     param_visitor,                                                                                                     \
     overload_set_visitor,                                                                                              \
+    proto_method_impl_visitor,                                                                                         \
     generic_param_visitor                                                                                              \
 )                                                                                                                      \
     if (!(symbol)) {                                                                                                   \
@@ -362,6 +363,8 @@
         param_visitor;                                                                                                 \
     } else if ([[maybe_unused]] auto inner = (symbol).match<banjo::sir::OverloadSet>()) {                              \
         overload_set_visitor;                                                                                          \
+    } else if ([[maybe_unused]] auto inner = (symbol).match<banjo::sir::DefaultMethod>()) {                            \
+        proto_method_impl_visitor;                                                                                     \
     } else if ([[maybe_unused]] auto inner = (symbol).match<banjo::sir::GenericParam>()) {                             \
         generic_param_visitor;                                                                                         \
     } else {                                                                                                           \

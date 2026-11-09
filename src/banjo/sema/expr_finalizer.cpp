@@ -501,7 +501,8 @@ Result ExprFinalizer::finalize_coercion(sir::UnaryExpr &unary_expr, sir::Expr ty
         RESULT_MERGE(result, ExprFinalizer{analyzer}.finalize(unary_expr.value));
     }
 
-    if (unary_expr.type.is<sir::PseudoType>()) {
+    // FIXME: What is going on.
+    if (unary_expr.type.is<sir::PseudoType>() && !unary_expr.type.is_pseudo_type(sir::PseudoTypeKind::SELF_TYPE)) {
         unary_expr.type = analyzer.get_resolved_type(unary_expr.value);
     }
 
@@ -655,8 +656,9 @@ Result ExprFinalizer::finalize_default(sir::BinaryExpr &binary_expr) {
 Result ExprFinalizer::finalize_default(sir::UnaryExpr &unary_expr) {
     ExprFinalizer(analyzer).finalize(unary_expr.value);
 
-    if (unary_expr.type.is<sir::PseudoType>()) {
-        unary_expr.type = analyzer.get_resolved_type(unary_expr.value);
+    // FIXME
+    if (unary_expr.type.is<sir::PseudoType>() && !unary_expr.type.is_pseudo_type(sir::PseudoTypeKind::SELF_TYPE)) {
+        unary_expr.type = analyzer.get_resolved_type(unary_expr.type);
     }
 
     return Result::SUCCESS;

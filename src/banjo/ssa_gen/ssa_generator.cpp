@@ -34,21 +34,6 @@ ssa::Module SSAGenerator::generate() {
     ctx.ssa_mod = &ssa_mod;
     ctx.specializations = SpecializationCollector{arena}.collect(sir_unit);
 
-    // for (const auto &[key, value] : ctx.specializations) {
-    //     std::cout << key.get_name() << "\n";
-    //     for (const auto &entry : value) {
-    //         std::cout << "  ";
-
-    //         for (sir::Expr arg : entry.args) {
-    //             sir::Printer{std::cout}.print_expr(arg);
-    //         }
-
-    //         std::cout << "\n";
-    //     }
-
-    //     std::cout << "\n";
-    // }
-
     for (const sir::Module *sir_mod : sir_unit.mods) {
         ctx.push_decl_context().sir_mod = sir_mod;
         create_decls(sir_mod->block);
@@ -78,6 +63,12 @@ void SSAGenerator::create_decls(const sir::DeclBlock &decl_block) {
         else if (auto var_decl = decl.match<sir::VarDecl>()) create_var_decl(*var_decl);
         else if (auto native_var_decl = decl.match<sir::NativeVarDecl>()) create_native_var_decl(*native_var_decl);
     }
+
+    for (const auto [name, symbol] : decl_block.symbol_table->symbols) {
+        if (auto func_impl = symbol.match<sir::DefaultMethod>()) {
+            create_impl_func_def(*func_impl);
+        }
+    }
 }
 
 void SSAGenerator::create_func_defs(const sir::FuncDef &sir_func) {
@@ -99,6 +90,13 @@ void SSAGenerator::create_func_defs(const sir::FuncDef &sir_func) {
     } else {
         ssa::Function *ssa_func = create_func_def(sir_func, {});
         ctx.ssa_funcs.insert(&sir_func, ssa_func);
+    }
+}
+
+void SSAGenerator::create_impl_func_def(const sir::DefaultMethod &sir_impl) {
+    if (auto sir_func = sir_impl.def.match<sir::FuncDef>()) {
+        ssa::Function *ssa_func = create_func_def(*sir_func, {});
+        ctx.ssa_impl_funcs.insert(&sir_impl, ssa_func);
     }
 }
 
@@ -333,6 +331,12 @@ void SSAGenerator::generate_decls(const sir::DeclBlock &decl_block) {
         else if (auto var_decl = decl.match<sir::VarDecl>()) generate_var_decl(*var_decl);
         else if (auto native_var = decl.match<sir::NativeVarDecl>()) generate_native_var_decl(*native_var);
     }
+
+    for (const auto [name, symbol] : decl_block.symbol_table->symbols) {
+        if (auto func_impl = symbol.match<sir::DefaultMethod>()) {
+            generate_func_def(func_impl->def.as<sir::FuncDef>(), *ctx.ssa_impl_funcs.find(func_impl));
+        }
+    }
 }
 
 void SSAGenerator::generate_func_defs(const sir::FuncDef &sir_func) {
@@ -514,6 +518,7 @@ void SSAGenerator::generate_native_func_decl(const sir::NativeFuncDecl &sir_func
 }
 
 void SSAGenerator::generate_struct_defs(const sir::StructDef &sir_struct) {
+    ctx.self_type = const_cast<sir::StructDef *>(&sir_struct);
     generate_decls(sir_struct.block);
 }
 

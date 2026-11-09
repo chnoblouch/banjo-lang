@@ -31,6 +31,8 @@ ssa::Type TypeSSAGenerator::generate(const sir::Expr &type) {
         return generate_closure_type(*closure_type);
     } else if (type.is<sir::ReferenceType>()) {
         return generate_reference_type();
+    } else if (auto pseudo_type = type.match<sir::PseudoType>()) {
+        return generate_pseudo_type(*pseudo_type);
     } else if (auto specialize_expr = type.match<sir::SpecializeExpr>()) {
         return generate_specialize_type(*specialize_expr);
     } else {
@@ -59,14 +61,7 @@ ssa::Type TypeSSAGenerator::generate_primitive_type(const sir::PrimitiveType &pr
 }
 
 ssa::Type TypeSSAGenerator::generate_symbol_type(const sir::SymbolExpr &symbol_type) {
-    const sir::Symbol &symbol = symbol_type.symbol;
-
-    if (auto struct_def = symbol.match<sir::StructDef>()) return generate_struct_type(*struct_def);
-    else if (auto enum_def = symbol.match<sir::EnumDef>()) return generate_enum_type(*enum_def);
-    else if (auto union_def = symbol.match<sir::UnionDef>()) return generate_union_type(*union_def);
-    else if (auto union_case = symbol.match<sir::UnionCase>()) return generate_union_case_type(*union_case);
-    else if (auto generic_param = symbol.match<sir::GenericParam>()) return generate_generic_type(*generic_param);
-    else ASSERT_UNREACHABLE;
+    return generate_symbol(symbol_type.symbol);
 }
 
 ssa::Type TypeSSAGenerator::generate_struct_type(const sir::StructDef &struct_def) {
@@ -130,6 +125,14 @@ ssa::Type TypeSSAGenerator::generate_reference_type() {
     return ssa::Primitive::ADDR;
 }
 
+ssa::Type TypeSSAGenerator::generate_pseudo_type(const sir::PseudoType &pseudo_type) {
+    if (pseudo_type.kind == sir::PseudoTypeKind::SELF_TYPE) {
+        return generate_symbol(ctx.self_type);
+    } else {
+        ASSERT_UNREACHABLE;
+    }
+}
+
 ssa::Type TypeSSAGenerator::generate_specialize_type(const sir::SpecializeExpr &specialize_type) {
     utils::Arena arena;
     std::span<sir::Expr> args = specialize_type.args;
@@ -144,6 +147,15 @@ ssa::Type TypeSSAGenerator::generate_specialize_type(const sir::SpecializeExpr &
     } else {
         ASSERT_UNREACHABLE;
     }
+}
+
+ssa::Type TypeSSAGenerator::generate_symbol(sir::Symbol symbol) {
+    if (auto struct_def = symbol.match<sir::StructDef>()) return generate_struct_type(*struct_def);
+    else if (auto enum_def = symbol.match<sir::EnumDef>()) return generate_enum_type(*enum_def);
+    else if (auto union_def = symbol.match<sir::UnionDef>()) return generate_union_type(*union_def);
+    else if (auto union_case = symbol.match<sir::UnionCase>()) return generate_union_case_type(*union_case);
+    else if (auto generic_param = symbol.match<sir::GenericParam>()) return generate_generic_type(*generic_param);
+    else ASSERT_UNREACHABLE;
 }
 
 } // namespace banjo

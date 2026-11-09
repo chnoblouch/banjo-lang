@@ -119,6 +119,7 @@ struct DeclBlock;
 struct Block;
 struct SymbolTable;
 struct OverloadSet;
+struct DefaultMethod;
 struct GenericParam;
 struct TypeNarrowing;
 struct GuardedSymbol;
@@ -447,8 +448,9 @@ class Symbol : public DynamicPointer<
                    Local,          // 18
                    Param,          // 19
                    OverloadSet,    // 20
-                   GenericParam,   // 21
-                   GuardedSymbol   // 22
+                   DefaultMethod,  // 21
+                   GenericParam,   // 22
+                   GuardedSymbol   // 23
                    > {
 public:
     Symbol() : DynamicPointer() {}
@@ -534,6 +536,11 @@ struct SymbolTable {
 
 struct OverloadSet {
     std::vector<FuncDef *> func_defs;
+};
+
+struct DefaultMethod {
+    sir::Symbol def;
+    sir::Expr type;
 };
 
 struct GuardedSymbol {

@@ -1026,27 +1026,28 @@ std::string_view ReportGenerator::expr_category_name(sir::ExprCategory category)
 std::string_view ReportGenerator::symbol_kind_name(sir::Symbol symbol) {
     SIR_MATCH_SYMBOL(
         symbol,
-        return "<empty>",              // empty,
-        return "module",               // module,
-        return "function",             // func_def,
-        return "function declaration", // func_decl,
-        return "native function",      // native_func_decl,
-        return "const",                // const_def,
-        return "struct",               // struct_def,
-        return "struct field",         // struct_field,
-        return "variable",             // var_decl,
-        return "native variable",      // native_var_decl,
-        return "enum",                 // enum_def,
-        return "enum variatn",         // enum_variant,
-        return "union",                // union_def,
-        return "union case",           // union_case,
-        return "proto",                // proto_def,
-        return "type alias",           // type_alias,
-        return "<use identifier>",     // use_ident,
-        return "<use rebinding>",      // use_rebind,
-        return "local",                // local,
-        return "parameter",            // param,
-        return "overload set",         // overload_set,
+        return "<empty>",              // empty
+        return "module",               // module
+        return "function",             // func_def
+        return "function declaration", // func_decl
+        return "native function",      // native_func_decl
+        return "const",                // const_def
+        return "struct",               // struct_def
+        return "struct field",         // struct_field
+        return "variable",             // var_decl
+        return "native variable",      // native_var_decl
+        return "enum",                 // enum_def
+        return "enum variant",         // enum_variant
+        return "union",                // union_def
+        return "union case",           // union_case
+        return "proto",                // proto_def
+        return "type alias",           // type_alias
+        return "<use identifier>",     // use_ident
+        return "<use rebinding>",      // use_rebind
+        return "local",                // local
+        return "parameter",            // param
+        return "overload set",         // overload_set
+        return "function",             // proto_method_impl
         return "type parameter"        // generic_param
     );
 }

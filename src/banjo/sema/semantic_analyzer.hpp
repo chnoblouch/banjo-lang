@@ -62,6 +62,7 @@ class SemanticAnalyzer {
     friend class UseResolver;
     friend class TypeAliasResolver;
     friend class DeclInterfaceAnalyzer;
+    friend class TypeConcretizer;
     friend class GenericParamAnalyzer;
     friend class DeclValueAnalyzer;
     friend class DeclBodyAnalyzer;

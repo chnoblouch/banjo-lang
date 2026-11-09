@@ -31,6 +31,9 @@ private:
     ssa::Type generate_closure_type(const sir::ClosureType &closure_type);
     ssa::Type generate_reference_type();
     ssa::Type generate_specialize_type(const sir::SpecializeExpr &specialize_type);
+    ssa::Type generate_pseudo_type(const sir::PseudoType &pseudo_type);
+
+    ssa::Type generate_symbol(sir::Symbol symbol);
 };
 
 } // namespace banjo

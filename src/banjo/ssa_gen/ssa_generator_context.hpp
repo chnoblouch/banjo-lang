@@ -111,6 +111,7 @@ public:
     SpecializationCollector::List specializations;
 
     MonoDeclMap<sir::FuncDef, ssa::Function *> ssa_funcs;
+    MonoDeclMap<sir::DefaultMethod, ssa::Function *> ssa_impl_funcs;
     MonoDeclMap<sir::StructDef, ssa::Structure *> ssa_structs;
     MonoDeclMap<sir::UnionDef, ssa::Structure *> ssa_unions;
     MonoDeclMap<sir::UnionCase, ssa::Structure *> ssa_union_cases;
@@ -128,6 +129,7 @@ public:
 
     std::stack<SpecializationCollector::Entry *> specialization_stack;
     std::unordered_map<const sir::GenericParam *, sir::Expr> sir_generic_args;
+    sir::Symbol self_type;
 
     int string_name_id = 0;
     int block_id = 0;
