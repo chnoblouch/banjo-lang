@@ -99,7 +99,7 @@ void SemanticTokensHandler::add_symbol_token(
 ) {
     if (symbol.is<sir::Module>()) {
         tokens.push_back({range, SemanticTokenType::NAMESPACE, SemanticTokenModifiers::NONE});
-    } else if (symbol.is_one_of<sir::FuncDef, sir::FuncDecl, sir::NativeFuncDecl>()) {
+    } else if (symbol.is_one_of<sir::FuncDef, sir::FuncDecl, sir::NativeFuncDecl, sir::DefaultMethod>()) {
         tokens.push_back({range, SemanticTokenType::FUNCTION, SemanticTokenModifiers::NONE});
     } else if (symbol.is<sir::ConstDef>()) {
         tokens.push_back({range, SemanticTokenType::VARIABLE, SemanticTokenModifiers::READONLY});

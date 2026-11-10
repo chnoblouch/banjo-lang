@@ -55,7 +55,7 @@ json::Object CompletionHandler::serialize_item(unsigned index, CompletionEngine:
     if (item.kind == CompletionEngine::Item::Kind::SIMPLE) {
         if (item.symbol.is<sir::Module>()) {
             return serialize_simple_item(index, item, LSPCompletionItemKind::MODULE);
-        } else if (item.symbol.is_one_of<sir::FuncDef, sir::FuncDecl, sir::NativeFuncDecl>()) {
+        } else if (item.symbol.is_one_of<sir::FuncDef, sir::FuncDecl, sir::NativeFuncDecl, sir::DefaultMethod>()) {
             return serialize_simple_item(index, item, LSPCompletionItemKind::FUNCTION);
         } else if (item.symbol.is<sir::ConstDef>()) {
             return serialize_simple_item(index, item, LSPCompletionItemKind::CONSTANT);
@@ -83,6 +83,8 @@ json::Object CompletionHandler::serialize_item(unsigned index, CompletionEngine:
             return serialize_func_call_template(index, item, func_decl->type);
         } else if (auto native_func_decl = item.symbol.match<sir::NativeFuncDecl>()) {
             return serialize_func_call_template(index, item, native_func_decl->type);
+        } else if (auto default_method = item.symbol.match<sir::DefaultMethod>()) {
+            return serialize_func_call_template(index, item, default_method->type.as<sir::FuncType>());
         } else {
             ASSERT_UNREACHABLE;
         }

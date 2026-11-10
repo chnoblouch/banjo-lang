@@ -299,7 +299,7 @@ void CompletionEngine::collect_value_members(sir::Concrete<sir::StructDef> &conc
 
         if (auto func_def = symbol.match<sir::FuncDef>()) {
             is_value_member = func_def->is_method();
-        } else if (symbol.is<sir::OverloadSet>()) {
+        } else if (symbol.is<sir::OverloadSet>() || symbol.is<sir::DefaultMethod>()) {
             // TODO: Only include the overloads that are actually methods.
             is_value_member = true;
         }
@@ -326,6 +326,8 @@ void CompletionEngine::collect_value_members(sir::ProtoDef &proto_def) {
             if (func_def->is_method()) {
                 try_collect_item(name, symbol, options);
             }
+        } else if (symbol.is<sir::DefaultMethod>()) {
+            try_collect_item(name, symbol, options);
         }
     }
 }
@@ -365,7 +367,7 @@ void CompletionEngine::try_collect_item(std::string_view name, sir::Symbol symbo
     };
 
     if (options.create_func_call_template) {
-        if (symbol.is_one_of<sir::FuncDef, sir::FuncDecl, sir::NativeFuncDecl>()) {
+        if (symbol.is_one_of<sir::FuncDef, sir::FuncDecl, sir::NativeFuncDecl, sir::DefaultMethod>()) {
             item.kind = Item::Kind::FUNC_CALL_TEMPLATE;
         }
     }

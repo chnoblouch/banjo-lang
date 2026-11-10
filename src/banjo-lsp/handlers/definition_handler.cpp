@@ -12,6 +12,8 @@ DefinitionHandler::DefinitionHandler(Workspace &workspace) : workspace(workspace
 DefinitionHandler::~DefinitionHandler() {}
 
 json::Value DefinitionHandler::handle(const json::Object &params, Connection & /*connection*/) {
+    // TODO: Default method implementations.
+
     std::string uri = params.get_object("textDocument").get_string("uri");
     std::filesystem::path fs_path = URI::decode_to_path(uri);
 
