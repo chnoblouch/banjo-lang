@@ -58,5 +58,7 @@ func i8 @f(i8 %0, i8 %1) {
 
 func f:
     movzx eax, dil
-    div sil
+    movzx ecx, sil
+    xor edx, edx
+    div ecx
     ret

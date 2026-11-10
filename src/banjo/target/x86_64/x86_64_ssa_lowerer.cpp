@@ -1033,17 +1033,19 @@ void X8664SSALowerer::lower_into_div(mcode::PhysicalReg result, ssa::Instruction
     mcode::Register rdx = mcode::Register::from_physical(X8664Register::RDX);
 
     if (size == 1) {
+        // TODO: Use the 8-bit instruction, but this requires support for
+        // representing the AH register.
+
         mcode::Operand m_lhs = lower_value(lhs, OperandKind::REG_ADDR_IMM);
-        mcode::Operand m_rhs = lower_value(rhs, OperandKind::REG_ADDR);
+        mcode::Operand m_rhs = lower_value(rhs, OperandKind::REG_ADDR_IMM);
         mcode::Operand m_eax = mcode::Operand::from_register(rax, 4);
+        mcode::Operand m_edx = mcode::Operand::from_register(rdx, 4);
+        mcode::Operand m_tmp = mcode::Operand::from_register(create_tmp_reg(), 4);
 
-        if (m_lhs.is_int_immediate()) {
-            emit({X8664Opcode::MOV, {m_eax, m_lhs}});
-        } else {
-            emit({X8664Opcode::MOVZX, {m_eax, m_lhs}});
-        }
-
-        emit({X8664Opcode::DIV, {m_rhs}});
+        emit({m_lhs.is_int_immediate() ? X8664Opcode::MOV : X8664Opcode::MOVZX, {m_eax, m_lhs}});
+        emit({m_rhs.is_int_immediate() ? X8664Opcode::MOV : X8664Opcode::MOVZX, {m_tmp, m_rhs}});
+        emit({X8664Opcode::XOR, {m_edx, m_edx}});
+        emit({X8664Opcode::DIV, {m_tmp}});
     } else if (size == 2) {
         mcode::Operand m_lhs = lower_value(lhs, OperandKind::REG_ADDR_IMM);
         mcode::Operand m_rhs = lower_value(rhs, OperandKind::REG_ADDR);
@@ -1082,17 +1084,19 @@ void X8664SSALowerer::lower_into_idiv(mcode::PhysicalReg result, ssa::Instructio
     mcode::Register rax = mcode::Register::from_physical(X8664Register::RAX);
 
     if (size == 1) {
+        // TODO: Use the 8-bit instruction, but this requires support for
+        // representing the AH register.
+
         mcode::Operand m_lhs = lower_value(lhs, OperandKind::REG_ADDR_IMM);
-        mcode::Operand m_rhs = lower_value(rhs, OperandKind::REG_ADDR);
+        mcode::Operand m_rhs = lower_value(rhs, OperandKind::REG_ADDR_IMM);
         mcode::Operand m_eax = mcode::Operand::from_register(rax, 4);
+        mcode::Operand m_tmp = mcode::Operand::from_register(create_tmp_reg(), 4);
 
-        if (m_lhs.is_int_immediate()) {
-            emit({X8664Opcode::MOV, {m_eax, m_lhs}});
-        } else {
-            emit({X8664Opcode::MOVSX, {m_eax, m_lhs}});
-        }
-
-        emit({X8664Opcode::IDIV, {m_rhs}});
+        emit({m_lhs.is_int_immediate() ? X8664Opcode::MOV : X8664Opcode::MOVSX, {m_eax, m_lhs}});
+        emit({m_rhs.is_int_immediate() ? X8664Opcode::MOV : X8664Opcode::MOVSX, {m_tmp, m_rhs}});
+        emit({X8664Opcode::CDQ});
+        emit({X8664Opcode::IDIV, {m_tmp}});
+        size = 2;
     } else if (size == 2) {
         mcode::Operand m_lhs = lower_value(lhs, OperandKind::REG_ADDR_IMM);
         mcode::Operand m_rhs = lower_value(rhs, OperandKind::REG_ADDR);

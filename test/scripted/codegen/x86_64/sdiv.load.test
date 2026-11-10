@@ -66,5 +66,7 @@ func i8 @f(addr %0, addr %1) {
 
 func f:
     movsx eax, byte [rdi]
-    idiv byte [rsi]
+    movsx ecx, byte [rsi]
+    cdq
+    idiv ecx
     ret

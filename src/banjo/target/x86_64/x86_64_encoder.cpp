@@ -34,6 +34,12 @@ static bool is_sse_reg(mcode::PhysicalReg reg) {
     return reg >= X8664Register::XMM0 && reg <= X8664Register::XMM15;
 }
 
+static bool requires_rex(std::uint8_t size, std::uint8_t reg) {
+    // The REX prefix is required to differentiate between registers
+    // Example: SIL and DH
+    return size == 1 && (reg & 0b111) >= 4;
+}
+
 void X8664Encoder::encode_instr(mcode::Instruction &instr, mcode::Function *func, UnwindInfo &frame_info) {
     cur_func = func;
 
@@ -238,7 +244,7 @@ void X8664Encoder::encode_movzx(mcode::Instruction &instr) {
     RegOrAddr src = roa(m_src);
 
     emit_16bit_prefix_if_required(dst_size);
-    emit_rex_rroa(dst_size, dst, src);
+    emit_rex_rroa(dst_size, src_size, dst, src);
     emit_opcode(0x0F);
     emit_opcode(src_size == 1 ? 0xB6 : 0xB7);
     emit_modrm_sib(dst, src);
@@ -254,7 +260,7 @@ void X8664Encoder::encode_movsx(mcode::Instruction &instr) {
     RegOrAddr src = roa(m_src);
 
     emit_16bit_prefix_if_required(dst_size);
-    emit_rex_rroa(dst_size, dst, src);
+    emit_rex_rroa(dst_size, src_size, dst, src);
 
     if (src_size == 1) {
         emit_opcode(0x0F);
@@ -1437,19 +1443,21 @@ void X8664Encoder::emit_rex_r(std::uint8_t size, RegCode rm) {
     bool w = size == 8;
     bool b = rm > RegCode::EDI;
 
-    bool required = size == 1 && (rm & 0b111) > RegCode::EBX;
-    if (required || w || b) {
+    if (requires_rex(size, rm) || w || b) {
         emit_rex(w, 0, 0, b);
     }
 }
 
 void X8664Encoder::emit_rex_rr(std::uint8_t size, std::uint8_t reg, RegCode rm) {
-    bool w = size == 8;
+    emit_rex_rr(size, size, reg, rm);
+}
+
+void X8664Encoder::emit_rex_rr(std::uint8_t size_reg, std::uint8_t size_rm, std::uint8_t reg, RegCode rm) {
+    bool w = size_reg == 8;
     bool r = reg > RegCode::EDI;
     bool b = rm > RegCode::EDI;
 
-    bool required = size == 1 && ((reg & 0b111) > RegCode::EBX || (rm & 0b111) > RegCode::EBX);
-    if (required || w || r || b) {
+    if (requires_rex(size_reg, reg) || requires_rex(size_rm, rm) || w || r || b) {
         emit_rex(w, r, 0, b);
     }
 }
@@ -1473,19 +1481,20 @@ void X8664Encoder::emit_rex_rm(std::uint8_t size, std::uint8_t reg, Address addr
     bool x = index > AddrRegCode::ADDR_EDI && index != AddrRegCode::ADDR_NO_INDEX;
     bool b = base > AddrRegCode::ADDR_EDI && base != AddrRegCode::ADDR_NO_BASE;
 
-    // The REX prefix is sometimes required to differentiate e.g. between DH and SI.
-    bool required = size == 1 && (reg & 0b111) > AddrRegCode::ADDR_EBX;
-
-    if (required || w || r || x || b) {
+    if (requires_rex(size, reg) || w || r || x || b) {
         emit_rex(w, r, x, b);
     }
 }
 
 void X8664Encoder::emit_rex_rroa(std::uint8_t size, std::uint8_t reg, RegOrAddr roa) {
+    emit_rex_rroa(size, size, reg, roa);
+}
+
+void X8664Encoder::emit_rex_rroa(std::uint8_t size_reg, std::uint8_t size_roa, std::uint8_t reg, RegOrAddr roa) {
     if (std::holds_alternative<RegCode>(roa)) {
-        emit_rex_rr(size, reg, std::get<RegCode>(roa));
+        emit_rex_rr(size_reg, size_roa, reg, std::get<RegCode>(roa));
     } else if (std::holds_alternative<Address>(roa)) {
-        emit_rex_rm(size, reg, std::get<Address>(roa));
+        emit_rex_rm(size_reg, reg, std::get<Address>(roa));
     } else {
         ASSERT_UNREACHABLE;
     }

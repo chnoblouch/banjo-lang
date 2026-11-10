@@ -147,3 +147,18 @@ movzx r11w, byte [rax]
 # test:encoding "66410FB636"
 
 movzx si, byte [r14]
+
+# test:subtest
+# test:encoding "480FB6D6"
+
+movzx rdx, sil
+
+# test:subtest
+# test:encoding "400FB6D6"
+
+movzx edx, sil
+
+# test:subtest
+# test:encoding "66400FB6D6"
+
+movzx dx, sil

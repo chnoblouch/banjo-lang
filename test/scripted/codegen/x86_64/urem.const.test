@@ -114,9 +114,10 @@ func i8 @f(i8 %0) {
 # test:section mcode
 
 func f:
-    mov ecx, 42
     movzx eax, dil
-    div cl
+    mov ecx, 42
+    xor edx, edx
+    div ecx
     mov eax, edx
     ret
 
@@ -132,6 +133,8 @@ func i8 @f(i8 %0) {
 
 func f:
     mov eax, 42
-    div dil
+    movzx ecx, dil
+    xor edx, edx
+    div ecx
     mov eax, edx
     ret

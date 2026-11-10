@@ -243,8 +243,10 @@ private:
     void emit_16bit_prefix_if_required(std::uint8_t size);
     void emit_rex_r(std::uint8_t size, RegCode rm);
     void emit_rex_rr(std::uint8_t size, std::uint8_t reg, RegCode rm);
+    void emit_rex_rr(std::uint8_t size_reg, std::uint8_t size_rm, std::uint8_t reg, RegCode rm);
     void emit_rex_rm(std::uint8_t size, std::uint8_t reg, Address addr);
     void emit_rex_rroa(std::uint8_t size, std::uint8_t reg, RegOrAddr roa);
+    void emit_rex_rroa(std::uint8_t size_reg, std::uint8_t size_roa, std::uint8_t reg, RegOrAddr roa);
     void emit_rex_o(std::uint8_t size, std::uint8_t opcode_ext);
 
     void emit_modrm(std::uint8_t mod, std::uint8_t reg, std::uint8_t rm);
