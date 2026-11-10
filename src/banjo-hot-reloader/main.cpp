@@ -1,17 +1,10 @@
 #include "hot_reloader.hpp"
 
 #include "banjo/config/config_parser.hpp"
-#include "banjo/utils/platform.hpp"
-
-#ifdef OS_WINDOWS
-#    define NOMINMAX
-#    include <windows.h>
-#endif
+#include "banjo/utils/cli_setup.hpp"
 
 int main(int argc, char *argv[]) {
-#ifdef OS_WINDOWS
-    SetConsoleOutputCP(CP_UTF8);
-#endif
+    banjo::utils::cli_setup();
 
     banjo::Config::instance() = banjo::ConfigParser().parse(argc, argv);
     banjo::Config::instance().hot_reload = true;

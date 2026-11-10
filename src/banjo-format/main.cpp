@@ -4,6 +4,7 @@
 #include "banjo/reports/report_manager.hpp"
 #include "banjo/reports/report_printer.hpp"
 #include "banjo/source/source_file.hpp"
+#include "banjo/utils/cli_setup.hpp"
 
 #include <filesystem>
 #include <fstream>
@@ -11,6 +12,8 @@
 #include <string>
 
 int main(int argc, char *argv[]) {
+    banjo::utils::cli_setup();
+
     if (argc < 2) {
         return 0;
     }

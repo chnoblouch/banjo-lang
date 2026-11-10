@@ -383,6 +383,7 @@ add_library(banjo STATIC
     "utils/arena.hpp"
     "utils/bit_set.cpp"
     "utils/bit_set.hpp"
+    "utils/cli_setup.hpp"
     "utils/box.hpp"
     "utils/dominator_tree.cpp"
     "utils/dominator_tree.hpp"

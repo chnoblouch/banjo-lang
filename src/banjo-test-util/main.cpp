@@ -1,5 +1,6 @@
 
 #include "banjo/target/target_description.hpp"
+#include "banjo/utils/cli_setup.hpp"
 #include "banjo/utils/write_buffer.hpp"
 
 #include "assembly_util.hpp"
@@ -32,6 +33,8 @@ static std::string read_stdin() {
 }
 
 int main(int argc, const char *argv[]) {
+    banjo::utils::cli_setup();
+
     if (argc < 2) {
         return 0;
     }
