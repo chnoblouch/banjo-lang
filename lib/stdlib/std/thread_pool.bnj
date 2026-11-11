@@ -1,0 +1,110 @@
+use std.{sync.{Condition, Mutex}, thread.Thread};
+
+type Task = ||;
+
+struct Queue {
+    struct State {
+        var tasks: Array[Task];
+        var closed: bool;
+    }
+
+    var state: Mutex[State];
+    var condition: Condition;
+
+    pub func new() -> Queue {
+        return Queue {
+            state: Mutex.new(State { tasks: [], closed: false }),
+            condition: Condition.new(),
+        };
+    }
+
+    pub func push(mut self, task: Task) {
+        var lock = self.state.lock();
+        lock.value.tasks.append(task);
+        self.condition.notify_all();
+    }
+
+    pub func pull(mut self) -> ?Task {
+        var task: ?Task = none;
+        var lock = self.state.lock();
+
+        while lock.value.tasks.length() == 0 && !lock.value.closed {
+            self.condition.wait(ref lock);
+        }
+
+        if !lock.value.closed {
+            task = lock.value.tasks.remove(0);
+        }
+
+        self.condition.notify_all();
+        return task;
+    }
+
+    pub func wait(mut self) {
+        var lock = self.state.lock();
+
+        while lock.value.tasks.length() > 0 {
+            self.condition.wait(ref lock);
+        }
+    }
+
+    pub func close(mut self) {
+        var lock = self.state.lock();
+        lock.value.closed = true;
+        self.condition.notify_all();
+    }
+}
+
+struct Worker {
+    var thread: Thread;
+
+    pub func spawn(queue: share Queue) -> Worker {
+        var thread = Thread.spawn(|| {
+            while true {
+                try task in queue.pull() {
+                    task();
+                } else {
+                    break;
+                }
+            }
+        });
+
+        return Worker { thread };
+    }
+
+    pub func close(move self) {
+        self.thread.join();
+    }
+}
+
+struct ThreadPool {
+    var queue: share Queue;
+    var workers: Array[Worker];
+
+    pub func new(num_threads: usize) -> ThreadPool {
+        var queue = share Queue.new();
+        var workers: Array[Worker] = [];
+
+        for i in 0..num_threads {
+            workers.append(Worker.spawn(queue.copy()));
+        }
+
+        return ThreadPool { queue, workers };
+    }
+
+    pub func run(mut self, task: Task) {
+        self.queue.push(task);
+    }
+
+    pub func wait(mut self) {
+        self.queue.wait();
+    }
+
+    pub func close(move self) {
+        self.queue.close();
+
+        for worker in self.workers {
+            worker.close();
+        }
+    }
+}
