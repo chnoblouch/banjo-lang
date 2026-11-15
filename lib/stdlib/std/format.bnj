@@ -105,6 +105,9 @@ func format_arg[T](format: StringSlice, arg: ref T) -> String {
     } else if T == i64 {
         string = convert.i64_to_string(arg as i64, base, upper);
         is_number = true;
+    } else if T == u8 {
+        string = convert.u64_to_string(arg as u64, base, upper);
+        is_number = true;
     } else if T == u16 {
         string = convert.u64_to_string(arg as u64, base, upper);
         is_number = true;
