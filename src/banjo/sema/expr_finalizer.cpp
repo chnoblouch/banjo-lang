@@ -7,6 +7,7 @@
 #include "banjo/sir/sir.hpp"
 #include "banjo/sir/sir_create.hpp"
 #include "banjo/sir/specializer.hpp"
+#include "banjo/sir/type_constraints.hpp"
 #include "banjo/utils/macros.hpp"
 
 #include <array>
@@ -207,12 +208,7 @@ Result ExprFinalizer::coerce_to_proto_ptr(
     sir::Concrete<sir::ProtoDef> concrete_proto,
     sir::Expr proto_ptr_type
 ) {
-    Result partial_result;
-
-    partial_result = ExprFinalizer(analyzer).finalize(inout_expr);
-    if (partial_result != Result::SUCCESS) {
-        return Result::ERROR;
-    }
+    RESULT_PROPAGATE(ExprFinalizer{analyzer}.finalize(inout_expr));
 
     sir::Expr type = analyzer.get_resolved_type(inout_expr);
     if (type == proto_ptr_type) {
@@ -222,8 +218,12 @@ Result ExprFinalizer::coerce_to_proto_ptr(
     bool is_valid = false;
 
     if (auto pointer_type = type.match<sir::PointerType>()) {
-        if (auto struct_def = pointer_type->base_type.match_symbol<sir::StructDef>()) {
+        sir::Expr base_type = pointer_type->base_type;
+
+        if (auto struct_def = base_type.match_symbol<sir::StructDef>()) {
             is_valid = struct_def->has_impl_for(concrete_proto);
+        } else if (auto generic_param = base_type.match_symbol<sir::GenericParam>()) {
+            is_valid = sir::implements(generic_param->constraint, concrete_proto);
         }
     }
 
@@ -232,13 +232,11 @@ Result ExprFinalizer::coerce_to_proto_ptr(
         return Result::ERROR;
     }
 
-    inout_expr = analyzer.create(
-        sir::CoercionExpr{
-            .ast_node = nullptr,
-            .type = proto_ptr_type,
-            .value = inout_expr,
-        }
-    );
+    inout_expr = analyzer.create<sir::CoercionExpr>({
+        .ast_node = nullptr,
+        .type = proto_ptr_type,
+        .value = inout_expr,
+    });
 
     return Result::SUCCESS;
 }

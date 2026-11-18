@@ -835,7 +835,9 @@ StoredValue ExprSSAGenerator::generate_coercion_expr(
         ExprSSAGenerator(ctx).generate_into_dst(coercion_expr.value, ssa_data_ptr_reg);
         return stored_val;
     } else if (auto concrete_proto = coercion_expr.type.match_proto_ptr()) {
-        const sir::Expr &base_type = coercion_expr.value.get_type().as<sir::PointerType>().base_type;
+        sir::Expr base_type = coercion_expr.value.get_type().as<sir::PointerType>().base_type;
+        base_type = ctx.resolve_if_generic(base_type);
+
         sir::StructDef &struct_def = const_cast<sir::StructDef &>(base_type.as_symbol<sir::StructDef>());
 
         std::optional<unsigned> impl_index;

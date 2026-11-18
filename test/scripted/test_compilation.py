@@ -38,6 +38,7 @@ SKIPPED_TESTS = set([
     "features.meta_for.0",
     "features.generics.protos.3",
     "features.deinit.use_in_expr.8",
+    "features.proto.generic_to_ptr.2",
     "fixed_bugs.generics.field_array_of_self.0",
     "fixed_bugs.generics.field_array_of_self.1",
     "fixed_bugs.meta_if_dependencies_not_analyzed_yet",

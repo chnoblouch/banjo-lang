@@ -1,0 +1,75 @@
+# test:common
+
+proto P {
+    func get(self) -> i32;
+}
+
+struct S: P {
+    var value: i32;
+
+    pub func get(self) -> i32 {
+        return self.value;
+    }
+}
+
+# test:subtest
+# test:output "42"
+
+func f1[T: P](value: T) {
+    f2(&value);
+}
+
+func f2(value: *P) {
+    println(value.get());
+}
+
+func main() {
+    var s = S { value: 42 };
+    f1(s);
+}
+
+# test:subtest
+# test:output "42"
+
+proto P2 {
+    pub func f(self);
+}
+
+struct S2: P, P2 {
+    var value: i32;
+
+    pub func get(self) -> i32 {
+        return self.value;
+    }
+
+    pub func f(self) {}
+}
+
+func f1[T: P2 + P](value: T) {
+    f2(&value);
+}
+
+func f2(value: *P) {
+    println(value.get());
+}
+
+func main() {
+    var s = S2 { value: 42 };
+    f1(s);
+}
+
+# test:subtest
+# test:output "42"
+
+func f1[T: *P](value: T) {
+    f2(value);
+}
+
+func f2(value: *P) {
+    println(value.get());
+}
+
+func main() {
+    var s = S { value: 42 };
+    f1(&s);
+}
