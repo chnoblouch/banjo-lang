@@ -139,6 +139,8 @@ add_library(banjo STATIC
     "passes/pipeline.hpp"
     "passes/precomputing.cpp"
     "passes/precomputing.hpp"
+    "passes/range_propagation_pass.cpp"
+    "passes/range_propagation_pass.hpp"
     "passes/sroa_pass.cpp"
     "passes/sroa_pass.hpp"
     "passes/sroa_pass_2.cpp"

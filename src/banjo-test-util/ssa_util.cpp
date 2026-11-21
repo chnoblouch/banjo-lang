@@ -4,6 +4,7 @@
 #include "banjo/passes/inlining_pass.hpp"
 #include "banjo/passes/loop_inversion_pass.hpp"
 #include "banjo/passes/peephole_optimizer.hpp"
+#include "banjo/passes/range_propagation_pass.hpp"
 #include "banjo/passes/sroa_pass.hpp"
 #include "banjo/passes/stack_to_reg_pass.hpp"
 #include "banjo/ssa/basic_block.hpp"
@@ -105,6 +106,8 @@ void SSAUtil::optimize(std::string_view pass_name, std::string_view source) {
         passes::ControlFlowOptPass{target}.run(ssa_mod);
     } else if (pass_name == "loop_inversion") {
         passes::LoopInversionPass{target}.run(ssa_mod);
+    } else if (pass_name == "range_propagation") {
+        passes::RangePropagationPass{target}.run(ssa_mod);
     } else {
         ASSERT_UNREACHABLE;
     }

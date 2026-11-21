@@ -13,6 +13,7 @@
 #include "banjo/passes/licm_pass.hpp"
 #include "banjo/passes/loop_inversion_pass.hpp"
 #include "banjo/passes/peephole_optimizer.hpp"
+#include "banjo/passes/range_propagation_pass.hpp"
 #include "banjo/passes/sroa_pass.hpp"
 #include "banjo/passes/sroa_pass_2.hpp"
 #include "banjo/passes/stack_slot_merge_pass.hpp"
@@ -46,46 +47,47 @@ void Pipeline::run(ssa::Module &mod) {
 std::vector<Pass *> Pipeline::create_opt_passes() {
     target::Target *target = config.target;
 
-    std::vector<Pass *> passes = {new DeadFuncEliminationPass(target)};
+    std::vector<Pass *> passes = {new DeadFuncEliminationPass{target}};
 
     if (config.opt_level >= 1) {
-        passes.push_back(new ControlFlowOptPass(target));
-        passes.push_back(new CanonicalizationPass(target));
-        passes.push_back(new SROA_PASS(target));
-        passes.push_back(new StackToRegPass(target));
+        passes.push_back(new ControlFlowOptPass{target});
+        passes.push_back(new CanonicalizationPass{target});
+        passes.push_back(new SROA_PASS{target});
+        passes.push_back(new StackToRegPass{target});
     }
 
     if (config.opt_level >= 2) {
-        // passes.push_back(new LoopInversionPass(target));
+        // passes.push_back(new LoopInversionPass{target});
     }
 
     if (config.opt_level >= 1) {
-        passes.push_back(new PeepholeOptimizer(target));
-        passes.push_back(new BranchElimination(target));
-        passes.push_back(new InliningPass(target));
-        passes.push_back(new DeadFuncEliminationPass(target));
-        passes.push_back(new ControlFlowOptPass(target));
-        passes.push_back(new CanonicalizationPass(target));
-        passes.push_back(new SROA_PASS(target));
-        passes.push_back(new StackToRegPass(target));
+        passes.push_back(new PeepholeOptimizer{target});
+        passes.push_back(new BranchElimination{target});
+        passes.push_back(new InliningPass{target});
+        passes.push_back(new DeadFuncEliminationPass{target});
+        passes.push_back(new ControlFlowOptPass{target});
+        passes.push_back(new CanonicalizationPass{target});
+        passes.push_back(new SROA_PASS{target});
+        passes.push_back(new StackToRegPass{target});
     }
 
     if (config.opt_level >= 2) {
-        // passes.push_back(new CSEPass(target));
-        passes.push_back(new LICMPass(target));
+        // passes.push_back(new CSEPass{target});
+        passes.push_back(new LICMPass{target});
+        // passes.push_back(new RangePropagationPass{target});
     }
 
     if (config.opt_level >= 1) {
-        passes.push_back(new PeepholeOptimizer(target));
-        passes.push_back(new ControlFlowOptPass(target));
-        passes.push_back(new HeapToStackPass(target));
-        passes.push_back(new SROA_PASS(target));
-        passes.push_back(new StackToRegPass(target));
-        passes.push_back(new DeadCodeEliminationPass(target));
-        // passes.push_back(new StackSlotMergePass(target));
+        passes.push_back(new PeepholeOptimizer{target});
+        passes.push_back(new ControlFlowOptPass{target});
+        passes.push_back(new HeapToStackPass{target});
+        passes.push_back(new SROA_PASS{target});
+        passes.push_back(new StackToRegPass{target});
+        passes.push_back(new DeadCodeEliminationPass{target});
+        // passes.push_back(new StackSlotMergePass{target});
     }
 
-    passes.push_back(new Legalizer(target));
+    passes.push_back(new Legalizer{target});
     return passes;
 }
 

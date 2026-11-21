@@ -1,0 +1,309 @@
+# test:subtest
+# test:section input
+
+func i32 @f(i32 %0, i32 %1) {
+    cjmp i32 %0, void ne, i32 %1, void b0, void b2
+
+b0:
+    cjmp i32 %0, void eq, i32 %1, void b1, void b2
+
+b1:
+    ret i32 1
+
+b2:
+    ret i32 0
+}
+
+# test:section output
+
+func i32 @f(i32 %0, i32 %1) {
+    cjmp i32 %0, void ne, i32 %1, void b0, void b2
+
+b0:
+    jmp void b2
+
+b1:
+    ret i32 1
+
+b2:
+    ret i32 0
+}
+
+# test:subtest
+# test:section input
+
+func i32 @f(i32 %0, i32 %1) {
+    cjmp i32 %0, void ne, i32 %1, void b0, void b2
+
+b0:
+    cjmp i32 %0, void ne, i32 %1, void b1, void b2
+
+b1:
+    ret i32 1
+
+b2:
+    ret i32 0
+}
+
+# test:section output
+
+func i32 @f(i32 %0, i32 %1) {
+    cjmp i32 %0, void ne, i32 %1, void b0, void b2
+
+b0:
+    jmp void b1
+
+b1:
+    ret i32 1
+
+b2:
+    ret i32 0
+}
+
+# test:subtest
+# test:section input
+
+func i32 @f(i32 %0, i32 %1) {
+    cjmp i32 %0, void ne, i32 %1, void b0, void b2
+
+b0:
+    cjmp i32 %0, void ugt, i32 %1, void b1, void b2
+
+b1:
+    ret i32 1
+
+b2:
+    ret i32 0
+}
+
+# test:section output
+
+func i32 @f(i32 %0, i32 %1) {
+    cjmp i32 %0, void ne, i32 %1, void b0, void b2
+
+b0:
+    cjmp i32 %0, void ugt, i32 %1, void b1, void b2
+
+b1:
+    ret i32 1
+
+b2:
+    ret i32 0
+}
+
+# test:subtest
+# test:section input
+
+func i32 @f(i32 %0, i32 %1) {
+    cjmp i32 %0, void ne, i32 %1, void b0, void b2
+
+b0:
+    cjmp i32 %0, void uge, i32 %1, void b1, void b2
+
+b1:
+    ret i32 1
+
+b2:
+    ret i32 0
+}
+
+# test:section output
+
+func i32 @f(i32 %0, i32 %1) {
+    cjmp i32 %0, void ne, i32 %1, void b0, void b2
+
+b0:
+    cjmp i32 %0, void uge, i32 %1, void b1, void b2
+
+b1:
+    ret i32 1
+
+b2:
+    ret i32 0
+}
+
+# test:subtest
+# test:section input
+
+func i32 @f(i32 %0, i32 %1) {
+    cjmp i32 %0, void ne, i32 %1, void b0, void b2
+
+b0:
+    cjmp i32 %0, void ult, i32 %1, void b1, void b2
+
+b1:
+    ret i32 1
+
+b2:
+    ret i32 0
+}
+
+# test:section output
+
+func i32 @f(i32 %0, i32 %1) {
+    cjmp i32 %0, void ne, i32 %1, void b0, void b2
+
+b0:
+    cjmp i32 %0, void ult, i32 %1, void b1, void b2
+
+b1:
+    ret i32 1
+
+b2:
+    ret i32 0
+}
+
+# test:subtest
+# test:section input
+
+func i32 @f(i32 %0, i32 %1) {
+    cjmp i32 %0, void ne, i32 %1, void b0, void b2
+
+b0:
+    cjmp i32 %0, void ule, i32 %1, void b1, void b2
+
+b1:
+    ret i32 1
+
+b2:
+    ret i32 0
+}
+
+# test:section output
+
+func i32 @f(i32 %0, i32 %1) {
+    cjmp i32 %0, void ne, i32 %1, void b0, void b2
+
+b0:
+    cjmp i32 %0, void ule, i32 %1, void b1, void b2
+
+b1:
+    ret i32 1
+
+b2:
+    ret i32 0
+}
+
+# test:subtest
+# test:section input
+
+func i32 @f(i32 %0, i32 %1) {
+    cjmp i32 %0, void ne, i32 %1, void b0, void b2
+
+b0:
+    cjmp i32 %0, void sgt, i32 %1, void b1, void b2
+
+b1:
+    ret i32 1
+
+b2:
+    ret i32 0
+}
+
+# test:section output
+
+func i32 @f(i32 %0, i32 %1) {
+    cjmp i32 %0, void ne, i32 %1, void b0, void b2
+
+b0:
+    cjmp i32 %0, void sgt, i32 %1, void b1, void b2
+
+b1:
+    ret i32 1
+
+b2:
+    ret i32 0
+}
+
+# test:subtest
+# test:section input
+
+func i32 @f(i32 %0, i32 %1) {
+    cjmp i32 %0, void ne, i32 %1, void b0, void b2
+
+b0:
+    cjmp i32 %0, void sge, i32 %1, void b1, void b2
+
+b1:
+    ret i32 1
+
+b2:
+    ret i32 0
+}
+
+# test:section output
+
+func i32 @f(i32 %0, i32 %1) {
+    cjmp i32 %0, void ne, i32 %1, void b0, void b2
+
+b0:
+    cjmp i32 %0, void sge, i32 %1, void b1, void b2
+
+b1:
+    ret i32 1
+
+b2:
+    ret i32 0
+}
+
+# test:subtest
+# test:section input
+
+func i32 @f(i32 %0, i32 %1) {
+    cjmp i32 %0, void ne, i32 %1, void b0, void b2
+
+b0:
+    cjmp i32 %0, void slt, i32 %1, void b1, void b2
+
+b1:
+    ret i32 1
+
+b2:
+    ret i32 0
+}
+
+# test:section output
+
+func i32 @f(i32 %0, i32 %1) {
+    cjmp i32 %0, void ne, i32 %1, void b0, void b2
+
+b0:
+    cjmp i32 %0, void slt, i32 %1, void b1, void b2
+
+b1:
+    ret i32 1
+
+b2:
+    ret i32 0
+}
+
+# test:subtest
+# test:section input
+
+func i32 @f(i32 %0, i32 %1) {
+    cjmp i32 %0, void ne, i32 %1, void b0, void b2
+
+b0:
+    cjmp i32 %0, void sle, i32 %1, void b1, void b2
+
+b1:
+    ret i32 1
+
+b2:
+    ret i32 0
+}
+
+# test:section output
+
+func i32 @f(i32 %0, i32 %1) {
+    cjmp i32 %0, void ne, i32 %1, void b0, void b2
+
+b0:
+    cjmp i32 %0, void sle, i32 %1, void b1, void b2
+
+b1:
+    ret i32 1
+
+b2:
+    ret i32 0
+}
