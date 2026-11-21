@@ -79,7 +79,7 @@ void DeinitSSAGenerator::generate_deinit_call(const sir::Resource &resource, ssa
         generic_args = concrete_struct->generic_args;
     } else if (auto closure_type = resource.type.match<sir::ClosureType>()) {
         symbol_table = closure_type->underlying_struct->block.symbol_table;
-        return; // TODO: generics
+        // TODO: generics
     } else {
         return;
     }

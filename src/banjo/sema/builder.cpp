@@ -102,4 +102,32 @@ sir::CallExpr *Builder::create_method_call(
     });
 }
 
+sir::FieldExpr *Builder::create_capture_access(ClosureContext &ctx, unsigned index, ASTNode *ast_node) {
+    sir::FuncDef &func_def = analyzer.get_decl().as<sir::FuncDef>();
+    sir::Symbol data_ptr_param = &func_def.type.params[0];
+
+    return analyzer.create<sir::FieldExpr>({
+        .ast_node = ast_node,
+        .type = ctx.captured_vars[index].get_type(),
+        .base = analyzer.create<sir::UnaryExpr>({
+            .ast_node = ast_node,
+            .type = ctx.data_type,
+            .op = sir::UnaryOp::DEREF,
+            .value = analyzer.create<sir::CastExpr>({
+                .ast_node = ast_node,
+                .type = analyzer.create<sir::PointerType>({
+                    .ast_node = ast_node,
+                    .base_type = ctx.data_type,
+                }),
+                .value = analyzer.create<sir::SymbolExpr>({
+                    .ast_node = ast_node,
+                    .type = data_ptr_param.get_type(),
+                    .symbol = data_ptr_param,
+                }),
+            }),
+        }),
+        .field_index = index,
+    });
+}
+
 } // namespace banjo::sema

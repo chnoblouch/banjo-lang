@@ -1,0 +1,139 @@
+# test:common
+
+struct Resource {
+    func __deinit__(self) {
+        print('d');
+    }
+}
+
+struct ValueResource {
+    var value: i32;
+
+    func __deinit__(self) {
+        print(self.value);
+        print(',');
+    }
+}
+
+# test:subtest
+# test:output "m"
+
+func f() -> || {
+    var i = 0;
+
+    return || {
+        var p = &i;
+    };
+}
+
+func main() {
+    var c = f();
+    print('m');
+}
+
+# test:subtest
+# test:output "md"
+
+func f() -> || {
+    var r = Resource {};
+
+    return || {
+        var p = &r;
+    };
+}
+
+func main() {
+    var c = f();
+    print('m');
+}
+
+# test:subtest
+# test:output "m42,"
+
+func f() -> || {
+    var r = ValueResource { value: 42 };
+
+    return || {
+        var p = &r;
+    };
+}
+
+func main() {
+    var c = f();
+    print('m');
+}
+
+# test:subtest
+# test:output "m42,100,"
+
+func f() -> || {
+    var r1 = ValueResource { value: 42 };
+    var r2 = ValueResource { value: 100 };
+
+    return || {
+        var p1 = &r1;
+        var p2 = &r2;
+    };
+}
+
+func main() {
+    var c = f();
+    print('m');
+}
+
+# test:subtest
+# test:output "m42,d100,"
+
+func f() -> || {
+    var r1 = ValueResource { value: 42 };
+    var r2 = (Resource {}, ValueResource { value: 100 });
+
+    return || {
+        var p1 = &r1;
+        var p2 = &r2;
+    };
+}
+
+func main() {
+    var c = f();
+    print('m');
+}
+
+# test:subtest
+# test:output "cmd"
+
+func f() -> || {
+    var r = Resource {};
+
+    return || {
+        var p = &r;
+        print('c');
+    };
+}
+
+func main() {
+    var c = f();
+    c();
+
+    print('m');
+}
+
+# test:subtest
+# test:output "ccmd"
+
+func f() -> || {
+    var r = Resource {};
+
+    return || {
+        var p = &r;
+        print('c');
+    };
+}
+
+func main() {
+    var c = f();
+    c();
+    c();
+
+    print('m');
+}

@@ -165,6 +165,8 @@ add_library(banjo STATIC
     "sema/attribute_analyzer.hpp"
     "sema/builder.cpp"
     "sema/builder.hpp"
+    "sema/closure_context.cpp"
+    "sema/closure_context.hpp"
     "sema/completion_context.hpp"
     "sema/const_evaluator.cpp"
     "sema/const_evaluator.hpp"

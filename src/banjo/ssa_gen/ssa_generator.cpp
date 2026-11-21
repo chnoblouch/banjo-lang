@@ -69,6 +69,10 @@ void SSAGenerator::create_decls(const sir::DeclBlock &decl_block) {
             create_impl_func_def(*func_impl);
         }
     }
+
+    for (const sir::FuncDef *func_def : decl_block.shadow_funcs) {
+        create_func_defs(*func_def);
+    }
 }
 
 void SSAGenerator::create_func_defs(const sir::FuncDef &sir_func) {
@@ -113,7 +117,7 @@ ssa::Function *SSAGenerator::create_func_def(const sir::FuncDef &sir_func, const
         ssa_func->debug_name = std::string{sir_func.ident.value};
         sir::Symbol parent = sir_func.parent;
 
-        while (!parent.is<sir::Module>()) {
+        while (parent && !parent.is<sir::Module>()) {
             ssa_func->debug_name = std::string{parent.get_name()} + '.' + ssa_func->debug_name;
             parent = parent.get_parent();
         }
@@ -336,6 +340,10 @@ void SSAGenerator::generate_decls(const sir::DeclBlock &decl_block) {
         if (auto func_impl = symbol.match<sir::DefaultMethod>()) {
             generate_func_def(func_impl->def.as<sir::FuncDef>(), *ctx.ssa_impl_funcs.find(func_impl));
         }
+    }
+
+    for (const sir::FuncDef *func_def : decl_block.shadow_funcs) {
+        generate_func_defs(*func_def);
     }
 }
 

@@ -2,15 +2,23 @@ use std.memory;
 
 struct Closure {
     var func_ptr: addr;
+    var deinit_ptr: func(addr);
     var data_ptr: addr;
 
-    pub func new[T](func_ptr: addr, data: T) -> Closure {
+    pub func new[T](
+        func_ptr: addr,
+        deinit_ptr: func(addr),
+        @unmanaged data: T,
+    ) -> Closure {
         var data_ptr = memory.alloc(meta(T).size);
         memory.copy(&data, data_ptr, meta(T).size);
-        return Closure { func_ptr, data_ptr };
+        return Closure { func_ptr, deinit_ptr, data_ptr };
     }
 
     pub func __deinit__(self) {
+        var deinit = self.deinit_ptr;
+        deinit(self.data_ptr);
+
         memory.free(self.data_ptr);
     }
 }

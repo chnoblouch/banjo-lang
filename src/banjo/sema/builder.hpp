@@ -2,6 +2,7 @@
 #define BANJO_SEMA_BUILDER_H
 
 #include "banjo/ast/ast_node.hpp"
+#include "banjo/sema/closure_context.hpp"
 #include "banjo/sir/sir.hpp"
 
 namespace banjo::sema {
@@ -28,6 +29,7 @@ public:
     sir::SymbolExpr *create_symbol_type(sir::Symbol symbol);
 
     sir::CallExpr *create_method_call(sir::Expr base, sir::Concrete<sir::FuncDef> &concrete_func, ASTNode *ast_node);
+    sir::FieldExpr *create_capture_access(ClosureContext &ctx, unsigned index, ASTNode *ast_node);
 };
 
 } // namespace banjo::sema

@@ -44,6 +44,10 @@ void SpecializationCollector::visit_decl_block(const sir::DeclBlock &decl_block)
             visit_proto_def(*proto_def);
         }
     }
+
+    for (sir::FuncDef *func_def : decl_block.shadow_funcs) {
+        visit_func_def(*func_def);
+    }
 }
 
 void SpecializationCollector::visit_func_def(const sir::FuncDef &func_def, bool is_specialized /* = false */) {

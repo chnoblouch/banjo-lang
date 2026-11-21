@@ -4,6 +4,7 @@
 #include "banjo/reports/report_generator.hpp"
 #include "banjo/reports/report_manager.hpp"
 #include "banjo/sema/builder.hpp"
+#include "banjo/sema/closure_context.hpp"
 #include "banjo/sema/completion_context.hpp"
 #include "banjo/sema/extra_analysis.hpp"
 #include "banjo/sema/symbol_context.hpp"
@@ -26,13 +27,6 @@ enum class Mode {
     COMPILATION,
     INDEXING,
     COMPLETION,
-};
-
-struct ClosureContext {
-    std::vector<sir::Symbol> captured_vars;
-    sir::TupleExpr *data_type;
-    sir::Block *parent_block;
-    sir::SymbolTable *parent_symbol_table;
 };
 
 enum class Result {
