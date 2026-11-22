@@ -34,6 +34,7 @@ void Legalizer::run(ssa::Function &func, ssa::BasicBlockIter block) {
         switch (instr->get_opcode()) {
             case ssa::Opcode::LOAD: legalize_load(func, block, instr); break;
             case ssa::Opcode::STORE: legalize_store(func, block, instr); break;
+            case ssa::Opcode::CALL: legalize_call(instr); break;
             default: break;
         }
 
@@ -225,6 +226,21 @@ void Legalizer::legalize_cjmp(ssa::Function &func, ssa::BasicBlockIter block, ss
 
     true_target = ssa::BranchTarget{.block = new_true_target};
     false_target = ssa::BranchTarget{.block = new_false_target};
+}
+
+void Legalizer::legalize_call(ssa::InstrIter instr) {
+    // TODO: Update the argument types of the function itself.
+
+    for (unsigned i = 2; i < instr->get_operands().size(); i++) {
+        ssa::Operand &arg = instr->get_operand(i);
+        unsigned size = get_target()->get_data_layout().get_size(arg.get_type());
+
+        if (size == 3) {
+            arg = arg.with_type(ssa::Primitive::U32);
+        } else if (size == 5 || size == 6 || size == 7) {
+            arg = arg.with_type(ssa::Primitive::U64);
+        }
+    }
 }
 
 void Legalizer::legalize_ret(ssa::InstrIter instr) {

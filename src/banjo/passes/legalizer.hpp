@@ -22,6 +22,7 @@ private:
     void legalize_load(ssa::Function &func, ssa::BasicBlockIter block, ssa::InstrIter instr);
     void legalize_store(ssa::Function &func, ssa::BasicBlockIter block, ssa::InstrIter instr);
     void legalize_cjmp(ssa::Function &func, ssa::BasicBlockIter block, ssa::InstrIter instr);
+    void legalize_call(ssa::InstrIter instr);
     void legalize_ret(ssa::InstrIter instr);
 };
 

@@ -1244,10 +1244,12 @@ void X8664SSALowerer::lower_to_copy_into(mcode::Operand &m_dst, ssa::Value &valu
 
     if (type.is_floating_point()) {
         mcode::Opcode m_opcode = type == ssa::Primitive::F64 ? X8664Opcode::MOVSD : X8664Opcode::MOVSS;
-        mcode::Operand m_src = lower_value(value, OperandKind::REG_ADDR);
+        OperandKind m_operand_kind = m_dst.is_register() ? OperandKind::REG_ADDR : OperandKind::REG;
+        mcode::Operand m_src = lower_value(value, m_operand_kind);
         emit({m_opcode, {m_dst, m_src}});
     } else {
-        mcode::Operand m_src = lower_value(value, OperandKind::REG_ADDR_IMM);
+        OperandKind m_operand_kind = m_dst.is_register() ? OperandKind::REG_ADDR_IMM : OperandKind::REG_IMM;
+        mcode::Operand m_src = lower_value(value, m_operand_kind);
         emit({X8664Opcode::MOV, {m_dst, m_src}});
     }
 }
