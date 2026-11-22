@@ -87,6 +87,7 @@ private:
     void lower_2_operand_numeric(ssa::Instruction &instr, mcode::Opcode m_opcode);
     void lower_fake_atomic(ssa::Instruction &instr, mcode::Opcode m_opcode_64, mcode::Opcode m_opcode_32);
     void emit_push(ssa::Operand &operand);
+    void emit_uextend(unsigned size);
     mcode::Operand lower_address(ssa::Operand &operand);
     void store_branch_args(ssa::BranchTarget &target);
 

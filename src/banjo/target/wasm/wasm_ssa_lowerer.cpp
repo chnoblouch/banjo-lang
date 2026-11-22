@@ -553,10 +553,16 @@ void WasmSSALowerer::lower_utof(ssa::Instruction &instr) {
 
     emit_push(instr.get_operand(0));
 
-    if (src_size == 1 || src_size == 2 || src_size == 4) {
-        emit({is_to_64_bit ? WasmOpcode::F64_CONVERT_I32_S : WasmOpcode::F32_CONVERT_I32_S});
+    if (src_size == 1) {
+        emit_uextend(1);
+        emit({is_to_64_bit ? WasmOpcode::F64_CONVERT_I32_U : WasmOpcode::F32_CONVERT_I32_U});
+    } else if (src_size == 2) {
+        emit_uextend(2);
+        emit({is_to_64_bit ? WasmOpcode::F64_CONVERT_I32_U : WasmOpcode::F32_CONVERT_I32_U});
+    } else if (src_size == 4) {
+        emit({is_to_64_bit ? WasmOpcode::F64_CONVERT_I32_U : WasmOpcode::F32_CONVERT_I32_U});
     } else if (src_size == 8) {
-        emit({is_to_64_bit ? WasmOpcode::F64_CONVERT_I64_S : WasmOpcode::F32_CONVERT_I64_S});
+        emit({is_to_64_bit ? WasmOpcode::F64_CONVERT_I64_U : WasmOpcode::F32_CONVERT_I64_U});
     } else {
         ASSERT_UNREACHABLE;
     }
@@ -572,10 +578,16 @@ void WasmSSALowerer::lower_stof(ssa::Instruction &instr) {
 
     emit_push(instr.get_operand(0));
 
-    if (src_size == 1 || src_size == 2 || src_size == 4) {
-        emit({is_to_64_bit ? WasmOpcode::F64_CONVERT_I32_U : WasmOpcode::F32_CONVERT_I32_U});
+    if (src_size == 1) {
+        emit({WasmOpcode::I32_EXTEND8_S});
+        emit({is_to_64_bit ? WasmOpcode::F64_CONVERT_I32_S : WasmOpcode::F32_CONVERT_I32_S});
+    } else if (src_size == 2) {
+        emit({WasmOpcode::I32_EXTEND16_S});
+        emit({is_to_64_bit ? WasmOpcode::F64_CONVERT_I32_S : WasmOpcode::F32_CONVERT_I32_S});
+    } else if (src_size == 4) {
+        emit({is_to_64_bit ? WasmOpcode::F64_CONVERT_I32_S : WasmOpcode::F32_CONVERT_I32_S});
     } else if (src_size == 8) {
-        emit({is_to_64_bit ? WasmOpcode::F64_CONVERT_I64_U : WasmOpcode::F32_CONVERT_I64_U});
+        emit({is_to_64_bit ? WasmOpcode::F64_CONVERT_I64_S : WasmOpcode::F32_CONVERT_I64_S});
     } else {
         ASSERT_UNREACHABLE;
     }
@@ -863,6 +875,18 @@ void WasmSSALowerer::emit_push(ssa::Operand &operand) {
     } else if (operand.is_func()) {
         mcode::Symbol m_symbol{operand.get_func()->name, mcode::Relocation::TABLE_INDEX_SLEB};
         emit({WasmOpcode::I32_CONST, {mcode::Operand::from_symbol(m_symbol)}});
+    } else {
+        ASSERT_UNREACHABLE;
+    }
+}
+
+void WasmSSALowerer::emit_uextend(unsigned size) {
+    if (size == 1) {
+        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_int_immediate(255)}});
+        emit({WasmOpcode::I32_AND});
+    } else if (size == 2) {
+        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_int_immediate(65535)}});
+        emit({WasmOpcode::I32_AND});
     } else {
         ASSERT_UNREACHABLE;
     }
