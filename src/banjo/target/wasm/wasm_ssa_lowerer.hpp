@@ -85,9 +85,13 @@ private:
     void lower_frame_address(ssa::Instruction &instr) override;
 
     void lower_2_operand_numeric(ssa::Instruction &instr, mcode::Opcode m_opcode);
-    void push_operand(ssa::Operand &operand);
+    void lower_fake_atomic(ssa::Instruction &instr, mcode::Opcode m_opcode_64, mcode::Opcode m_opcode_32);
+    void emit_push(ssa::Operand &operand);
+    mcode::Operand lower_address(ssa::Operand &operand);
     void store_branch_args(ssa::BranchTarget &target);
 
+    mcode::Opcode load_opcode(ssa::Type type);
+    mcode::Opcode store_opcode(ssa::Type type);
     WasmFuncType lower_func_type(ssa::FunctionType type);
     WasmType lower_type(ssa::Type type);
     mcode::Opcode lower_comparison(ssa::Comparison comparison, bool is_64_bit);

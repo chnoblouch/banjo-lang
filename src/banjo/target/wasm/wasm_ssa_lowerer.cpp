@@ -187,109 +187,21 @@ void WasmSSALowerer::emit_block_prologue(ssa::BasicBlock &block) {
 void WasmSSALowerer::lower_load(ssa::Instruction &instr) {
     unsigned local_index = vregs2locals.at(*instr.get_dest());
     ssa::Type type = instr.get_operand(0).get_type();
+    ssa::Operand &addr = instr.get_operand(1);
 
-    if (type.is_primitive(ssa::Primitive::VOID)) {
-        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_int_immediate(0)}});
-        emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(local_index)}});
-        return;
-    }
-
-    mcode::Opcode load_opcode;
-
-    switch (type_as_primitive(type)) {
-        case ssa::Primitive::VOID: ASSERT_UNREACHABLE;
-        case ssa::Primitive::U8: load_opcode = WasmOpcode::I32_LOAD8_U; break;
-        case ssa::Primitive::U16: load_opcode = WasmOpcode::I32_LOAD16_U; break;
-        case ssa::Primitive::U32: load_opcode = WasmOpcode::I32_LOAD; break;
-        case ssa::Primitive::U64: load_opcode = WasmOpcode::I64_LOAD; break;
-        case ssa::Primitive::I8: load_opcode = WasmOpcode::I32_LOAD8_S; break;
-        case ssa::Primitive::I16: load_opcode = WasmOpcode::I32_LOAD16_S; break;
-        case ssa::Primitive::I32: load_opcode = WasmOpcode::I32_LOAD; break;
-        case ssa::Primitive::I64: load_opcode = WasmOpcode::I64_LOAD; break;
-        case ssa::Primitive::F32: load_opcode = WasmOpcode::F32_LOAD; break;
-        case ssa::Primitive::F64: load_opcode = WasmOpcode::F64_LOAD; break;
-        case ssa::Primitive::ADDR: load_opcode = WasmOpcode::I32_LOAD; break;
-    }
-
-    AddrComponents addr = collect_addr(instr.get_operand(1));
-    ASSERT(!addr.reg_offset);
-
-    if (addr.base.is_register()) {
-        ssa::VirtualRegister base = addr.base.get_register();
-
-        if (std::optional<mcode::StackSlotID> stack_slot = find_stack_slot(base)) {
-            mcode::StackAddress stack_addr{*stack_slot, addr.const_offset.to_unsigned()};
-            emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(stack_pointer_local)}});
-            emit({load_opcode, {mcode::Operand::from_stack_offset(stack_addr)}});
-        } else {
-            emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(vregs2locals.at(base))}});
-            emit({load_opcode, {mcode::Operand::from_int_immediate(addr.const_offset)}});
-        }
-    } else if (addr.base.is_global()) {
-        mcode::Symbol m_symbol{addr.base.get_global()->name, mcode::Relocation::MEMORY_ADDR_SLEB};
-        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_symbol(m_symbol)}});
-        emit({load_opcode, {mcode::Operand::from_int_immediate(addr.const_offset)}});
-    } else if (addr.base.is_extern_global()) {
-        mcode::Symbol m_symbol{addr.base.get_extern_global()->name, mcode::Relocation::MEMORY_ADDR_SLEB};
-        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_symbol(m_symbol)}});
-        emit({load_opcode, {mcode::Operand::from_int_immediate(addr.const_offset)}});
-    } else {
-        ASSERT_UNREACHABLE;
-    }
-
+    mcode::Operand m_addr = lower_address(addr);
+    emit({load_opcode(type), {m_addr}});
     emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(local_index)}});
 }
 
 void WasmSSALowerer::lower_store(ssa::Instruction &instr) {
     ssa::Operand &value = instr.get_operand(0);
+    ssa::Operand &addr = instr.get_operand(1);
     ssa::Type type = value.get_type();
 
-    mcode::Opcode store_opcode;
-
-    switch (type_as_primitive(type)) {
-        case ssa::Primitive::VOID: return;
-        case ssa::Primitive::U8: store_opcode = WasmOpcode::I32_STORE8; break;
-        case ssa::Primitive::U16: store_opcode = WasmOpcode::I32_STORE16; break;
-        case ssa::Primitive::U32: store_opcode = WasmOpcode::I32_STORE; break;
-        case ssa::Primitive::U64: store_opcode = WasmOpcode::I64_STORE; break;
-        case ssa::Primitive::I8: store_opcode = WasmOpcode::I32_STORE8; break;
-        case ssa::Primitive::I16: store_opcode = WasmOpcode::I32_STORE16; break;
-        case ssa::Primitive::I32: store_opcode = WasmOpcode::I32_STORE; break;
-        case ssa::Primitive::I64: store_opcode = WasmOpcode::I64_STORE; break;
-        case ssa::Primitive::F32: store_opcode = WasmOpcode::F32_STORE; break;
-        case ssa::Primitive::F64: store_opcode = WasmOpcode::F64_STORE; break;
-        case ssa::Primitive::ADDR: store_opcode = WasmOpcode::I32_STORE; break;
-    }
-
-    AddrComponents addr = collect_addr(instr.get_operand(1));
-    ASSERT(!addr.reg_offset);
-
-    if (addr.base.is_register()) {
-        ssa::VirtualRegister base = addr.base.get_register();
-
-        if (std::optional<mcode::StackSlotID> stack_slot = find_stack_slot(base)) {
-            mcode::StackAddress stack_addr{*stack_slot, addr.const_offset.to_unsigned()};
-            emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(stack_pointer_local)}});
-            push_operand(value);
-            emit({store_opcode, {mcode::Operand::from_stack_offset(stack_addr)}});
-        } else {
-            emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(vregs2locals.at(base))}});
-            push_operand(value);
-            emit({store_opcode, {mcode::Operand::from_int_immediate(addr.const_offset)}});
-        }
-    } else if (addr.base.is_global()) {
-        mcode::Symbol m_symbol{addr.base.get_global()->name, mcode::Relocation::MEMORY_ADDR_SLEB};
-        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_symbol(m_symbol)}});
-        push_operand(value);
-        emit({store_opcode, {mcode::Operand::from_int_immediate(addr.const_offset)}});
-    } else if (addr.base.is_extern_global()) {
-        mcode::Symbol m_symbol{addr.base.get_extern_global()->name, mcode::Relocation::MEMORY_ADDR_SLEB};
-        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_symbol(m_symbol)}});
-        push_operand(value);
-        emit({store_opcode, {mcode::Operand::from_int_immediate(addr.const_offset)}});
-    } else {
-        ASSERT_UNREACHABLE;
-    }
+    mcode::Operand m_addr = lower_address(addr);
+    emit_push(value);
+    emit({store_opcode(type), {m_addr}});
 }
 
 void WasmSSALowerer::lower_add(ssa::Instruction &instr) {
@@ -405,8 +317,8 @@ void WasmSSALowerer::lower_cjmp(ssa::Instruction &instr) {
     emit({WasmOpcode::I32_CONST, {mcode::Operand::from_int_immediate(block_index_true)}});
     emit({WasmOpcode::I32_CONST, {mcode::Operand::from_int_immediate(block_index_false)}});
 
-    push_operand(instr.get_operand(0));
-    push_operand(instr.get_operand(2));
+    emit_push(instr.get_operand(0));
+    emit_push(instr.get_operand(2));
     emit({m_cmp_opcode});
     emit({WasmOpcode::SELECT});
 
@@ -431,8 +343,8 @@ void WasmSSALowerer::lower_fcjmp(ssa::Instruction &instr) {
     emit({WasmOpcode::I32_CONST, {mcode::Operand::from_int_immediate(block_index_true)}});
     emit({WasmOpcode::I32_CONST, {mcode::Operand::from_int_immediate(block_index_false)}});
 
-    push_operand(instr.get_operand(0));
-    push_operand(instr.get_operand(2));
+    emit_push(instr.get_operand(0));
+    emit_push(instr.get_operand(2));
     emit({m_cmp_opcode});
     emit({WasmOpcode::SELECT});
 
@@ -447,11 +359,11 @@ void WasmSSALowerer::lower_select(ssa::Instruction &instr) {
     bool is_input_64_bit = is_64_bit_int(input_type) || input_type == ssa::Primitive::F64;
     mcode::Opcode m_cmp_opcode = lower_comparison(comparison, is_input_64_bit);
 
-    push_operand(instr.get_operand(3));
-    push_operand(instr.get_operand(4));
+    emit_push(instr.get_operand(3));
+    emit_push(instr.get_operand(4));
 
-    push_operand(instr.get_operand(0));
-    push_operand(instr.get_operand(2));
+    emit_push(instr.get_operand(0));
+    emit_push(instr.get_operand(2));
     emit({m_cmp_opcode});
     emit({WasmOpcode::SELECT});
 
@@ -465,7 +377,7 @@ void WasmSSALowerer::lower_call(ssa::Instruction &instr) {
 
     if (!func_type.variadic) {
         for (unsigned i = 2; i < instr.get_operands().size(); i++) {
-            push_operand(instr.get_operand(i));
+            emit_push(instr.get_operand(i));
         }
     } else {
         mcode::StackFrame &stack_frame = instr_ctx.func->stack_frame;
@@ -485,7 +397,7 @@ void WasmSSALowerer::lower_call(ssa::Instruction &instr) {
             unsigned alignment = get_alignment(type);
 
             emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(stack_pointer_local)}});
-            push_operand(instr.get_operand(i));
+            emit_push(instr.get_operand(i));
 
             mcode::Opcode store_opcode;
 
@@ -506,7 +418,7 @@ void WasmSSALowerer::lower_call(ssa::Instruction &instr) {
         stack_frame.get_stack_slot(buffer).size = offset;
 
         for (unsigned i = 0; i < func_type.first_variadic_index; i++) {
-            push_operand(instr.get_operand(i + 2));
+            emit_push(instr.get_operand(i + 2));
         }
 
         emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(stack_pointer_local)}});
@@ -549,7 +461,7 @@ void WasmSSALowerer::lower_call(ssa::Instruction &instr) {
 
 void WasmSSALowerer::lower_ret(ssa::Instruction &instr) {
     if (!instr.get_operands().empty()) {
-        push_operand(instr.get_operand(0));
+        emit_push(instr.get_operand(0));
         emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(return_value_local)}});
     }
 
@@ -564,7 +476,7 @@ void WasmSSALowerer::lower_uextend(ssa::Instruction &instr) {
     unsigned local_index = vregs2locals.at(*instr.get_dest());
     unsigned dst_size = get_size(instr.get_operand(1).get_type());
 
-    push_operand(instr.get_operand(0));
+    emit_push(instr.get_operand(0));
 
     if (dst_size == 8) {
         emit({WasmOpcode::I64_EXTEND_I32_U});
@@ -577,7 +489,7 @@ void WasmSSALowerer::lower_sextend(ssa::Instruction &instr) {
     unsigned local_index = vregs2locals.at(*instr.get_dest());
     unsigned dst_size = get_size(instr.get_operand(1).get_type());
 
-    push_operand(instr.get_operand(0));
+    emit_push(instr.get_operand(0));
 
     if (dst_size == 8) {
         emit({WasmOpcode::I64_EXTEND_I32_S});
@@ -591,7 +503,7 @@ void WasmSSALowerer::lower_truncate(ssa::Instruction &instr) {
     unsigned src_size = get_size(instr.get_operand(0).get_type());
     unsigned dst_size = get_size(instr.get_operand(1).get_type());
 
-    push_operand(instr.get_operand(0));
+    emit_push(instr.get_operand(0));
 
     if (src_size == 8) {
         emit({WasmOpcode::I32_WRAP_I64});
@@ -611,24 +523,24 @@ void WasmSSALowerer::lower_truncate(ssa::Instruction &instr) {
 
 void WasmSSALowerer::lower_fpromote(ssa::Instruction &instr) {
     unsigned local_index = vregs2locals.at(*instr.get_dest());
-    ssa::Type src_type = instr.get_operand(0).get_type();
-    ssa::Type dst_type = instr.get_operand(1).get_type();
+    [[maybe_unused]] ssa::Type src_type = instr.get_operand(0).get_type();
+    [[maybe_unused]] ssa::Type dst_type = instr.get_operand(1).get_type();
 
     ASSERT(src_type == ssa::Primitive::F32 && dst_type == ssa::Primitive::F64);
 
-    push_operand(instr.get_operand(0));
+    emit_push(instr.get_operand(0));
     emit({WasmOpcode::F64_PROMOTE_F32});
     emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(local_index)}});
 }
 
 void WasmSSALowerer::lower_fdemote(ssa::Instruction &instr) {
     unsigned local_index = vregs2locals.at(*instr.get_dest());
-    ssa::Type src_type = instr.get_operand(0).get_type();
-    ssa::Type dst_type = instr.get_operand(1).get_type();
+    [[maybe_unused]] ssa::Type src_type = instr.get_operand(0).get_type();
+    [[maybe_unused]] ssa::Type dst_type = instr.get_operand(1).get_type();
 
     ASSERT(src_type == ssa::Primitive::F64 && dst_type == ssa::Primitive::F32);
 
-    push_operand(instr.get_operand(0));
+    emit_push(instr.get_operand(0));
     emit({WasmOpcode::F32_DEMOTE_F64});
     emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(local_index)}});
 }
@@ -639,7 +551,7 @@ void WasmSSALowerer::lower_utof(ssa::Instruction &instr) {
     ssa::Type dst_type = instr.get_operand(1).get_type();
     bool is_to_64_bit = dst_type == ssa::Primitive::F64;
 
-    push_operand(instr.get_operand(0));
+    emit_push(instr.get_operand(0));
 
     if (src_size == 1 || src_size == 2 || src_size == 4) {
         emit({is_to_64_bit ? WasmOpcode::F64_CONVERT_I32_S : WasmOpcode::F32_CONVERT_I32_S});
@@ -658,7 +570,7 @@ void WasmSSALowerer::lower_stof(ssa::Instruction &instr) {
     ssa::Type dst_type = instr.get_operand(1).get_type();
     bool is_to_64_bit = dst_type == ssa::Primitive::F64;
 
-    push_operand(instr.get_operand(0));
+    emit_push(instr.get_operand(0));
 
     if (src_size == 1 || src_size == 2 || src_size == 4) {
         emit({is_to_64_bit ? WasmOpcode::F64_CONVERT_I32_U : WasmOpcode::F32_CONVERT_I32_U});
@@ -677,7 +589,7 @@ void WasmSSALowerer::lower_ftou(ssa::Instruction &instr) {
     unsigned dst_size = get_size(instr.get_operand(1).get_type());
     bool is_from_64_bit = src_type == ssa::Primitive::F64;
 
-    push_operand(instr.get_operand(0));
+    emit_push(instr.get_operand(0));
 
     if (dst_size == 1 || dst_size == 2 || dst_size == 4) {
         emit({is_from_64_bit ? WasmOpcode::I32_TRUNC_SAT_F64_U : WasmOpcode::I32_TRUNC_SAT_F32_U});
@@ -696,7 +608,7 @@ void WasmSSALowerer::lower_ftos(ssa::Instruction &instr) {
     unsigned dst_size = get_size(instr.get_operand(1).get_type());
     bool is_from_64_bit = src_type == ssa::Primitive::F64;
 
-    push_operand(instr.get_operand(0));
+    emit_push(instr.get_operand(0));
 
     if (dst_size == 1 || dst_size == 2 || dst_size == 4) {
         emit({is_from_64_bit ? WasmOpcode::I32_TRUNC_SAT_F64_S : WasmOpcode::I32_TRUNC_SAT_F32_S});
@@ -722,31 +634,71 @@ void WasmSSALowerer::lower_atomic_store(ssa::Instruction &instr) {
 }
 
 void WasmSSALowerer::lower_atomic_swap(ssa::Instruction &instr) {
-    ASSERT_UNREACHABLE;
+    unsigned local_index = vregs2locals.at(*instr.get_dest());
+    ssa::Operand &addr = instr.get_operand(0);
+    ssa::Operand &value = instr.get_operand(1);
+    ssa::Type type = value.get_type();
+
+    mcode::Operand m_load_addr = lower_address(addr);
+    emit({load_opcode(type), {m_load_addr}});
+    emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(local_index)}});
+
+    mcode::Operand m_store_addr = lower_address(addr);
+    emit_push(value);
+    emit({store_opcode(type), {m_store_addr}});
 }
 
 void WasmSSALowerer::lower_atomic_cmpswap(ssa::Instruction &instr) {
-    ASSERT_UNREACHABLE;
+    // TODO: This is the least atomic implementation out of all the fake atomic
+    // implementations.
+
+    unsigned local_index = vregs2locals.at(*instr.get_dest());
+    ssa::Operand &addr = instr.get_operand(0);
+    ssa::Operand &current_value = instr.get_operand(1);
+    ssa::Operand &new_value = instr.get_operand(2);
+    ssa::Operand &flag_addr = instr.get_operand(3);
+
+    ssa::Type type = current_value.get_type();
+    unsigned size = get_size(type);
+
+    mcode::Operand m_load_addr = lower_address(addr);
+    emit({load_opcode(type), {m_load_addr}});
+    emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(local_index)}});
+
+    mcode::Operand m_store_addr = lower_address(addr);
+    emit_push(new_value);
+    emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(local_index)}});
+    emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(local_index)}});
+    emit_push(current_value);
+    emit({size == 8 ? WasmOpcode::I64_EQ : WasmOpcode::I32_EQ});
+    emit({WasmOpcode::SELECT});
+    emit({store_opcode(type), {m_store_addr}});
+
+    mcode::Operand m_flag_addr = lower_address(flag_addr);
+    emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(local_index)}});
+    emit_push(current_value);
+    emit({size == 8 ? WasmOpcode::I64_EQ : WasmOpcode::I32_EQ});
+    emit({WasmOpcode::I32_STORE8, {m_flag_addr}});
 }
 
 void WasmSSALowerer::lower_atomic_add(ssa::Instruction &instr) {
-    ASSERT_UNREACHABLE;
+    lower_fake_atomic(instr, WasmOpcode::I64_ADD, WasmOpcode::I32_ADD);
 }
 
 void WasmSSALowerer::lower_atomic_sub(ssa::Instruction &instr) {
-    ASSERT_UNREACHABLE;
+    lower_fake_atomic(instr, WasmOpcode::I64_SUB, WasmOpcode::I32_SUB);
 }
 
 void WasmSSALowerer::lower_atomic_and(ssa::Instruction &instr) {
-    ASSERT_UNREACHABLE;
+    lower_fake_atomic(instr, WasmOpcode::I64_AND, WasmOpcode::I32_AND);
 }
 
 void WasmSSALowerer::lower_atomic_or(ssa::Instruction &instr) {
-    ASSERT_UNREACHABLE;
+    lower_fake_atomic(instr, WasmOpcode::I64_OR, WasmOpcode::I32_OR);
 }
 
 void WasmSSALowerer::lower_atomic_xor(ssa::Instruction &instr) {
-    ASSERT_UNREACHABLE;
+    lower_fake_atomic(instr, WasmOpcode::I64_XOR, WasmOpcode::I32_XOR);
 }
 
 void WasmSSALowerer::lower_offsetptr(ssa::Instruction &instr) {
@@ -861,13 +813,30 @@ void WasmSSALowerer::lower_frame_address(ssa::Instruction &instr) {
 void WasmSSALowerer::lower_2_operand_numeric(ssa::Instruction &instr, mcode::Opcode m_opcode) {
     unsigned local_index = vregs2locals.at(*instr.get_dest());
 
-    push_operand(instr.get_operand(0));
-    push_operand(instr.get_operand(1));
+    emit_push(instr.get_operand(0));
+    emit_push(instr.get_operand(1));
     emit({m_opcode});
     emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(local_index)}});
 }
 
-void WasmSSALowerer::push_operand(ssa::Operand &operand) {
+void WasmSSALowerer::lower_fake_atomic(ssa::Instruction &instr, mcode::Opcode m_opcode_64, mcode::Opcode m_opcode_32) {
+    unsigned local_index = vregs2locals.at(*instr.get_dest());
+    ssa::Operand &addr = instr.get_operand(0);
+    ssa::Operand &value = instr.get_operand(1);
+    ssa::Type type = value.get_type();
+
+    mcode::Operand m_load_addr = lower_address(addr);
+    emit({load_opcode(type), {m_load_addr}});
+    emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(local_index)}});
+
+    mcode::Operand m_store_addr = lower_address(addr);
+    emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(local_index)}});
+    emit_push(value);
+    emit({get_size(type) == 8 ? m_opcode_64 : m_opcode_32});
+    emit({store_opcode(type), {m_store_addr}});
+}
+
+void WasmSSALowerer::emit_push(ssa::Operand &operand) {
     if (operand.is_register()) {
         if (std::optional<mcode::StackSlotID> stack_slot = find_stack_slot(operand.get_register())) {
             mcode::StackAddress stack_addr{*stack_slot};
@@ -899,18 +868,80 @@ void WasmSSALowerer::push_operand(ssa::Operand &operand) {
     }
 }
 
+mcode::Operand WasmSSALowerer::lower_address(ssa::Operand &operand) {
+    AddrComponents addr = collect_addr(operand);
+    ASSERT(!addr.reg_offset);
+
+    if (addr.base.is_register()) {
+        ssa::VirtualRegister base = addr.base.get_register();
+
+        if (std::optional<mcode::StackSlotID> stack_slot = find_stack_slot(base)) {
+            mcode::StackAddress stack_addr{*stack_slot, addr.const_offset.to_unsigned()};
+            emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(stack_pointer_local)}});
+            return mcode::Operand::from_stack_offset(stack_addr);
+        } else {
+            emit({WasmOpcode::LOCAL_GET, {mcode::Operand::from_int_immediate(vregs2locals.at(base))}});
+            return mcode::Operand::from_int_immediate(addr.const_offset);
+        }
+    } else if (addr.base.is_global()) {
+        mcode::Symbol m_symbol{addr.base.get_global()->name, mcode::Relocation::MEMORY_ADDR_SLEB};
+        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_symbol(m_symbol)}});
+        return mcode::Operand::from_int_immediate(addr.const_offset);
+    } else if (addr.base.is_extern_global()) {
+        mcode::Symbol m_symbol{addr.base.get_extern_global()->name, mcode::Relocation::MEMORY_ADDR_SLEB};
+        emit({WasmOpcode::I32_CONST, {mcode::Operand::from_symbol(m_symbol)}});
+        return mcode::Operand::from_int_immediate(addr.const_offset);
+    } else {
+        ASSERT_UNREACHABLE;
+    }
+}
+
 void WasmSSALowerer::store_branch_args(ssa::BranchTarget &target) {
     for (unsigned i = 0; i < target.args.size(); i++) {
         ssa::VirtualRegister arg_reg = target.block->get_param_regs()[i];
         unsigned tmp_local = block_arg_tmp_locals.at(arg_reg);
 
-        push_operand(target.args[i]);
+        emit_push(target.args[i]);
         emit({WasmOpcode::LOCAL_SET, {mcode::Operand::from_int_immediate(tmp_local)}});
     }
 }
 
 mcode::CallingConvention *WasmSSALowerer::get_calling_convention(ssa::CallingConv /*calling_conv*/) {
     return static_cast<mcode::CallingConvention *>(&WasmCallingConv::INSTANCE);
+}
+
+mcode::Opcode WasmSSALowerer::load_opcode(ssa::Type type) {
+    switch (type_as_primitive(type)) {
+        case ssa::Primitive::VOID: ASSERT_UNREACHABLE;
+        case ssa::Primitive::U8: return WasmOpcode::I32_LOAD8_U;
+        case ssa::Primitive::U16: return WasmOpcode::I32_LOAD16_U;
+        case ssa::Primitive::U32: return WasmOpcode::I32_LOAD;
+        case ssa::Primitive::U64: return WasmOpcode::I64_LOAD;
+        case ssa::Primitive::I8: return WasmOpcode::I32_LOAD8_S;
+        case ssa::Primitive::I16: return WasmOpcode::I32_LOAD16_S;
+        case ssa::Primitive::I32: return WasmOpcode::I32_LOAD;
+        case ssa::Primitive::I64: return WasmOpcode::I64_LOAD;
+        case ssa::Primitive::F32: return WasmOpcode::F32_LOAD;
+        case ssa::Primitive::F64: return WasmOpcode::F64_LOAD;
+        case ssa::Primitive::ADDR: return WasmOpcode::I32_LOAD;
+    }
+}
+
+mcode::Opcode WasmSSALowerer::store_opcode(ssa::Type type) {
+    switch (type_as_primitive(type)) {
+        case ssa::Primitive::VOID: ASSERT_UNREACHABLE;
+        case ssa::Primitive::U8: return WasmOpcode::I32_STORE8;
+        case ssa::Primitive::U16: return WasmOpcode::I32_STORE16;
+        case ssa::Primitive::U32: return WasmOpcode::I32_STORE;
+        case ssa::Primitive::U64: return WasmOpcode::I64_STORE;
+        case ssa::Primitive::I8: return WasmOpcode::I32_STORE8;
+        case ssa::Primitive::I16: return WasmOpcode::I32_STORE16;
+        case ssa::Primitive::I32: return WasmOpcode::I32_STORE;
+        case ssa::Primitive::I64: return WasmOpcode::I64_STORE;
+        case ssa::Primitive::F32: return WasmOpcode::F32_STORE;
+        case ssa::Primitive::F64: return WasmOpcode::F64_STORE;
+        case ssa::Primitive::ADDR: return WasmOpcode::I32_STORE;
+    }
 }
 
 WasmFuncType WasmSSALowerer::lower_func_type(ssa::FunctionType type) {
