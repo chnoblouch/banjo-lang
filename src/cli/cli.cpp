@@ -826,7 +826,7 @@ void CLI::load_config() {
     load_toolchain();
 
     if (source_file) {
-        package_name = std::filesystem::path{*source_file}.stem();
+        package_name = std::filesystem::path{*source_file}.stem().string();
     } else {
         source_paths.push_back("src");
 
