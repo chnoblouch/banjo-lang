@@ -1,13 +1,27 @@
 #include "x86_64_reg_analyzer.hpp"
 
+#include "banjo/codegen/reg_alloc_func.hpp"
 #include "banjo/mcode/calling_convention.hpp"
 #include "banjo/mcode/instruction.hpp"
 #include "banjo/mcode/operand.hpp"
+#include "banjo/mcode/register.hpp"
 #include "banjo/ssa/virtual_register.hpp"
 #include "banjo/target/x86_64/x86_64_opcode.hpp"
 #include "banjo/utils/macros.hpp"
 
+#include <optional>
+
 namespace banjo::target {
+
+static codegen::RegClass reg_class_of(mcode::PhysicalReg reg) {
+    if (reg >= X8664Register::RAX && reg <= X8664Register::R15) {
+        return X8664RegClass::GENERAL_PURPOSE;
+    } else if (reg >= X8664Register::XMM0 && reg <= X8664Register::XMM15) {
+        return X8664RegClass::SSE;
+    } else {
+        ASSERT_UNREACHABLE;
+    }
+}
 
 static bool is_float_instr(mcode::Instruction &instr) {
     switch (instr.get_opcode()) {
@@ -100,12 +114,16 @@ void X8664RegAnalyzer::suggest_regs(
         mcode::Instruction &first_def = *func.blocks[range.block].instrs[range.start.instr].iter;
         mcode::Instruction &last_use = *func.blocks[range.block].instrs[range.end.instr].iter;
 
+        std::optional<mcode::PhysicalReg> reg;
+
         if (is_move_opcode(first_def.get_opcode()) && first_def.get_operand(1).is_physical_reg()) {
-            suggested_regs.push_back(first_def.get_operand(1).get_physical_reg());
+            reg = first_def.get_operand(1).get_physical_reg();
+        } else if (is_move_opcode(last_use.get_opcode()) && last_use.get_operand(0).is_physical_reg()) {
+            reg = last_use.get_operand(0).get_physical_reg();
         }
 
-        if (is_move_opcode(last_use.get_opcode()) && last_use.get_operand(0).is_physical_reg()) {
-            suggested_regs.push_back(last_use.get_operand(0).get_physical_reg());
+        if (reg && reg_class_of(*reg) == bundle.reg_class) {
+            suggested_regs.push_back(*reg);
         }
     }
 }

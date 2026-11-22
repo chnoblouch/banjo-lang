@@ -5,10 +5,25 @@
 #include "banjo/mcode/instruction.hpp"
 #include "banjo/mcode/register.hpp"
 #include "banjo/target/aarch64/aarch64_opcode.hpp"
+#include "banjo/target/aarch64/aarch64_register.hpp"
 #include "banjo/target/target_reg_analyzer.hpp"
 #include "banjo/utils/macros.hpp"
 
+#include <optional>
+
 namespace banjo::target {
+
+static codegen::RegClass reg_class_of(mcode::PhysicalReg reg) {
+    if (reg >= AArch64Register::R0 && reg <= AArch64Register::R30) {
+        return AArch64RegClass::GENERAL_PURPOSE;
+    } else if (reg >= AArch64Register::V0 && reg <= AArch64Register::V30) {
+        return AArch64RegClass::FP_AND_VECTOR;
+    } else if (reg == AArch64Register::SP) {
+        return AArch64RegClass::GENERAL_PURPOSE;
+    } else {
+        ASSERT_UNREACHABLE;
+    }
+}
 
 static bool is_float_instr(mcode::Instruction &instr) {
     switch (instr.get_opcode()) {
@@ -63,12 +78,16 @@ void AArch64RegAnalyzer::suggest_regs(
         mcode::Instruction &first_def = *func.blocks[range.block].instrs[range.start.instr].iter;
         mcode::Instruction &last_use = *func.blocks[range.block].instrs[range.end.instr].iter;
 
+        std::optional<mcode::PhysicalReg> reg;
+
         if (is_move_opcode(first_def.get_opcode()) && first_def.get_operand(1).is_physical_reg()) {
-            suggested_regs.push_back(first_def.get_operand(1).get_physical_reg());
+            reg = first_def.get_operand(1).get_physical_reg();
+        } else if (is_move_opcode(last_use.get_opcode()) && last_use.get_operand(0).is_physical_reg()) {
+            reg = last_use.get_operand(0).get_physical_reg();
         }
 
-        if (is_move_opcode(last_use.get_opcode()) && last_use.get_operand(0).is_physical_reg()) {
-            suggested_regs.push_back(last_use.get_operand(0).get_physical_reg());
+        if (reg && reg_class_of(*reg) == bundle.reg_class) {
+            suggested_regs.push_back(*reg);
         }
     }
 }

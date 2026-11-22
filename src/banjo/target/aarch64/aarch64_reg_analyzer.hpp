@@ -12,7 +12,7 @@
 namespace banjo::target {
 
 namespace AArch64RegClass {
-enum AArch64RegClass {
+enum {
     GENERAL_PURPOSE,
     FP_AND_VECTOR,
 };
