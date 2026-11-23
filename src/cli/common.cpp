@@ -1,20 +1,20 @@
 #include "common.hpp"
 
+#include "banjo/utils/cli_utils.hpp"
 #include "banjo/utils/utils.hpp"
 
 #include "paths.hpp"
 
 #include <iostream>
 
-namespace banjo {
-namespace cli {
+namespace banjo::cli {
 
 bool quiet = false;
 bool verbose = false;
 bool single_line_output = true;
 
 void print_step(std::string_view message) {
-    if (quiet) {
+    if (quiet || !utils::is_stdout_terminal()) {
         return;
     }
 
@@ -41,7 +41,7 @@ void print_command(std::string_view name, const Command &command) {
 }
 
 void print_clear_line() {
-    if (quiet || !single_line_output) {
+    if (quiet || !single_line_output || !utils::is_stdout_terminal()) {
         return;
     }
 
@@ -66,7 +66,8 @@ void error(std::string_view message) {
     exit_error();
 }
 
-std::optional<std::filesystem::path> find_tool(std::string_view name, std::string_view windows_ext /* = ".exe" */) {
+std::optional<std::filesystem::path>
+find_tool(std::string_view name, [[maybe_unused]] std::string_view windows_ext /* = ".exe" */) {
     std::string file_name(name);
 
 #if OS_WINDOWS
@@ -169,5 +170,4 @@ void run_utility_script(const std::string &name, const std::vector<std::string> 
     }
 }
 
-} // namespace cli
-} // namespace banjo
+} // namespace banjo::cli

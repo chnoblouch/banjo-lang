@@ -1,5 +1,5 @@
 #include "banjo/config/config_parser.hpp"
-#include "banjo/utils/cli_setup.hpp"
+#include "banjo/utils/cli_utils.hpp"
 
 #include "server.hpp"
 

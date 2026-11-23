@@ -95,7 +95,7 @@ if(BUILD_HOT_RELOADER)
     install(TARGETS banjo-hot-reloader RUNTIME DESTINATION bin)
 endif()
 
-if(WIN32)
+if(MSVC)
     install(FILES $<TARGET_PDB_FILE:banjo-compiler> DESTINATION bin OPTIONAL)
     install(FILES $<TARGET_PDB_FILE:banjo-lsp> DESTINATION bin OPTIONAL)
     install(FILES $<TARGET_PDB_FILE:banjo-format> DESTINATION bin OPTIONAL)

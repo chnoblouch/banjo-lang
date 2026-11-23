@@ -1,6 +1,6 @@
 
 #include "banjo/target/target_description.hpp"
-#include "banjo/utils/cli_setup.hpp"
+#include "banjo/utils/cli_utils.hpp"
 #include "banjo/utils/write_buffer.hpp"
 
 #include "assembly_util.hpp"

@@ -1,4 +1,4 @@
-#include "banjo/utils/cli_setup.hpp"
+#include "banjo/utils/cli_utils.hpp"
 
 #include "cli.hpp"
 

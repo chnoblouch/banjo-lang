@@ -8,8 +8,7 @@
 #include <string_view>
 #include <vector>
 
-namespace banjo {
-namespace cli {
+namespace banjo::cli {
 
 extern bool quiet;
 extern bool verbose;
@@ -29,7 +28,6 @@ std::string get_tool_output(const std::filesystem::path &tool_path, std::vector<
 std::string get_python_executable();
 void run_utility_script(const std::string &name, const std::vector<std::string> &args);
 
-} // namespace cli
-} // namespace banjo
+} // namespace banjo::cli
 
 #endif

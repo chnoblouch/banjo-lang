@@ -2,7 +2,7 @@
 
 #include "banjo/config/argument_parser.hpp"
 #include "banjo/config/config_parser.hpp"
-#include "banjo/utils/cli_setup.hpp"
+#include "banjo/utils/cli_utils.hpp"
 #include "banjo/utils/timing.hpp"
 
 int main(int argc, char *argv[]) {

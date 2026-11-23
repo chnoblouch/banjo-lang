@@ -4,7 +4,7 @@
 #include "banjo/reports/report_manager.hpp"
 #include "banjo/reports/report_printer.hpp"
 #include "banjo/source/source_file.hpp"
-#include "banjo/utils/cli_setup.hpp"
+#include "banjo/utils/cli_utils.hpp"
 
 #include <filesystem>
 #include <fstream>
