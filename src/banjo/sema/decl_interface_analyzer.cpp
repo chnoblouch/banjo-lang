@@ -3,10 +3,8 @@
 #include "banjo/sema/attribute_analyzer.hpp"
 #include "banjo/sema/expr_analyzer.hpp"
 #include "banjo/sema/semantic_analyzer.hpp"
-#include "banjo/sema/symbol_collector.hpp"
 #include "banjo/sir/resource_generator.hpp"
 #include "banjo/sir/sir.hpp"
-#include "banjo/sir/sir_cloner.hpp"
 
 namespace banjo::sema {
 

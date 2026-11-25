@@ -96,7 +96,7 @@ Result ExprAnalyzer::analyze_value_uncoerced(sir::Expr &expr) {
 }
 
 Result ExprAnalyzer::analyze_type(sir::Expr &expr) {
-    RESULT_PROPAGATE(analyze(expr));
+    RESULT_PROPAGATE(analyze_uncoerced(expr));
 
     sir::ExprCategory category = expr.get_category();
 
