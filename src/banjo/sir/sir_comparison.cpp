@@ -60,6 +60,7 @@ bool Comparison::compare(Expr lhs, Expr rhs) {
         return false,                                      // map_type
         return compare(*inner, rhs.as<ClosureType>()),     // closure_type
         return compare(*inner, rhs.as<ReferenceType>()),   // reference_type
+        return true,                                       // never_type
         return false,                                      // ident_expr
         return false,                                      // star_expr
         return false,                                      // bracket_expr

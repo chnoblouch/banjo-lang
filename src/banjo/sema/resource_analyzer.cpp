@@ -329,6 +329,7 @@ Result ResourceAnalyzer::analyze_expr(sir::Expr &expr, Context &ctx) {
         SIR_MATCH_IGNORE,                                 // map_type
         SIR_MATCH_IGNORE,                                 // closure_type
         SIR_MATCH_IGNORE,                                 // reference_type
+        SIR_MATCH_IGNORE,                                 // never_type
         SIR_MATCH_IGNORE,                                 // ident_expr
         SIR_MATCH_IGNORE,                                 // star_expr
         SIR_MATCH_IGNORE,                                 // bracket_expr

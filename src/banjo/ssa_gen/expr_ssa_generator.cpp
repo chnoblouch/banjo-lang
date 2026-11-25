@@ -89,6 +89,7 @@ StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints
         SIR_MATCH_IMPOSSIBLE,                              // map_type
         SIR_MATCH_IMPOSSIBLE,                              // closure_type
         SIR_MATCH_IMPOSSIBLE,                              // reference_type
+        SIR_MATCH_IMPOSSIBLE,                              // never_type
         SIR_MATCH_IMPOSSIBLE,                              // ident_expr
         SIR_MATCH_IMPOSSIBLE,                              // star_expr
         SIR_MATCH_IMPOSSIBLE,                              // bracket_expr

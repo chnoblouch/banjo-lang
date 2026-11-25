@@ -165,6 +165,7 @@ std::string ReportText::to_string(const sir::Expr &expr) {
         return "<map type>",
         return closure_type_to_string(*inner),
         return reference_type_to_string(*inner),
+        return "never",
         return "<ident expr>",
         return "<star expr>",
         return "<bracket expr>",

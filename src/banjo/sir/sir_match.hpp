@@ -46,6 +46,7 @@
     map_type_visitor,                                                                                                  \
     closure_type_visitor,                                                                                              \
     reference_type_visitor,                                                                                            \
+    never_type_visitor,                                                                                                \
     ident_expr_visitor,                                                                                                \
     star_expr_visitor,                                                                                                 \
     bracket_expr_visitor,                                                                                              \
@@ -136,6 +137,8 @@
         closure_type_visitor;                                                                                          \
     } else if ([[maybe_unused]] auto inner = (expr).match<banjo::sir::ReferenceType>()) {                              \
         reference_type_visitor;                                                                                        \
+    } else if ([[maybe_unused]] auto inner = (expr).match<banjo::sir::NeverType>()) {                                  \
+        never_type_visitor;                                                                                            \
     } else if ([[maybe_unused]] auto inner = (expr).match<banjo::sir::IdentExpr>()) {                                  \
         ident_expr_visitor;                                                                                            \
     } else if ([[maybe_unused]] auto inner = (expr).match<banjo::sir::StarExpr>()) {                                   \

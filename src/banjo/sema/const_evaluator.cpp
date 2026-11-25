@@ -79,6 +79,7 @@ ConstEvaluator::Output ConstEvaluator::evaluate(sir::Expr &expr) {
         return expr,                             // map_type
         return expr,                             // closure_type
         return expr,                             // reference_type
+        return expr,                             // never_type
         return expr,                             // ident_expr
         return expr,                             // star_expr
         return expr,                             // bracket_expr

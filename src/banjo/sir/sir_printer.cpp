@@ -643,6 +643,7 @@ void Printer::print_expr(const Expr &expr) {
         print_map_type(*inner),
         print_closure_type(*inner),
         print_reference_type(*inner),
+        print_never_type(*inner),
         print_ident_expr(*inner),
         print_star_expr(*inner),
         print_bracket_expr(*inner),
@@ -987,6 +988,11 @@ void Printer::print_reference_type(const ReferenceType &reference_type) {
     BEGIN_OBJECT("ReferenceType");
     PRINT_FIELD("mut", reference_type.mut ? "true" : "false");
     PRINT_EXPR_FIELD("base_type", reference_type.base_type);
+    END_OBJECT();
+}
+
+void Printer::print_never_type(const NeverType &) {
+    BEGIN_OBJECT("NeverType");
     END_OBJECT();
 }
 

@@ -611,6 +611,7 @@ Expr Cloner::clone_expr(const Expr &expr) {
         return clone_map_type(*inner),
         return clone_closure_type(*inner),
         return clone_reference_type(*inner),
+        return clone_never_type(*inner),
         return clone_ident_expr(*inner),
         return clone_star_expr(*inner),
         return clone_bracket_expr(*inner),
@@ -1038,6 +1039,14 @@ ReferenceType *Cloner::clone_reference_type(const ReferenceType &reference_type)
             .ast_node = reference_type.ast_node,
             .mut = reference_type.mut,
             .base_type = clone_expr(reference_type.base_type),
+        }
+    );
+}
+
+NeverType *Cloner::clone_never_type(const NeverType &never_type) {
+    return mod.create(
+        NeverType{
+            .ast_node = never_type.ast_node,
         }
     );
 }

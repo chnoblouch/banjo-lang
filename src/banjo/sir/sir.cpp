@@ -52,6 +52,7 @@ Expr Expr::get_type() const {
         return nullptr,     // map_type
         return nullptr,     // closure_type
         return nullptr,     // reference_type
+        return nullptr,     // never_type
         return nullptr,     // ident_expr
         return nullptr,     // star_expr
         return nullptr,     // bracket_expr
@@ -110,6 +111,7 @@ ExprCategory Expr::get_category() const {
         return ExprCategory::TYPE,           // map_type
         return ExprCategory::TYPE,           // closure_type
         return ExprCategory::TYPE,           // reference_type
+        return ExprCategory::TYPE,           // never_type
         return ExprCategory::OTHER,          // ident_expr
         return ExprCategory::OTHER,          // star_expr
         return ExprCategory::OTHER,          // bracket_expr
@@ -246,6 +248,7 @@ ASTNode *Expr::get_ast_node() const {
     SIR_MATCH_EXPR(
         *this,
         SIR_MATCH_IMPOSSIBLE,
+        return inner->ast_node,
         return inner->ast_node,
         return inner->ast_node,
         return inner->ast_node,

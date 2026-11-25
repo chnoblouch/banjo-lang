@@ -260,6 +260,7 @@ void SpecializationCollector::visit_expr(sir::Expr expr) {
         SIR_MATCH_IMPOSSIBLE,            // map_type
         SIR_MATCH_IGNORE,                // closure_type (TODO)
         visit_reference_type(*inner),    // reference_type
+        SIR_MATCH_IMPOSSIBLE,            // never_type
         SIR_MATCH_IMPOSSIBLE,            // ident_expr
         SIR_MATCH_IMPOSSIBLE,            // star_expr
         SIR_MATCH_IMPOSSIBLE,            // bracket_expr

@@ -206,6 +206,7 @@ Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
         result = analyze_map_type(*inner, expr),        // map_type
         result = analyze_closure_type(*inner),          // closure_type
         result = analyze_reference_type(*inner),        // reference_type
+        SIR_MATCH_IGNORE,                               // never_type
         result = analyze_ident_expr(*inner, expr),      // ident_expr
         result = analyze_star_expr(*inner, expr),       // star_expr
         result = analyze_bracket_expr(*inner, expr),    // bracket_expr

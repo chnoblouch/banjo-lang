@@ -64,6 +64,7 @@ struct ArrayType;
 struct MapType;
 struct ClosureType;
 struct ReferenceType;
+struct NeverType;
 struct IdentExpr;
 struct StarExpr;
 struct BracketExpr;
@@ -204,22 +205,23 @@ class Expr {
         MapType *,          // 33
         ClosureType *,      // 34
         ReferenceType *,    // 35
-        IdentExpr *,        // 36
-        StarExpr *,         // 37
-        BracketExpr *,      // 38
-        DotExpr *,          // 39
-        PseudoType *,       // 40
-        MetaAccess *,       // 41
-        MetaFieldExpr *,    // 42
-        MetaCallExpr *,     // 43
-        InitExpr *,         // 44
-        MoveExpr *,         // 45
-        DeinitExpr *,       // 46
-        TypeCheckExpr *,    // 47
-        BuiltinExpr *,      // 48
-        PlaceholderExpr *,  // 49
-        Error *,            // 50
-        std::nullptr_t>     // 51
+        NeverType *,        // 36
+        IdentExpr *,        // 37
+        StarExpr *,         // 38
+        BracketExpr *,      // 39
+        DotExpr *,          // 40
+        PseudoType *,       // 41
+        MetaAccess *,       // 42
+        MetaFieldExpr *,    // 43
+        MetaCallExpr *,     // 44
+        InitExpr *,         // 45
+        MoveExpr *,         // 46
+        DeinitExpr *,       // 47
+        TypeCheckExpr *,    // 48
+        BuiltinExpr *,      // 49
+        PlaceholderExpr *,  // 50
+        Error *,            // 51
+        std::nullptr_t>     // 52
         kind;
 
 public:
@@ -951,6 +953,10 @@ struct ReferenceType {
     ASTNode *ast_node;
     bool mut;
     Expr base_type;
+};
+
+struct NeverType {
+    ASTNode *ast_node;
 };
 
 struct IdentExpr {
