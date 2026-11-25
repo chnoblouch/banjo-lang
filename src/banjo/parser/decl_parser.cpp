@@ -52,11 +52,50 @@ ParseResult DeclParser::parse_func(ASTNode *qualifier_list) {
         return {node.build(type), false};
     }
 
-    ParseResult result = parser.parse_block();
+    ParseResult result = parser.parse_stmt_block();
     node.append_child(result.node);
 
     ASTNodeType type = generic ? AST_GENERIC_FUNC_DEF : AST_FUNC_DEF;
     return {node.build(type), result.is_valid};
+}
+
+ParseResult DeclParser::parse_var() {
+    NodeBuilder node = parser.build_node();
+    node.consume(); // Consume 'var'
+
+    if (!stream.get()->is(TKN_IDENTIFIER)) {
+        parser.report_generator.report_err_expected_ident(parser.file, *stream.get());
+        return node.build_error();
+    }
+
+    node.append_child(parser.consume_into_node(AST_IDENTIFIER));
+
+    if (stream.get()->is(TKN_COLON)) {
+        node.consume(); // Consume ':'
+    } else {
+        parser.report_generator.report_err_expected(parser.file, *stream.get(), TKN_COLON);
+        return node.build_error();
+    }
+
+    ParseResult result = parser.parse_type();
+    node.append_child(result.node);
+
+    if (!result.is_valid) {
+        return node.build_error();
+    }
+
+    if (stream.get()->is(TKN_EQ)) {
+        node.consume(); // Consume '='
+
+        result = ExprParser(parser, true).parse();
+        node.append_child(result.node);
+
+        if (!result.is_valid) {
+            return node.build_error(AST_VAR_DEF);
+        }
+    }
+
+    return parser.check_stmt_terminator(node, AST_VAR_DEF);
 }
 
 ParseResult DeclParser::parse_const() {
@@ -131,7 +170,7 @@ ParseResult DeclParser::parse_struct() {
         node.append_child(parser.create_node(AST_IMPL_LIST));
     }
 
-    ParseResult result = parser.parse_block();
+    ParseResult result = parser.parse_decl_block();
     node.append_child(result.node);
 
     return {node.build(type), result.is_valid};
@@ -173,7 +212,7 @@ ParseResult DeclParser::parse_union() {
     }
     node.append_child(parser.consume_into_node(AST_IDENTIFIER));
 
-    ParseResult result = parser.parse_block();
+    ParseResult result = parser.parse_decl_block();
     if (!result.is_valid) {
         return node.build_error();
     }
@@ -229,7 +268,7 @@ ParseResult DeclParser::parse_proto() {
         type = AST_GENERIC_PROTO_DEF;
     }
 
-    ParseResult result = parser.parse_block();
+    ParseResult result = parser.parse_decl_block();
     if (!result.is_valid) {
         return node.build_error();
     }

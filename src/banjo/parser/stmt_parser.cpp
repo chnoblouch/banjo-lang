@@ -130,7 +130,7 @@ ParseResult StmtParser::parse_switch() {
 
         if (stream.get()->value == "_") {
             stream.consume();
-            case_node.append_child(parser.parse_block().node);
+            case_node.append_child(parser.parse_stmt_block().node);
             cases_node.append_child(case_node.build(AST_SWITCH_DEFAULT_BRANCH));
             continue;
         }
@@ -145,7 +145,7 @@ ParseResult StmtParser::parse_switch() {
             return node.build_error();
         }
 
-        case_node.append_child(parser.parse_block().node);
+        case_node.append_child(parser.parse_stmt_block().node);
         cases_node.append_child(case_node.build(AST_SWITCH_CASE_BRANCH));
     }
 
@@ -180,7 +180,7 @@ ParseResult StmtParser::parse_try() {
     }
     success_case_node.append_child(result.node);
 
-    success_case_node.append_child(parser.parse_block().node);
+    success_case_node.append_child(parser.parse_stmt_block().node);
     node.append_child(success_case_node.build(AST_TRY_SUCCESS_BRANCH));
 
     if (stream.get()->is(TKN_EXCEPT)) {
@@ -203,12 +203,12 @@ ParseResult StmtParser::parse_try() {
             return node.build_error();
         }
 
-        error_case_node.append_child(parser.parse_block().node);
+        error_case_node.append_child(parser.parse_stmt_block().node);
         node.append_child(error_case_node.build(AST_TRY_EXCEPT_BRANCH));
     } else if (stream.get()->is(TKN_ELSE)) {
         NodeBuilder else_case_node = parser.build_node();
         else_case_node.consume(); // Consume 'else'
-        else_case_node.append_child(parser.parse_block().node);
+        else_case_node.append_child(parser.parse_stmt_block().node);
         node.append_child(else_case_node.build(AST_TRY_ELSE_BRANCH));
     }
 
@@ -225,7 +225,7 @@ ParseResult StmtParser::parse_while() {
     }
     node.append_child(result.node);
 
-    node.append_child(parser.parse_block().node);
+    node.append_child(parser.parse_stmt_block().node);
     return node.build(AST_WHILE_STMT);
 }
 
@@ -265,8 +265,7 @@ ParseResult StmtParser::parse_for() {
     }
     node.append_child(result.node);
 
-    node.append_child(parser.parse_block().node);
-
+    node.append_child(parser.parse_stmt_block().node);
     return node.build(type);
 }
 
@@ -296,84 +295,6 @@ ParseResult StmtParser::parse_return() {
     }
 
     return parser.check_stmt_terminator(builder, AST_RETURN_STMT);
-}
-
-ParseResult StmtParser::parse_meta_stmt() {
-    NodeBuilder node = parser.build_node();
-    node.consume(); // Consume 'meta'
-
-    if (stream.get()->is(TKN_IF)) {
-        return parse_meta_if(node);
-    } else if (stream.get()->is(TKN_FOR)) {
-        return parse_meta_for(node);
-    } else {
-        parser.report_generator.report_err_unexpected_token(parser.file, *stream.get());
-        return node.build_error();
-    }
-}
-
-ParseResult StmtParser::parse_meta_if(NodeBuilder &node) {
-    NodeBuilder first_branch = parser.build_node();
-    first_branch.consume(); // Consume 'if'
-
-    ParseResult result = ExprParser(parser, false).parse();
-    if (!result.is_valid) {
-        return node.build_error();
-    }
-    first_branch.append_child(result.node);
-    first_branch.append_child(parser.parse_block().node);
-    node.append_child(first_branch.build(AST_META_IF_BRANCH));
-
-    while (stream.get()->is(TKN_ELSE)) {
-        NodeBuilder branch = parser.build_node();
-        branch.consume(); // Consume 'else'
-
-        if (stream.get()->is(TKN_IF)) {
-            branch.consume(); // Consume 'if'
-
-            ParseResult result = ExprParser(parser, false).parse();
-            if (!result.is_valid) {
-                return node.build_error();
-            }
-            branch.append_child(result.node);
-            branch.append_child(parser.parse_block().node);
-            node.append_child(branch.build(AST_META_ELSE_IF_BRANCH));
-        } else if (stream.get()->is(TKN_LBRACE)) {
-            branch.append_child(parser.parse_block().node);
-            node.append_child(branch.build(AST_META_ELSE_BRANCH));
-        } else {
-            parser.report_generator.report_err_unexpected_token(parser.file, *stream.get());
-            return node.build_error();
-        }
-    }
-
-    return node.build(AST_META_IF_STMT);
-}
-
-ParseResult StmtParser::parse_meta_for(NodeBuilder &node) {
-    node.consume(); // Consume 'for'
-
-    if (!stream.get()->is(TKN_IDENTIFIER)) {
-        parser.report_generator.report_err_expected_ident(parser.file, *stream.get());
-        return node.build_error();
-    }
-    node.append_child(parser.consume_into_node(AST_IDENTIFIER));
-
-    if (!stream.get()->is(TKN_IN)) {
-        parser.report_generator.report_err_unexpected_token(parser.file, *stream.get());
-        return node.build_error();
-    }
-    node.consume(); // Consume 'in'
-
-    ParseResult result = ExprParser(parser).parse();
-    if (!result.is_valid) {
-        return node.build_error();
-    }
-    node.append_child(result.node);
-
-    node.append_child(parser.parse_block().node);
-
-    return node.build(AST_META_FOR_STMT);
 }
 
 } // namespace banjo

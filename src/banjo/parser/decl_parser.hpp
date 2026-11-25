@@ -15,6 +15,7 @@ public:
     DeclParser(Parser &parser);
 
     ParseResult parse_func(ASTNode *qualifier_list);
+    ParseResult parse_var();
     ParseResult parse_const();
     ParseResult parse_struct();
     ParseResult parse_enum();

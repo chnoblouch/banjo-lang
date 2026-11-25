@@ -525,7 +525,7 @@ ParseResult ExprParser::parse_closure() {
         return node.build(AST_CLOSURE_TYPE);
     }
 
-    ParseResult result = parser.parse_block();
+    ParseResult result = parser.parse_stmt_block();
     if (!result.is_valid) {
         return node.build_error();
     }
@@ -588,7 +588,7 @@ ParseResult ExprParser::parse_if_expr() {
         return {node.build_with_inferred_range(AST_IF_EXPR), false};
     }
 
-    result = parser.parse_block();
+    result = parser.parse_stmt_block();
     first_if.append_child(result.node);
 
     if (!result.is_valid) {
@@ -613,12 +613,12 @@ ParseResult ExprParser::parse_if_expr() {
                 return {node.build_with_inferred_range(AST_IF_BRANCH), false};
             }
 
-            else_if_node.append_child(parser.parse_block().node);
+            else_if_node.append_child(parser.parse_stmt_block().node);
             node.append_child(else_if_node.build(AST_ELSE_IF_BRANCH));
         } else if (stream.peek(1)->is(TKN_LBRACE)) {
             NodeBuilder else_node = parser.build_node();
             else_node.consume(); // Consume 'else'
-            else_node.append_child(parser.parse_block().node);
+            else_node.append_child(parser.parse_stmt_block().node);
             node.append_child(else_node.build(AST_ELSE_BRANCH));
         } else {
             stream.consume(); // Consume 'else'

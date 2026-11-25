@@ -26,14 +26,11 @@ public:
     ParseResult parse_break();
     ParseResult parse_continue();
     ParseResult parse_return();
-    ParseResult parse_meta_stmt();
 
 private:
     ParseResult parse_var_or_ref(NodeBuilder &node, ASTNodeType type, ASTNodeType type_typeless);
     ParseResult parse_var_with_type(NodeBuilder &node, ASTNodeType type);
     ParseResult parse_var_without_type(NodeBuilder &node, ASTNodeType type);
-    ParseResult parse_meta_if(NodeBuilder &node);
-    ParseResult parse_meta_for(NodeBuilder &node);
 };
 
 } // namespace banjo

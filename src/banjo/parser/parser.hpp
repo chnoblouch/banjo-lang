@@ -54,14 +54,20 @@ public:
 
 private:
     ASTNode *parse_top_level_block();
-    ParseResult parse_block();
-    void parse_and_append_block_child(NodeBuilder &node);
+    ParseResult parse_decl_block();
+    ParseResult parse_stmt_block();
+    ParseResult parse_block(const std::function<ParseResult()> &child_parser);
 
-    ParseResult parse_block_child();
+    ParseResult parse_decl();
+    ParseResult parse_stmt();
     ParseResult parse_type();
     ParseResult parse_expr_or_assign();
     ParseResult parse_try();
-    ParseResult parse_meta();
+
+    ParseResult parse_meta_decl();
+    ParseResult parse_meta_stmt();
+    ParseResult parse_meta_if(const std::function<ParseResult()> &block_parser);
+    ParseResult parse_meta_for(const std::function<ParseResult()> &block_parser);
 
     ParseResult parse_attribute_wrapper(const std::function<ParseResult()> &child_parser);
     ParseResult parse_attribute_list();
