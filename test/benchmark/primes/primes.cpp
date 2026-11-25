@@ -18,9 +18,8 @@ int main(int /* argc */, const char ** /* argv */) {
             continue;
         }
 
-        for (unsigned p = 2 * i; p <= LIMIT; p++) {
+        for (unsigned p = 2 * i; p <= LIMIT; p += i) {
             flags.at(p) = false;
-            p += i;
         }
 
         num_primes += 1;
