@@ -180,6 +180,7 @@ public:
     void report_err_impl_missing_func(const sir::StructDef &struct_def, const sir::ProtoFuncDecl &func_decl);
     void report_err_impl_type_mismatch(sir::FuncDef &func_def, sir::ProtoFuncDecl &func_decl);
 
+    void report_err_struct_field_has_value(sir::VarDecl &field_decl);
     void report_err_self_not_allowed(const sir::Param &param);
     void report_err_self_not_first(const sir::Param &param);
     void report_err_case_outside_union(const sir::UnionCase &union_case);

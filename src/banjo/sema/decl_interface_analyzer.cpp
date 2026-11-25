@@ -177,18 +177,19 @@ Result DeclInterfaceAnalyzer::analyze_var_decl(sir::VarDecl &var_decl, sir::Decl
     if (auto struct_def = var_decl.parent.match<sir::StructDef>()) {
         // TODO: Error handling for missing type.
 
-        out_decl = analyzer.create(
-            sir::StructField{
-                .ast_node = var_decl.ast_node,
-                .ident = var_decl.ident,
-                .type = var_decl.type,
-                .attrs = var_decl.attrs,
-                .index = static_cast<unsigned>(struct_def->fields.size()),
-            }
-        );
+        if (var_decl.value) {
+            analyzer.report_generator.report_err_struct_field_has_value(var_decl);
+        }
+
+        out_decl = analyzer.create<sir::StructField>({
+            .ast_node = var_decl.ast_node,
+            .ident = var_decl.ident,
+            .type = var_decl.type,
+            .attrs = var_decl.attrs,
+            .index = static_cast<unsigned>(struct_def->fields.size()),
+        });
 
         struct_def->fields.push_back(&out_decl.as<sir::StructField>());
-
         analyzer.add_symbol_def(&out_decl.as<sir::StructField>());
     }
 

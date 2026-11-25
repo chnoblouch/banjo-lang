@@ -107,6 +107,7 @@ void ReportGenerator::report_err_expected(SourceFile &file, Token &token, TokenT
 
     switch (expected_type) {
         case TKN_SEMI: expected_token_name = ";"; break;
+        case TKN_COLON: expected_token_name = ":"; break;
         case TKN_EQ: expected_token_name = "="; break;
         case TKN_LPAREN: expected_token_name = "("; break;
         case TKN_LBRACE: expected_token_name = "{"; break;
@@ -807,6 +808,10 @@ void ReportGenerator::report_err_impl_type_mismatch(sir::FuncDef &func_def, sir:
     )
         .add_note("method declared here, in proto '$'", func_decl.get_ident().ast_node, proto_def.ident.value)
         .report();
+}
+
+void ReportGenerator::report_err_struct_field_has_value(sir::VarDecl &field_decl) {
+    report_error("struct fields cannot have a value in their declaration", field_decl.value.get_ast_node());
 }
 
 void ReportGenerator::report_err_self_not_allowed(const sir::Param &param) {
