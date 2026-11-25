@@ -78,7 +78,7 @@ def run_tests(directory, file_name_extension, runner, filter_fn=lambda _: True):
         print("no match found")
         return True
 
-    print("\ntests:")
+    print(f"\n{directory} tests:")
 
     max_len = max([len(test.name) for test in tests])
     failures = []

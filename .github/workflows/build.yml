@@ -29,7 +29,7 @@ jobs:
         run: cmake --build build --target install -j4
 
       - name: Run tests
-        run: python test/scripted/test_compilation.py --install-dir banjo-x86_64-windows
+        run: python test/scripted/test_everything.py --install-dir banjo-x86_64-windows
 
       - name: Archive
         run: 7z a banjo-x86_64-windows.zip banjo-x86_64-windows
@@ -66,7 +66,7 @@ jobs:
         run: cmake --build build --target install -j4
 
       - name: Run tests
-        run: python3 test/scripted/test_compilation.py --install-dir banjo-${{ matrix.arch }}-linux
+        run: python3 test/scripted/test_everything.py --install-dir banjo-${{ matrix.arch }}-linux
 
       - name: Archive
         run: zip -r banjo-${{ matrix.arch }}-linux.zip banjo-${{ matrix.arch }}-linux
@@ -97,7 +97,7 @@ jobs:
         run: cmake --build build --target install -j4
 
       - name: Run tests
-        run: python3 test/scripted/test_compilation.py --install-dir banjo-aarch64-macos
+        run: python3 test/scripted/test_everything.py --install-dir banjo-aarch64-macos
 
       - name: Archive
         run: zip -r banjo-aarch64-macos.zip banjo-aarch64-macos
