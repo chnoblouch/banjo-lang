@@ -504,7 +504,6 @@ sir::Stmt SIRGenerator::generate_stmt(ASTNode *node) {
         case AST_BIT_XOR_ASSIGN_STMT: return generate_comp_assign_stmt(node, sir::BinaryOp::BIT_XOR);
         case AST_SHL_ASSIGN_STMT: return generate_comp_assign_stmt(node, sir::BinaryOp::SHL);
         case AST_SHR_ASSIGN_STMT: return generate_comp_assign_stmt(node, sir::BinaryOp::SHR);
-        case AST_RETURN_STMT: return generate_return_stmt(node);
         case AST_SWITCH_STMT: return generate_switch_stmt(node);
         case AST_TRY_STMT: return generate_try_stmt(node);
         case AST_WHILE_STMT: return generate_while_stmt(node);
@@ -624,17 +623,6 @@ sir::Stmt SIRGenerator::generate_comp_assign_stmt(ASTNode *node, sir::BinaryOp o
             .op = op,
             .lhs = generate_expr(lhs_node),
             .rhs = generate_expr(rhs_node),
-        }
-    );
-}
-
-sir::Stmt SIRGenerator::generate_return_stmt(ASTNode *node) {
-    ASTNode *value_node = node->first_child;
-
-    return create(
-        sir::ReturnStmt{
-            .ast_node = node,
-            .value = value_node ? generate_expr(value_node) : nullptr,
         }
     );
 }
@@ -877,6 +865,7 @@ sir::Expr SIRGenerator::generate_expr(ASTNode *node) {
         case AST_RANGE_EXPR: return generate_range_expr(node);
         case AST_TYPE_CHECK_EXPR: return generate_type_check_expr(node);
         case AST_IF_EXPR: return generate_if_expr(node);
+        case AST_RETURN_EXPR: return generate_return_expr(node);
         case AST_TRY_EXPR: return generate_try_expr(node);
         case AST_TUPLE_EXPR: return generate_tuple_expr(node);
         case AST_I8: return generate_primitive_type(node, sir::Primitive::I8);
@@ -1315,6 +1304,18 @@ sir::Expr SIRGenerator::generate_if_expr(ASTNode *node) {
             .type = nullptr,
             .cond_branches = create_array<sir::IfCondBranch>(cond_branches),
             .else_branch = else_branch,
+        }
+    );
+}
+
+sir::Expr SIRGenerator::generate_return_expr(ASTNode *node) {
+    ASTNode *value_node = node->first_child;
+
+    return create(
+        sir::ReturnExpr{
+            .ast_node = node,
+            .type = nullptr,
+            .value = value_node ? generate_expr(value_node) : nullptr,
         }
     );
 }

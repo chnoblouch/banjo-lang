@@ -406,7 +406,6 @@ void Printer::print_stmt(const Stmt &stmt) {
         print_var_stmt(*inner),
         print_assign_stmt(*inner),
         print_comp_assign_stmt(*inner),
-        print_return_stmt(*inner),
         print_switch_stmt(*inner),
         print_try_stmt(*inner),
         print_while_stmt(*inner),
@@ -443,12 +442,6 @@ void Printer::print_comp_assign_stmt(const CompAssignStmt &comp_assign_stmt) {
     print_binary_op("op", comp_assign_stmt.op);
     PRINT_EXPR_FIELD("lhs", comp_assign_stmt.lhs);
     PRINT_EXPR_FIELD("rhs", comp_assign_stmt.rhs);
-    END_OBJECT();
-}
-
-void Printer::print_return_stmt(const ReturnStmt &return_stmt) {
-    BEGIN_OBJECT("ReturnStmt");
-    PRINT_EXPR_FIELD("value", return_stmt.value);
     END_OBJECT();
 }
 
@@ -629,6 +622,7 @@ void Printer::print_expr(const Expr &expr) {
         print_field_expr(*inner),
         print_range_expr(*inner),
         print_if_expr(*inner),
+        print_return_expr(*inner),
         print_try_expr(*inner),
         print_tuple_expr(*inner),
         print_coercion_expr(*inner),
@@ -858,6 +852,13 @@ void Printer::print_if_expr(const IfExpr &if_expr) {
         stream << "none\n";
     }
 
+    END_OBJECT();
+}
+
+void Printer::print_return_expr(const ReturnExpr &return_expr) {
+    BEGIN_OBJECT("ReturnExpr");
+    PRINT_EXPR_FIELD("type", return_expr.type);
+    PRINT_EXPR_FIELD("value", return_expr.value);
     END_OBJECT();
 }
 

@@ -237,6 +237,7 @@ ParseResult ExprParser::parse_operand() {
         case TKN_FUNC: return parse_func_type();
         case TKN_SELF: return parse_self();
         case TKN_IF: return parse_if_expr();
+        case TKN_RETURN: return parse_return_expr();
         case TKN_META: return parse_meta_expr();
         default: {
             parser.report_generator.report_err_unexpected_token(parser.file, *stream.get());
@@ -628,6 +629,22 @@ ParseResult ExprParser::parse_if_expr() {
     }
 
     return node.build(AST_IF_EXPR);
+}
+
+ParseResult ExprParser::parse_return_expr() {
+    NodeBuilder node = parser.build_node();
+    node.consume(); // Consume 'return'
+
+    if (!stream.get()->is(TKN_SEMI) && !stream.previous()->end_of_line) {
+        ParseResult result = ExprParser(parser, true).parse();
+        node.append_child(result.node);
+
+        if (!result.is_valid) {
+            return node.build_error(AST_RETURN_EXPR);
+        }
+    }
+
+    return node.build(AST_RETURN_EXPR);
 }
 
 ParseResult ExprParser::parse_meta_expr() {

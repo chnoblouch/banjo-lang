@@ -105,7 +105,6 @@ void SpecializationCollector::visit_stmt(sir::Stmt stmt) {
         visit_var_stmt(*inner),      // var_stmt
         visit_assign_stmt(*inner),   // assign_stmt
         SIR_MATCH_IMPOSSIBLE,        // comp_assign_stmt
-        visit_return_stmt(*inner),   // return_stmt
         visit_switch_stmt(*inner),   // switch_stmt
         SIR_MATCH_IMPOSSIBLE,        // try_stmt
         SIR_MATCH_IMPOSSIBLE,        // while_stmt
@@ -130,10 +129,6 @@ void SpecializationCollector::visit_var_stmt(const sir::VarStmt &var_stmt) {
 void SpecializationCollector::visit_assign_stmt(const sir::AssignStmt &assign_stmt) {
     visit_expr(assign_stmt.lhs);
     visit_expr(assign_stmt.rhs);
-}
-
-void SpecializationCollector::visit_return_stmt(const sir::ReturnStmt &return_stmt) {
-    visit_expr(return_stmt.value);
 }
 
 void SpecializationCollector::visit_switch_stmt(const sir::SwitchStmt &switch_stmt) {
@@ -246,6 +241,7 @@ void SpecializationCollector::visit_expr(sir::Expr expr) {
         visit_field_expr(*inner),        // field_expr
         visit_range_expr(*inner),        // range_expr
         visit_if_expr(*inner),           // if_expr
+        visit_return_expr(*inner),       // return_expr
         visit_try_expr(*inner),          // try_expr
         visit_tuple_expr(*inner),        // tuple_expr
         visit_coercion_expr(*inner),     // coercion_expr
@@ -260,7 +256,7 @@ void SpecializationCollector::visit_expr(sir::Expr expr) {
         SIR_MATCH_IMPOSSIBLE,            // map_type
         SIR_MATCH_IGNORE,                // closure_type (TODO)
         visit_reference_type(*inner),    // reference_type
-        SIR_MATCH_IMPOSSIBLE,            // never_type
+        SIR_MATCH_IGNORE,                // never_type
         SIR_MATCH_IMPOSSIBLE,            // ident_expr
         SIR_MATCH_IMPOSSIBLE,            // star_expr
         SIR_MATCH_IMPOSSIBLE,            // bracket_expr
@@ -345,6 +341,11 @@ void SpecializationCollector::visit_if_expr(const sir::IfExpr &if_expr) {
     if (if_expr.else_branch) {
         visit_block(*if_expr.else_branch->block);
     }
+}
+
+void SpecializationCollector::visit_return_expr(const sir::ReturnExpr &return_expr) {
+    visit_expr(return_expr.type);
+    visit_expr(return_expr.value);
 }
 
 void SpecializationCollector::visit_try_expr(const sir::TryExpr &try_expr) {

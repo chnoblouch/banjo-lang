@@ -75,6 +75,7 @@ StoredValue ExprSSAGenerator::generate(const sir::Expr &expr, const StorageHints
         return generate_field_expr(*inner),                // field_expr
         SIR_MATCH_IMPOSSIBLE,                              // range_expr
         return generate_if_expr(*inner, hints),            // if_expr
+        return generate_return_expr(*inner),               // return_expr
         return generate_try_expr(*inner, hints),           // try_expr
         return generate_tuple_expr(*inner, hints),         // tuple_expr
         return generate_coercion_expr(*inner, hints),      // coercion_expr
@@ -744,6 +745,25 @@ StoredValue ExprSSAGenerator::generate_if_expr(const sir::IfExpr &if_expr, const
     }
 
     return stored_val;
+}
+
+StoredValue ExprSSAGenerator::generate_return_expr(const sir::ReturnExpr &return_expr) {
+    SSAGeneratorContext::FuncContext &func_context = ctx.get_func_context();
+
+    if (return_expr.value) {
+        ExprSSAGenerator{ctx}.generate_into_dst(return_expr.value, ctx.get_func_context().ssa_return_slot);
+    }
+
+    DeinitSSAGenerator{ctx}.generate_deferred_deinits();
+
+    for (auto iter = func_context.sir_scopes.rbegin(); iter != func_context.sir_scopes.rend(); ++iter) {
+        DeinitSSAGenerator{ctx}.generate_block_deinit(**iter);
+    }
+
+    ctx.append_jmp(ctx.get_func_context().ssa_func_exit);
+
+    // TODO
+    return StoredValue::create_undefined(ssa::Primitive::I32);
 }
 
 StoredValue ExprSSAGenerator::generate_try_expr(const sir::TryExpr &try_expr, const StorageHints &hints) {

@@ -281,20 +281,4 @@ ParseResult StmtParser::parse_continue() {
     return parser.check_stmt_terminator(builder, AST_CONTINUE_STMT);
 }
 
-ParseResult StmtParser::parse_return() {
-    NodeBuilder builder = parser.build_node();
-    builder.consume(); // Consume 'return'
-
-    if (!stream.get()->is(TKN_SEMI) && !stream.previous()->end_of_line) {
-        ParseResult result = ExprParser(parser, true).parse();
-        builder.append_child(result.node);
-
-        if (!result.is_valid) {
-            return {builder.build(AST_RETURN_STMT), false};
-        }
-    }
-
-    return parser.check_stmt_terminator(builder, AST_RETURN_STMT);
-}
-
 } // namespace banjo

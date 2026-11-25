@@ -79,13 +79,7 @@ void BlockSSAGenerator::generate_block_body(const sir::Block &block, ssa::Value 
 
     ctx.get_func_context().sir_scopes.pop_back();
 
-    generate_block_deinit(block);
-}
-
-void BlockSSAGenerator::generate_block_deinit(const sir::Block &block) {
-    for (const auto &[symbol, resource] : std::ranges::reverse_view{block.resources}) {
-        DeinitSSAGenerator{ctx}.generate_deinit(resource, symbol);
-    }
+    DeinitSSAGenerator{ctx}.generate_block_deinit(block);
 }
 
 void BlockSSAGenerator::generate_stmt(sir::Stmt sir_stmt, ssa::Value *dst) {
@@ -95,7 +89,6 @@ void BlockSSAGenerator::generate_stmt(sir::Stmt sir_stmt, ssa::Value *dst) {
         generate_var_stmt(*inner),       // var_stmt
         generate_assign_stmt(*inner),    // assign_stmt
         SIR_MATCH_IMPOSSIBLE,            // comp_assign_stmt
-        generate_return_stmt(*inner),    // return_stmt
         generate_switch_stmt(*inner),    // switch_stmt
         SIR_MATCH_IMPOSSIBLE,            // try_stmt
         SIR_MATCH_IMPOSSIBLE,            // while_stmt
@@ -108,7 +101,7 @@ void BlockSSAGenerator::generate_stmt(sir::Stmt sir_stmt, ssa::Value *dst) {
         SIR_MATCH_IGNORE,                // expanded_meta_stmt
         generate_expr_stmt(*inner, dst), // expr_stmt
         generate_block(*inner),          // block_stmt
-        return                           // error
+        SIR_MATCH_IGNORE                 // error
     );
 }
 
@@ -127,22 +120,6 @@ void BlockSSAGenerator::generate_assign_stmt(const sir::AssignStmt &assign_stmt)
     ExprSSAGenerator{ctx}.generate_into_dst(assign_stmt.rhs, dst.get_ptr());
 
     DeinitSSAGenerator{ctx}.generate_deferred_deinits();
-}
-
-void BlockSSAGenerator::generate_return_stmt(const sir::ReturnStmt &return_stmt) {
-    SSAGeneratorContext::FuncContext &func_context = ctx.get_func_context();
-
-    if (return_stmt.value) {
-        ExprSSAGenerator{ctx}.generate_into_dst(return_stmt.value, ctx.get_func_context().ssa_return_slot);
-    }
-
-    DeinitSSAGenerator{ctx}.generate_deferred_deinits();
-
-    for (auto iter = func_context.sir_scopes.rbegin(); iter != func_context.sir_scopes.rend(); ++iter) {
-        generate_block_deinit(**iter);
-    }
-
-    ctx.append_jmp(ctx.get_func_context().ssa_func_exit);
 }
 
 void BlockSSAGenerator::generate_switch_stmt(const sir::SwitchStmt &switch_stmt) {
@@ -384,7 +361,7 @@ void BlockSSAGenerator::generate_loop_jump_deinit() {
     SSAGeneratorContext::LoopContext &loop_context = ctx.get_loop_context();
 
     for (auto iter = func_context.sir_scopes.rbegin(); iter != func_context.sir_scopes.rend(); ++iter) {
-        generate_block_deinit(**iter);
+        DeinitSSAGenerator{ctx}.generate_block_deinit(**iter);
 
         if (*iter == loop_context.sir_block) {
             break;

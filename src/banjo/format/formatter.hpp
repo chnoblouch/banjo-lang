@@ -65,11 +65,11 @@ private:
     void format_var_decl(ASTNode *node, WhitespaceKind whitespace);
     void format_typeless_var_stmt(ASTNode *node, WhitespaceKind whitespace);
     void format_assign_stmt(ASTNode *node, WhitespaceKind whitespace);
-    void format_return_stmt(ASTNode *node, WhitespaceKind whitespace);
     void format_if_expr(ASTNode *node, WhitespaceKind whitespace);
     void format_if_branch(ASTNode *node, WhitespaceKind whitespace);
     void format_else_if_branch(ASTNode *node, WhitespaceKind whitespace);
     void format_else_branch(ASTNode *node, WhitespaceKind whitespace);
+    void format_return_expr(ASTNode *node, WhitespaceKind whitespace);
     void format_switch_stmt(ASTNode *node, WhitespaceKind whitespace);
     void format_switch_case_branch(ASTNode *node, WhitespaceKind whitespace);
     void format_try_stmt(ASTNode *node, WhitespaceKind whitespace);

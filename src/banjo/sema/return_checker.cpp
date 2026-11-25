@@ -1,5 +1,7 @@
 #include "return_checker.hpp"
 
+#include "banjo/sir/sir.hpp"
+
 namespace banjo::sema {
 
 ReturnChecker::ReturnChecker(SemanticAnalyzer &analyzer) : analyzer{analyzer} {}
@@ -17,14 +19,14 @@ ReturnChecker::Result ReturnChecker::check(sir::Block &block) {
             return result;
         }
 
-        if (stmt.is<sir::ReturnStmt>()) {
-            result = Result::RETURNS_ALWAYS;
-        } else if (auto block = stmt.match<sir::Block>()) {
-            result = check(*block);
-        } else if (auto expr = stmt.match<sir::Expr>()) {
-            if (auto if_expr = expr->match<sir::IfExpr>()) {
+        if (auto expr = stmt.match<sir::Expr>()) {
+            if (expr->is<sir::ReturnExpr>()) {
+                result = Result::RETURNS_ALWAYS;
+            } else if (auto if_expr = expr->match<sir::IfExpr>()) {
                 result = check_if_expr(*if_expr);
             }
+        } else if (auto block = stmt.match<sir::Block>()) {
+            result = check(*block);
         }
     }
 

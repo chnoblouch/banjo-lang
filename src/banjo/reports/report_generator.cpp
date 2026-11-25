@@ -838,11 +838,8 @@ void ReportGenerator::report_err_invalid_global_value(const sir::Expr &value) {
     report_error("globals cannot be initialized with this type of value", value.get_ast_node());
 }
 
-void ReportGenerator::report_err_return_missing_value(
-    const sir::ReturnStmt &return_stmt,
-    const sir::Expr &expected_type
-) {
-    report_error("'return' statement without a value (expected '$')", return_stmt.ast_node, expected_type);
+void ReportGenerator::report_err_return_missing_value(sir::ReturnExpr &return_expr, sir::Expr expected_type) {
+    report_error("'return' without a value (expected '$')", return_expr.ast_node, expected_type);
 }
 
 void ReportGenerator::report_err_does_not_return(const sir::Ident &func_ident) {

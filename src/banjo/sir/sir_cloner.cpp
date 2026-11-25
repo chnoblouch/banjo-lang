@@ -386,7 +386,6 @@ Stmt Cloner::clone_stmt(const Stmt &stmt) {
         return clone_var_stmt(*inner),
         return clone_assign_stmt(*inner),
         return clone_comp_assign_stmt(*inner),
-        return clone_return_stmt(*inner),
         return clone_switch_stmt(*inner),
         return clone_try_stmt(*inner),
         return clone_while_stmt(*inner),
@@ -433,15 +432,6 @@ CompAssignStmt *Cloner::clone_comp_assign_stmt(const CompAssignStmt &comp_assign
             .op = comp_assign_stmt.op,
             .lhs = clone_expr(comp_assign_stmt.lhs),
             .rhs = clone_expr(comp_assign_stmt.rhs),
-        }
-    );
-}
-
-ReturnStmt *Cloner::clone_return_stmt(const ReturnStmt &return_stmt) {
-    return mod.create(
-        ReturnStmt{
-            .ast_node = return_stmt.ast_node,
-            .value = clone_expr(return_stmt.value),
         }
     );
 }
@@ -597,6 +587,7 @@ Expr Cloner::clone_expr(const Expr &expr) {
         return clone_field_expr(*inner),
         return clone_range_expr(*inner),
         return clone_if_expr(*inner),
+        return clone_return_expr(*inner),
         return clone_try_expr(*inner),
         return clone_tuple_expr(*inner),
         return clone_coercion_expr(*inner),
@@ -908,6 +899,16 @@ IfExpr *Cloner::clone_if_expr(const IfExpr &if_expr) {
             .type = clone_expr(if_expr.type),
             .cond_branches = cond_branches,
             .else_branch = else_branch,
+        }
+    );
+}
+
+ReturnExpr *Cloner::clone_return_expr(const ReturnExpr &return_expr) {
+    return mod.create(
+        ReturnExpr{
+            .ast_node = return_expr.ast_node,
+            .type = clone_expr(return_expr.type),
+            .value = clone_expr(return_expr.value),
         }
     );
 }

@@ -13,7 +13,7 @@ private:
 public:
     DeinitSSAGenerator(SSAGeneratorContext &ctx);
 
-    void generate_resource_flag_slot(const sir::Resource &resource, ssa::Value initial_value);
+    void generate_block_deinit(const sir::Block &block);
     void generate_deferred_deinits();
     void generate_deinit(const sir::Resource &resource, sir::Symbol symbol);
     void generate_deinit(const sir::Resource &resource, ssa::Value ssa_ptr);

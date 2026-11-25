@@ -38,6 +38,7 @@ Expr Expr::get_type() const {
         return inner->type, // field_expr
         return nullptr,     // range_expr
         return inner->type, // if_expr
+        return inner->type, // return_expr
         return inner->type, // try_expr
         return inner->type, // tuple_expr
         return inner->type, // coercion_type
@@ -97,6 +98,7 @@ ExprCategory Expr::get_category() const {
         return ExprCategory::VALUE,          // field_expr
         return ExprCategory::VALUE,          // range_expr
         return ExprCategory::VALUE,          // if_expr
+        return ExprCategory::VALUE,          // return_expr
         return ExprCategory::VALUE,          // try_expr
         return inner->get_category(),        // tuple_expr
         return ExprCategory::VALUE,          // type_coercion
@@ -299,6 +301,7 @@ ASTNode *Expr::get_ast_node() const {
         return inner->ast_node,
         return inner->ast_node,
         return inner->ast_node,
+        return inner->ast_node,
         return inner->ast_node
     );
 }
@@ -317,7 +320,6 @@ ASTNode *Stmt::get_ast_node() const {
     SIR_MATCH_STMT(
         *this,
         SIR_MATCH_IMPOSSIBLE,
-        return inner->ast_node,
         return inner->ast_node,
         return inner->ast_node,
         return inner->ast_node,

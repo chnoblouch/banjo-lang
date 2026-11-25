@@ -49,6 +49,7 @@ struct CallExpr;
 struct FieldExpr;
 struct RangeExpr;
 struct IfExpr;
+struct ReturnExpr;
 struct TryExpr;
 struct TupleExpr;
 struct CoercionExpr;
@@ -83,7 +84,6 @@ struct PlaceholderExpr;
 struct VarStmt;
 struct AssignStmt;
 struct CompAssignStmt;
-struct ReturnStmt;
 struct SwitchStmt;
 struct TryStmt;
 struct WhileStmt;
@@ -191,37 +191,38 @@ class Expr {
         FieldExpr *,        // 19
         RangeExpr *,        // 20
         IfExpr *,           // 21
-        TryExpr *,          // 22
-        TupleExpr *,        // 23
-        CoercionExpr *,     // 24
-        SpecializeExpr *,   // 25
-        PrimitiveType *,    // 26
-        PointerType *,      // 27
-        StaticArrayType *,  // 28
-        FuncType *,         // 29
-        OptionalType *,     // 30
-        ResultType *,       // 31
-        ArrayType *,        // 32
-        MapType *,          // 33
-        ClosureType *,      // 34
-        ReferenceType *,    // 35
-        NeverType *,        // 36
-        IdentExpr *,        // 37
-        StarExpr *,         // 38
-        BracketExpr *,      // 39
-        DotExpr *,          // 40
-        PseudoType *,       // 41
-        MetaAccess *,       // 42
-        MetaFieldExpr *,    // 43
-        MetaCallExpr *,     // 44
-        InitExpr *,         // 45
-        MoveExpr *,         // 46
-        DeinitExpr *,       // 47
-        TypeCheckExpr *,    // 48
-        BuiltinExpr *,      // 49
-        PlaceholderExpr *,  // 50
-        Error *,            // 51
-        std::nullptr_t>     // 52
+        ReturnExpr *,       // 22
+        TryExpr *,          // 23
+        TupleExpr *,        // 24
+        CoercionExpr *,     // 25
+        SpecializeExpr *,   // 26
+        PrimitiveType *,    // 27
+        PointerType *,      // 28
+        StaticArrayType *,  // 29
+        FuncType *,         // 30
+        OptionalType *,     // 31
+        ResultType *,       // 32
+        ArrayType *,        // 33
+        MapType *,          // 34
+        ClosureType *,      // 35
+        ReferenceType *,    // 36
+        NeverType *,        // 37
+        IdentExpr *,        // 38
+        StarExpr *,         // 39
+        BracketExpr *,      // 40
+        DotExpr *,          // 41
+        PseudoType *,       // 42
+        MetaAccess *,       // 43
+        MetaFieldExpr *,    // 44
+        MetaCallExpr *,     // 45
+        InitExpr *,         // 46
+        MoveExpr *,         // 47
+        DeinitExpr *,       // 48
+        TypeCheckExpr *,    // 49
+        BuiltinExpr *,      // 50
+        PlaceholderExpr *,  // 51
+        Error *,            // 52
+        std::nullptr_t>     // 53
         kind;
 
 public:
@@ -315,7 +316,6 @@ private:
         VarStmt *,
         AssignStmt *,
         CompAssignStmt *,
-        ReturnStmt *,
         SwitchStmt *,
         TryStmt *,
         WhileStmt *,
@@ -859,6 +859,12 @@ struct IfExpr {
     std::optional<IfElseBranch> else_branch;
 };
 
+struct ReturnExpr {
+    ASTNode *ast_node;
+    Expr type;
+    Expr value;
+};
+
 struct TryExpr {
     ASTNode *ast_node;
     Expr type;
@@ -1115,11 +1121,6 @@ struct CompAssignStmt {
     BinaryOp op;
     Expr lhs;
     Expr rhs;
-};
-
-struct ReturnStmt {
-    ASTNode *ast_node;
-    Expr value;
 };
 
 struct SwitchCaseBranch {

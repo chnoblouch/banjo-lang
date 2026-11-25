@@ -5,9 +5,17 @@
 #include "banjo/ssa_gen/expr_ssa_generator.hpp"
 #include "banjo/ssa_gen/type_ssa_generator.hpp"
 
+#include <ranges>
+
 namespace banjo {
 
 DeinitSSAGenerator::DeinitSSAGenerator(SSAGeneratorContext &ctx) : ctx{ctx} {}
+
+void DeinitSSAGenerator::generate_block_deinit(const sir::Block &block) {
+    for (const auto &[symbol, resource] : std::ranges::reverse_view{block.resources}) {
+        DeinitSSAGenerator{ctx}.generate_deinit(resource, symbol);
+    }
+}
 
 void DeinitSSAGenerator::generate_deferred_deinits() {
     std::optional<ssa::Instruction> branch_instr;

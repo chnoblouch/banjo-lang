@@ -112,7 +112,6 @@ ResourceAnalyzer::Scope ResourceAnalyzer::analyze_block(sir::Block &block, Conte
             analyze_var_stmt(*inner),         // var_stmt
             analyze_assign_stmt(*inner),      // assign_stmt
             analyze_comp_assign_stmt(*inner), // comp_assign_stmt
-            analyze_return_stmt(*inner),      // return_stmt
             SIR_MATCH_IGNORE,                 // switch_stmt (TODO!)
             analyze_try_stmt(*inner),         // try_stmt
             SIR_MATCH_IGNORE,                 // while_stmt
@@ -220,11 +219,6 @@ void ResourceAnalyzer::analyze_comp_assign_stmt(sir::CompAssignStmt &comp_assign
     analyze_expr(comp_assign_stmt.rhs, true, false);
 }
 
-void ResourceAnalyzer::analyze_return_stmt(sir::ReturnStmt &return_stmt) {
-    analyze_expr(return_stmt.value, true, false);
-    scopes.back().exit_behavior = ExitBehavior::RETURN;
-}
-
 void ResourceAnalyzer::analyze_try_stmt(sir::TryStmt &try_stmt) {
     std::vector<Scope> child_scopes{
         analyze_block(*try_stmt.success_branch.block),
@@ -315,6 +309,7 @@ Result ResourceAnalyzer::analyze_expr(sir::Expr &expr, Context &ctx) {
         result = analyze_field_expr(*inner, expr, ctx),   // field_expr
         SIR_MATCH_IGNORE,                                 // range_expr
         result = analyze_if_expr(*inner, ctx),            // if_expr
+        result = analyze_return_expr(*inner, ctx),        // return_expr
         result = analyze_try_expr(*inner, ctx),           // try_expr
         result = analyze_tuple_expr(*inner, ctx),         // tuple_expr
         result = analyze_coercion_expr(*inner, ctx),      // coercion_expr
@@ -554,6 +549,12 @@ Result ResourceAnalyzer::analyze_if_expr(sir::IfExpr &if_expr, Context &ctx) {
         merge_move_states(scopes.back(), child_scope, true);
     }
 
+    return Result::SUCCESS;
+}
+
+Result ResourceAnalyzer::analyze_return_expr(sir::ReturnExpr &return_expr, Context &ctx) {
+    analyze_expr(return_expr.value, true, ctx.conditional);
+    scopes.back().exit_behavior = ExitBehavior::RETURN;
     return Result::SUCCESS;
 }
 

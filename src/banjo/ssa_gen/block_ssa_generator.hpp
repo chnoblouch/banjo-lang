@@ -18,14 +18,12 @@ public:
     void generate_block_allocas(const sir::Block &block, const sir::Local *excluded = nullptr);
     void generate_resource_flags(const sir::Resource &resource);
     void generate_block_body(const sir::Block &block, ssa::Value *dst);
-    void generate_block_deinit(const sir::Block &block);
 
     void generate_stmt(sir::Stmt stmt, ssa::Value *dst);
 
 private:
     void generate_var_stmt(const sir::VarStmt &var_stmt);
     void generate_assign_stmt(const sir::AssignStmt &assign_stmt);
-    void generate_return_stmt(const sir::ReturnStmt &return_stmt);
     void generate_switch_stmt(const sir::SwitchStmt &switch_stmt);
     void generate_loop_stmt(const sir::LoopStmt &loop_stmt);
     void generate_continue_stmt(const sir::ContinueStmt &continue_stmt);

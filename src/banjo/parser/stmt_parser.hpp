@@ -25,7 +25,6 @@ public:
     ParseResult parse_for();
     ParseResult parse_break();
     ParseResult parse_continue();
-    ParseResult parse_return();
 
 private:
     ParseResult parse_var_or_ref(NodeBuilder &node, ASTNodeType type, ASTNodeType type_typeless);

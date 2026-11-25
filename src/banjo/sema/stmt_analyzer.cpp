@@ -46,7 +46,6 @@ void StmtAnalyzer::analyze(sir::Block &block, unsigned &index, const StmtContext
         analyze_var_stmt(*inner),                                    // var_stmt
         analyze_assign_stmt(*inner),                                 // assign_stmt
         analyze_comp_assign_stmt(*inner, stmt),                      // comp_assign_stmt
-        analyze_return_stmt(*inner),                                 // return_stmt
         analyze_switch_stmt(*inner),                                 // switch_stmt
         analyze_try_stmt(*inner, stmt),                              // try_stmt
         analyze_while_stmt(*inner, stmt),                            // while_stmt
@@ -146,51 +145,6 @@ void StmtAnalyzer::analyze_comp_assign_stmt(sir::CompAssignStmt &comp_assign_stm
 
     analyze_assign_stmt(*assign_stmt);
     out_stmt = assign_stmt;
-}
-
-void StmtAnalyzer::analyze_return_stmt(sir::ReturnStmt &return_stmt) {
-    sir::FuncDef &func_def = analyzer.get_decl().as<sir::FuncDef>();
-    sir::Expr return_type = func_def.type.return_type;
-
-    if (return_stmt.value) {
-        // TODO: Also generate an appropriate error if the function returns `void`.
-        ExprAnalyzer(analyzer).analyze_value(return_stmt.value, return_type);
-    } else {
-        if (auto result_type = return_type.match_specialization(*analyzer.std_result_def)) {
-            if (result_type->generic_args[0].is_primitive_type(sir::Primitive::VOID)) {
-                return_stmt.value = sir::create_result_success_void(*analyzer.mod, *result_type);
-                return;
-            }
-        }
-
-        if (!return_type.is_primitive_type(sir::Primitive::VOID)) {
-            analyzer.report_generator.report_err_return_missing_value(return_stmt, return_type);
-        }
-    }
-
-    if (auto unary_expr = return_stmt.value.match<sir::UnaryExpr>()) {
-        if (unary_expr->op != sir::UnaryOp::ADDR || !unary_expr->type.is<sir::ReferenceType>()) {
-            return;
-        }
-
-        ExprProperties props = ExprPropertyAnalyzer().analyze(unary_expr->value);
-
-        if (props.is_temporary) {
-            analyzer.report_generator.report_err_return_ref_tmp(unary_expr->value);
-        } else if (auto symbol_expr = props.base_value.match<sir::SymbolExpr>()) {
-            bool is_local = false;
-
-            if (auto local = symbol_expr->symbol.match<sir::Local>()) {
-                is_local = !local->type.is<sir::ReferenceType>();
-            } else if (auto param = symbol_expr->symbol.match<sir::Param>()) {
-                is_local = !param->type.is<sir::ReferenceType>();
-            }
-
-            if (is_local) {
-                analyzer.report_generator.report_err_return_ref_local(unary_expr->value, symbol_expr->symbol);
-            }
-        }
-    }
 }
 
 void StmtAnalyzer::analyze_switch_stmt(sir::SwitchStmt &switch_stmt) {

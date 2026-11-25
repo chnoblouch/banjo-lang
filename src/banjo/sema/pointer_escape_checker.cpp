@@ -5,12 +5,13 @@ namespace banjo::sema {
 
 PointerEscapeChecker::PointerEscapeChecker(SemanticAnalyzer &analyzer) : analyzer(analyzer) {}
 
-void PointerEscapeChecker::check_return_stmt(sir::ReturnStmt &return_stmt) {
-    if (!return_stmt.value) {
+void PointerEscapeChecker::check_return_expr(sir::ReturnExpr &return_expr) {
+    if (!return_expr.value) {
         return;
     }
 
-    check_escaping_value(&return_stmt, return_stmt.value);
+    // FIXME
+    // check_escaping_value(&return_stmt, return_stmt.value);
 }
 
 void PointerEscapeChecker::check_escaping_value(sir::Stmt stmt, sir::Expr value) {

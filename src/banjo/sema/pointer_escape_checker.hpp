@@ -12,7 +12,7 @@ private:
 
 public:
     PointerEscapeChecker(SemanticAnalyzer &analyzer);
-    void check_return_stmt(sir::ReturnStmt &return_stmt);
+    void check_return_expr(sir::ReturnExpr &return_expr);
 
 private:
     void check_escaping_value(sir::Stmt stmt, sir::Expr value);

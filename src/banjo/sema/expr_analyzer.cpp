@@ -192,6 +192,7 @@ Result ExprAnalyzer::analyze_uncoerced(sir::Expr &expr) {
         SIR_MATCH_IGNORE,                               // field_expr
         analyze_range_expr(*inner),                     // range_expr
         result = analyze_if_expr(*inner),               // if_expr
+        result = analyze_return_expr(*inner),           // return_expr
         result = analyze_try_expr(*inner),              // try_expr
         analyze_tuple_expr(*inner),                     // tuple_expr
         SIR_MATCH_IGNORE,                               // coercion_expr
@@ -1530,6 +1531,55 @@ Result ExprAnalyzer::analyze_if_expr(sir::IfExpr &if_expr) {
         RESULT_PROPAGATE(result);
 
         if_expr.type = if_expr.cond_branches[0].block->stmts.back().as<sir::Expr>().get_type();
+    }
+
+    return Result::SUCCESS;
+}
+
+Result ExprAnalyzer::analyze_return_expr(sir::ReturnExpr &return_expr) {
+    sir::FuncDef &func_def = analyzer.get_decl().as<sir::FuncDef>();
+    sir::Expr return_type = func_def.type.return_type;
+
+    return_expr.type = analyzer.create<sir::NeverType>({.ast_node = nullptr});
+
+    if (return_expr.value) {
+        // TODO: Also generate an appropriate error if the function returns `void`.
+        ExprAnalyzer(analyzer).analyze_value(return_expr.value, return_type);
+    } else {
+        if (auto result_type = return_type.match_specialization(*analyzer.std_result_def)) {
+            if (result_type->generic_args[0].is_primitive_type(sir::Primitive::VOID)) {
+                return_expr.value = sir::create_result_success_void(*analyzer.mod, *result_type);
+                return Result::SUCCESS;
+            }
+        }
+
+        if (!return_type.is_primitive_type(sir::Primitive::VOID)) {
+            analyzer.report_generator.report_err_return_missing_value(return_expr, return_type);
+        }
+    }
+
+    if (auto unary_expr = return_expr.value.match<sir::UnaryExpr>()) {
+        if (unary_expr->op != sir::UnaryOp::ADDR || !unary_expr->type.is<sir::ReferenceType>()) {
+            return Result::SUCCESS;
+        }
+
+        ExprProperties props = ExprPropertyAnalyzer().analyze(unary_expr->value);
+
+        if (props.is_temporary) {
+            analyzer.report_generator.report_err_return_ref_tmp(unary_expr->value);
+        } else if (auto symbol_expr = props.base_value.match<sir::SymbolExpr>()) {
+            bool is_local = false;
+
+            if (auto local = symbol_expr->symbol.match<sir::Local>()) {
+                is_local = !local->type.is<sir::ReferenceType>();
+            } else if (auto param = symbol_expr->symbol.match<sir::Param>()) {
+                is_local = !param->type.is<sir::ReferenceType>();
+            }
+
+            if (is_local) {
+                analyzer.report_generator.report_err_return_ref_local(unary_expr->value, symbol_expr->symbol);
+            }
+        }
     }
 
     return Result::SUCCESS;

@@ -79,7 +79,6 @@ void Formatter::format_node(ASTNode *node, WhitespaceKind whitespace) {
         case AST_BIT_XOR_ASSIGN_STMT: format_assign_stmt(node, whitespace); break;
         case AST_SHL_ASSIGN_STMT: format_assign_stmt(node, whitespace); break;
         case AST_SHR_ASSIGN_STMT: format_assign_stmt(node, whitespace); break;
-        case AST_RETURN_STMT: format_return_stmt(node, whitespace); break;
         case AST_SWITCH_STMT: format_switch_stmt(node, whitespace); break;
         case AST_SWITCH_CASE_LIST: format_block(node, whitespace); break;
         case AST_SWITCH_CASE_BRANCH: format_switch_case_branch(node, whitespace); break;
@@ -155,6 +154,7 @@ void Formatter::format_node(ASTNode *node, WhitespaceKind whitespace) {
         case AST_IF_BRANCH: format_if_branch(node, whitespace); break;
         case AST_ELSE_IF_BRANCH: format_else_if_branch(node, whitespace); break;
         case AST_ELSE_BRANCH: format_else_branch(node, whitespace); break;
+        case AST_RETURN_EXPR: format_return_expr(node, whitespace); break;
         case AST_TRY_EXPR: format_unary_expr(node, whitespace, true); break;
         case AST_TUPLE_EXPR: format_list(node, whitespace); break;
         case AST_I8: format_single_token_node(node, whitespace); break;
@@ -740,18 +740,6 @@ void Formatter::format_assign_stmt(ASTNode *node, WhitespaceKind whitespace) {
     format_before_terminator(node, rhs_node, whitespace, 1);
 }
 
-void Formatter::format_return_stmt(ASTNode *node, WhitespaceKind whitespace) {
-    ASTNode *value_node = node->first_child;
-    unsigned tkn_return = node->tokens[0];
-
-    if (value_node) {
-        ensure_space_after(tkn_return);
-        format_before_terminator(node, value_node, whitespace, 1);
-    } else {
-        format_keyword_stmt(node, whitespace);
-    }
-}
-
 void Formatter::format_switch_stmt(ASTNode *node, WhitespaceKind whitespace) {
     ASTNode *value_node = node->first_child;
     ASTNode *cases_node = value_node->next_sibling;
@@ -1063,6 +1051,18 @@ void Formatter::format_else_branch(ASTNode *node, WhitespaceKind whitespace) {
 
     ensure_space_after(tkn_else);
     format_node(block_node, whitespace);
+}
+
+void Formatter::format_return_expr(ASTNode *node, WhitespaceKind whitespace) {
+    ASTNode *value_node = node->first_child;
+    unsigned tkn_return = node->tokens[0];
+
+    if (value_node) {
+        ensure_space_after(tkn_return);
+        format_before_terminator(node, value_node, whitespace, 1);
+    } else {
+        format_keyword_stmt(node, whitespace);
+    }
 }
 
 void Formatter::format_static_array_type(ASTNode *node, WhitespaceKind whitespace) {

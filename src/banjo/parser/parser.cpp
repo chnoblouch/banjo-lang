@@ -124,7 +124,6 @@ ParseResult Parser::parse_stmt() {
         case TKN_FOR: return StmtParser{*this}.parse_for();
         case TKN_BREAK: return StmtParser{*this}.parse_break();
         case TKN_CONTINUE: return StmtParser{*this}.parse_continue();
-        case TKN_RETURN: return StmtParser{*this}.parse_return();
         case TKN_TRY: return parse_try();
         case TKN_META: return parse_meta_stmt();
         case TKN_LBRACE: return parse_stmt_block();

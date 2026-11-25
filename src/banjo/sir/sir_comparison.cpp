@@ -46,6 +46,7 @@ bool Comparison::compare(Expr lhs, Expr rhs) {
         return false,                                      // field_expr
         return false,                                      // range_expr
         return false,                                      // if_expr
+        return false,                                      // return_expr
         return false,                                      // try_expr
         return compare(*inner, rhs.as<TupleExpr>()),       // tuple_expr
         return false,                                      // coercion_expr
