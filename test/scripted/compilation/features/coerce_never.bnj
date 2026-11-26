@@ -1,0 +1,53 @@
+# test:subtest
+# test:compiles
+
+struct S {}
+
+func main() {
+    var a: u64 = return;
+    var b: (i32, f32) = return;
+    var c: *S = return;
+}
+
+# test:subtest
+# test:output "a"
+
+func main() {
+    print('a');
+    var a: i32 = return;
+    print('!');
+}
+
+# test:subtest
+# test:output "a"
+
+func f() -> bool {
+    print('a');
+    var a: i32 = return false;
+    print('!');
+
+    return true;
+}
+
+func main() {
+    f();
+}
+
+# test:subtest
+# test:output "42f"
+
+func f(flag: bool) {
+    var value = if flag {
+        42;
+    } else {
+        print('f');
+        return;
+    };
+
+    print(value);
+}
+
+func main() {
+    f(true);
+    f(false);
+}

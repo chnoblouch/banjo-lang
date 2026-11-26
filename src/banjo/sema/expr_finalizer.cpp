@@ -34,19 +34,19 @@ Result ExprFinalizer::finalize_by_coercion(sir::Expr &expr, sir::Expr expected_t
     sir::Expr type = analyzer.get_resolved_type(expr);
 
     if (expected_type.is_primitive_type(sir::Primitive::ADDR) && type.is_addr_like_type()) {
-        expr = analyzer.create(
-            sir::CoercionExpr{
-                .ast_node = expr.get_ast_node(),
-                .type = expected_type,
-                .value = expr,
-            }
-        );
+        expr = analyzer.create<sir::CoercionExpr>({
+            .ast_node = expr.get_ast_node(),
+            .type = expected_type,
+            .value = expr,
+        });
 
         return Result::SUCCESS;
     }
 
     if (type != expected_type) {
-        if (auto reference_type = expected_type.match<sir::ReferenceType>()) {
+        if (type.is<sir::NeverType>()) {
+            return coerce_never(expr, expected_type);
+        } else if (auto reference_type = expected_type.match<sir::ReferenceType>()) {
             return coerce_to_reference(expr, *reference_type);
         } else if (expected_type.is_symbol<sir::UnionDef>()) {
             return coerce_to_union(expr, expected_type);
@@ -123,13 +123,21 @@ Result ExprFinalizer::infer_dot_expr_lhs(sir::DotExpr &dot_expr, sir::Expr type,
 
     analyzer.add_symbol_use(dot_expr.rhs.ast_node, lookup_result.symbol);
 
-    out_expr = analyzer.create(
-        sir::SymbolExpr{
-            .ast_node = dot_expr.ast_node,
-            .type = lookup_result.symbol.get_type(),
-            .symbol = lookup_result.symbol,
-        }
-    );
+    out_expr = analyzer.create<sir::SymbolExpr>({
+        .ast_node = dot_expr.ast_node,
+        .type = lookup_result.symbol.get_type(),
+        .symbol = lookup_result.symbol,
+    });
+
+    return Result::SUCCESS;
+}
+
+Result ExprFinalizer::coerce_never(sir::Expr &inout_expr, sir::Expr &type) {
+    inout_expr = analyzer.create<sir::CoercionExpr>({
+        .ast_node = inout_expr.get_ast_node(),
+        .type = type,
+        .value = inout_expr,
+    });
 
     return Result::SUCCESS;
 }
@@ -143,13 +151,11 @@ Result ExprFinalizer::coerce_to_reference(sir::Expr &inout_expr, sir::ReferenceT
             return Result::ERROR;
         }
 
-        inout_expr = analyzer.create(
-            sir::CoercionExpr{
-                .ast_node = inout_expr.get_ast_node(),
-                .type = &reference_type,
-                .value = inout_expr,
-            }
-        );
+        inout_expr = analyzer.create<sir::CoercionExpr>({
+            .ast_node = inout_expr.get_ast_node(),
+            .type = &reference_type,
+            .value = inout_expr,
+        });
 
         return Result::SUCCESS;
     }
@@ -161,14 +167,12 @@ Result ExprFinalizer::coerce_to_reference(sir::Expr &inout_expr, sir::ReferenceT
 
     sir::Expr base_expr = inout_expr;
 
-    inout_expr = analyzer.create(
-        sir::UnaryExpr{
-            .ast_node = inout_expr.get_ast_node(),
-            .type = &reference_type,
-            .op = sir::UnaryOp::ADDR,
-            .value = inout_expr,
-        }
-    );
+    inout_expr = analyzer.create<sir::UnaryExpr>({
+        .ast_node = inout_expr.get_ast_node(),
+        .type = &reference_type,
+        .op = sir::UnaryOp::ADDR,
+        .value = inout_expr,
+    });
 
     if (reference_type.mut) {
         ExprProperties props = ExprPropertyAnalyzer().analyze(base_expr);
