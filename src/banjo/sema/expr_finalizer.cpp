@@ -13,6 +13,7 @@
 #include <array>
 #include <cstdint>
 #include <limits>
+#include <span>
 #include <unordered_map>
 
 namespace banjo::sema {
@@ -481,9 +482,10 @@ Result ExprFinalizer::finalize_coercion(sir::BinaryExpr &binary_expr, sir::Expr 
         binary_expr.type = analyzer.get_resolved_type(binary_expr.lhs);
         RESULT_PROPAGATE(result);
     } else {
-        // If the expression returns a boolean, the operands have already been analyzed in the first
-        // phase of expression analysis.
+        // If the expression returns a boolean, the operands have already been
+        // analyzed in the first phase of expression analysis.
         ASSERT(binary_expr.is_comparison_op() || binary_expr.is_logical_op());
+        return Result::SUCCESS;
     }
 
     if (binary_expr.type != type) {
@@ -534,6 +536,39 @@ Result ExprFinalizer::finalize(sir::Expr &expr) {
     else if (auto map_literal = expr.match<sir::MapLiteral>()) return finalize_default(*map_literal, expr);
     else if (auto dot_expr = expr.match<sir::DotExpr>()) return finalize_default(*dot_expr);
     else return Result::SUCCESS;
+}
+
+Result ExprFinalizer::finalize_group(std::span<sir::Expr> exprs, sir::Expr expected_type /* = nullptr */) {
+    Result result = Result::SUCCESS;
+    sir::Expr analyzed_expr = nullptr;
+
+    if (!expected_type) {
+        for (sir::Expr expr : exprs) {
+            if (is_type_fluid(expr)) {
+                continue;
+            }
+
+            RESULT_MERGE(result, finalize(expr));
+
+            analyzed_expr = expr;
+            expected_type = expr.get_type();
+            break;
+        }
+    }
+
+    for (sir::Expr expr : exprs) {
+        if (expr == analyzed_expr) {
+            continue;
+        }
+
+        if (expected_type) {
+            RESULT_MERGE(result, finalize_by_coercion(expr, expected_type));
+        } else {
+            RESULT_MERGE(result, finalize(expr));
+        }
+    }
+
+    return result;
 }
 
 Result ExprFinalizer::finalize_default(sir::IntLiteral &int_literal) {
@@ -938,23 +973,7 @@ void ExprFinalizer::create_std_map(sir::MapLiteral &map_literal, sir::Expr &out_
 }
 
 Result ExprFinalizer::finalize_array_literal_elements(sir::ArrayLiteral &array_literal, sir::Expr element_type) {
-    Result result = Result::SUCCESS;
-    Result partial_result;
-
-    for (sir::Expr &value : array_literal.values) {
-        if (element_type) {
-            partial_result = ExprFinalizer(analyzer).finalize_by_coercion(value, element_type);
-        } else {
-            partial_result = ExprFinalizer(analyzer).finalize(value);
-            element_type = analyzer.get_resolved_type(value);
-        }
-
-        if (partial_result != Result::SUCCESS) {
-            result = Result::ERROR;
-        }
-    }
-
-    return result;
+    return finalize_group(array_literal.values, element_type);
 }
 
 Result ExprFinalizer::finalize_struct_literal_fields(sir::StructLiteral &struct_literal) {
@@ -1025,31 +1044,20 @@ Result ExprFinalizer::finalize_map_literal_elements(
     sir::Expr key_type,
     sir::Expr value_type
 ) {
-    Result result = Result::SUCCESS;
-    Result partial_result;
+    std::vector<sir::Expr> keys;
+    std::vector<sir::Expr> values;
 
-    for (sir::MapLiteralEntry &entry : map_literal.entries) {
-        if (key_type) {
-            partial_result = ExprFinalizer(analyzer).finalize_by_coercion(entry.key, key_type);
-        } else {
-            partial_result = ExprFinalizer(analyzer).finalize(entry.key);
-        }
+    keys.resize(map_literal.entries.size(), nullptr);
+    values.resize(map_literal.entries.size(), nullptr);
 
-        if (partial_result != Result::SUCCESS) {
-            result = Result::ERROR;
-        }
-
-        if (value_type) {
-            partial_result = ExprFinalizer(analyzer).finalize_by_coercion(entry.value, value_type);
-        } else {
-            partial_result = ExprFinalizer(analyzer).finalize(entry.value);
-        }
-
-        if (partial_result != Result::SUCCESS) {
-            result = Result::ERROR;
-        }
+    for (unsigned i = 0; i < map_literal.entries.size(); i++) {
+        keys[i] = map_literal.entries[i].key;
+        values[i] = map_literal.entries[i].value;
     }
 
+    Result result = Result::SUCCESS;
+    RESULT_MERGE(result, finalize_group(keys, key_type));
+    RESULT_MERGE(result, finalize_group(values, value_type));
     return result;
 }
 
@@ -1093,6 +1101,14 @@ void ExprFinalizer::check_int_literal_range(sir::IntLiteral &int_literal) {
             analyzer.report_generator.report_err_int_literal_out_of_range(int_literal, range);
         }
     }
+}
+
+bool ExprFinalizer::is_type_fluid(sir::Expr value) {
+    if (auto dot_expr = value.match<sir::DotExpr>()) {
+        return !dot_expr->lhs;
+    }
+
+    return analyzer.get_resolved_type(value).is<sir::PseudoType>();
 }
 
 } // namespace banjo::sema

@@ -1,0 +1,63 @@
+# test:subtest
+# test:compiles
+
+func main() {
+    var a = [0, 0, 0];
+}
+
+# test:subtest
+# test:compiles
+
+func main() {
+    var v: u64 = 42;
+
+    var a1 = [v, 0, 0];
+    var a2 = [0, v, 0];
+    var a3 = [0, 0, v];
+}
+
+# test:subtest
+# test:compiles
+
+func main() {
+    var v1: u8 = 42;
+    var v2: u8 = 100;
+
+    var a1 = [0, v1, v2];
+    var a2 = [v1, 0, v2];
+    var a3 = [v1, v2, 0];
+}
+
+# test:subtest
+# test:compiles
+
+func main() {
+    var m = [0: 0.0, 0: 0.0];
+}
+
+# test:subtest
+# test:compiles
+
+func main() {
+    var k: u64 = 42;
+    var v: f32 = 0.5;
+
+    var m1 = [k: v, 0: 0.0];
+    var m2 = [0: 0.0, k: v];
+    var m3 = [k: 0.0, 0: v];
+    var m4 = [0: v, k: 0.0];
+}
+
+# test:subtest
+# test:compiles
+
+func main() {
+    var k1: u8 = 42;
+    var k2: u8 = 100;
+    var v1: f64 = 0.5;
+    var v2: f64 = -0.2;
+
+    var m1 = [0: 0.0, k1: v1, k2: v2];
+    var m2 = [k1: v1, 0: 0.0, k2: v2];
+    var m3 = [k1: v1, k2: v2, 0: 0.0];
+}

@@ -1432,24 +1432,8 @@ Result ExprAnalyzer::analyze_range_expr(sir::RangeExpr &range_expr) {
     RESULT_MERGE(result, analyze_uncoerced(range_expr.rhs));
     RESULT_PROPAGATE(result);
 
-    sir::Expr lhs_type = analyzer.get_resolved_type(range_expr.lhs);
-    sir::Expr rhs_type = analyzer.get_resolved_type(range_expr.rhs);
-
-    bool can_lhs_be_coerced = can_be_coerced(range_expr.lhs);
-    bool can_rhs_be_coerced = can_be_coerced(range_expr.rhs);
-
-    if (can_lhs_be_coerced && !can_rhs_be_coerced) {
-        RESULT_PROPAGATE(ExprFinalizer{analyzer}.finalize(range_expr.rhs));
-        RESULT_PROPAGATE(ExprFinalizer{analyzer}.finalize_by_coercion(range_expr.lhs, rhs_type));
-    } else if (can_rhs_be_coerced && !can_lhs_be_coerced) {
-        RESULT_PROPAGATE(ExprFinalizer{analyzer}.finalize(range_expr.lhs));
-        RESULT_PROPAGATE(ExprFinalizer{analyzer}.finalize_by_coercion(range_expr.rhs, lhs_type));
-    } else {
-        RESULT_MERGE(result, ExprFinalizer{analyzer}.finalize(range_expr.lhs));
-        RESULT_MERGE(result, ExprFinalizer{analyzer}.finalize(range_expr.rhs));
-    }
-
-    return result;
+    std::array<sir::Expr, 2> values{range_expr.lhs, range_expr.rhs};
+    return ExprFinalizer{analyzer}.finalize_group(values);
 }
 
 Result ExprAnalyzer::analyze_if_expr(sir::IfExpr &if_expr) {
@@ -1643,13 +1627,11 @@ void ExprAnalyzer::analyze_tuple_expr(sir::TupleExpr &tuple_expr) {
         types[i] = analyzer.get_resolved_type(tuple_expr.exprs[i]);
     }
 
-    tuple_expr.type = analyzer.create(
-        sir::TupleExpr{
-            .ast_node = nullptr,
-            .type = nullptr,
-            .exprs = types,
-        }
-    );
+    tuple_expr.type = analyzer.create<sir::TupleExpr>({
+        .ast_node = nullptr,
+        .type = nullptr,
+        .exprs = types,
+    });
 }
 
 Result ExprAnalyzer::analyze_ident_expr(sir::IdentExpr &ident_expr, sir::Expr &out_expr) {
@@ -1699,12 +1681,10 @@ Result ExprAnalyzer::analyze_star_expr(sir::StarExpr &star_expr, sir::Expr &out_
     sir::ExprCategory expr_category = star_expr.value.get_category();
 
     if (expr_category == sir::ExprCategory::TYPE || expr_category == sir::ExprCategory::PROTO) {
-        out_expr = analyzer.create(
-            sir::PointerType{
-                .ast_node = star_expr.ast_node,
-                .base_type = star_expr.value,
-            }
-        );
+        out_expr = analyzer.create<sir::PointerType>({
+            .ast_node = star_expr.ast_node,
+            .base_type = star_expr.value,
+        });
     } else {
         sir::Expr value_type = analyzer.get_resolved_type(star_expr.value);
 
@@ -1722,23 +1702,19 @@ Result ExprAnalyzer::analyze_star_expr(sir::StarExpr &star_expr, sir::Expr &out_
         }
 
         if (auto pointer_type = value_type.match<sir::PointerType>()) {
-            out_expr = analyzer.create(
-                sir::UnaryExpr{
-                    .ast_node = star_expr.ast_node,
-                    .type = pointer_type->base_type,
-                    .op = sir::UnaryOp::DEREF,
-                    .value = star_expr.value,
-                }
-            );
+            out_expr = analyzer.create<sir::UnaryExpr>({
+                .ast_node = star_expr.ast_node,
+                .type = pointer_type->base_type,
+                .op = sir::UnaryOp::DEREF,
+                .value = star_expr.value,
+            });
         } else if (auto reference_type = value_type.match<sir::ReferenceType>()) {
-            out_expr = analyzer.create(
-                sir::UnaryExpr{
-                    .ast_node = star_expr.ast_node,
-                    .type = reference_type->base_type,
-                    .op = sir::UnaryOp::DEREF,
-                    .value = star_expr.value,
-                }
-            );
+            out_expr = analyzer.create<sir::UnaryExpr>({
+                .ast_node = star_expr.ast_node,
+                .type = reference_type->base_type,
+                .op = sir::UnaryOp::DEREF,
+                .value = star_expr.value,
+            });
         } else {
             analyzer.report_generator.report_err_cannot_deref(star_expr.value);
             return Result::ERROR;

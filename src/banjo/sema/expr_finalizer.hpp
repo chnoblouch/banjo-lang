@@ -4,6 +4,8 @@
 #include "banjo/sema/semantic_analyzer.hpp"
 #include "banjo/sir/sir.hpp"
 
+#include <span>
+
 namespace banjo::sema {
 
 class ExprFinalizer {
@@ -16,6 +18,7 @@ public:
 
     Result finalize_by_coercion(sir::Expr &expr, sir::Expr expected_type);
     Result finalize(sir::Expr &expr);
+    Result finalize_group(std::span<sir::Expr> exprs, sir::Expr expected_type = nullptr);
 
     Result infer_dot_expr_lhs(sir::DotExpr &dot_expr, sir::Expr type, sir::Expr &out_expr);
 
@@ -71,6 +74,7 @@ public:
     Result finalize_map_literal_elements(sir::MapLiteral &map_literal, sir::Expr key_type, sir::Expr value_type);
 
     void check_int_literal_range(sir::IntLiteral &int_literal);
+    bool is_type_fluid(sir::Expr value);
 };
 
 } // namespace banjo::sema
